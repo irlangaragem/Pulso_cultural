@@ -16,6 +16,7 @@ import {
 } from 'recharts';
 
 const socket = io(import.meta.env.VITE_API_URL || 'http://localhost:3333');
+console.log('Socket Connection URL:', import.meta.env.VITE_API_URL || 'http://localhost:3333');
 
 export function Dashboard() {
   const { user, logout } = useAuthStore();
