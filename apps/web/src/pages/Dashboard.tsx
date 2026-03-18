@@ -1,325 +1,590 @@
-import { useEffect, useState } from 'react';
-import { io } from 'socket.io-client';
-import { api } from '../services/api';
-import { BarChart3, Users, Activity, TrendingUp, Clock } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useAuthStore } from '../store/useAuthStore';
-import { useNavigate } from 'react-router-dom';
-import { 
-  AreaChart, 
-  Area, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer 
-} from 'recharts';
+import { useState, useEffect } from "react";
+import { BarChart, Bar, LineChart, Line, AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import io from "socket.io-client";
 
-const socket = io(import.meta.env.VITE_API_URL || 'http://localhost:3333');
-console.log('Socket Connection URL:', import.meta.env.VITE_API_URL || 'http://localhost:3333');
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3333";
+console.log("Dashboard: Socket Connection URL:", API_URL);
+const socket = io(API_URL);
 
-export function Dashboard() {
-  const { user, logout } = useAuthStore();
-  const navigate = useNavigate();
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [time, setTime] = useState(new Date());
-  const [isBackendConnected, setIsBackendConnected] = useState(false);
+// ============================================================
+// PULSO CULTURAL — Dashboard do Gestor
+// MAM Bahia · Protótipo
+// ============================================================
+
+// --- MOCK DATA ---
+const FLOW_TODAY = [
+  { h: "8h", v: 12 }, { h: "9h", v: 34 }, { h: "10h", v: 78 }, { h: "11h", v: 145 },
+  { h: "12h", v: 186 }, { h: "13h", v: 163 }, { h: "14h", v: 231 }, { h: "15h", v: 278 },
+  { h: "16h", v: 245 }, { h: "17h", v: 167 }, { h: "18h", v: 42 },
+];
+
+const WEEKLY = [
+  { d: "Seg", v: 0, c: 0 }, { d: "Ter", v: 412, c: 186 }, { d: "Qua", v: 389, c: 162 },
+  { d: "Qui", v: 445, c: 201 }, { d: "Sex", v: 523, v_checkin: 245 }, { d: "Sáb", v: 687, c: 342 }, { d: "Dom", v: 612, c: 298 },
+];
+
+const MONTHLY = [
+  { w: "Sem 1", cam: 2834, checkin: 1287 }, { w: "Sem 2", cam: 3102, checkin: 1456 },
+  { w: "Sem 3", cam: 3456, checkin: 1689 }, { w: "Sem 4", cam: 3210, checkin: 1534 },
+];
+
+const GENDER = [
+  { name: "Feminino", value: 48, color: "#D4267E" },
+  { name: "Masculino", value: 38, color: "#E8554E" },
+  { name: "Não-binário", value: 8, color: "#F28C38" },
+  { name: "Não informado", value: 6, color: "#3D3240" },
+];
+
+const AGES = [
+  { faixa: "< 18", v: 8 }, { faixa: "18-24", v: 22 }, { faixa: "25-34", v: 31 },
+  { faixa: "35-44", v: 18 }, { faixa: "45-59", v: 14 }, { faixa: "60+", v: 7 },
+];
+
+const ORIGIN = [
+  { name: "Salvador", value: 52, color: "#E8554E" },
+  { name: "Interior BA", value: 18, color: "#D4267E" },
+  { name: "Outro estado", value: 22, color: "#F28C38" },
+  { name: "Internacional", value: 8, color: "#F2B63C" },
+];
+
+const CHANNELS = [
+  { canal: "Redes sociais", v: 34 }, { canal: "Indicação", v: 24 },
+  { canal: "Passei na frente", v: 19 }, { canal: "Jornal / TV", v: 12 },
+  { canal: "Escola", v: 8 }, { canal: "Outro", v: 3 },
+];
+
+const RECURRENCE = [
+  { label: "1ª visita", value: 68, color: "#E8554E" },
+  { label: "Retorno", value: 32, color: "#48BB78" },
+];
+
+const DAILY_HISTORY = Array.from({ length: 30 }, (_, i) => ({
+  dia: `${i + 1}`,
+  cam: Math.floor(250 + Math.random() * 500 + (i > 14 ? 150 : 0)),
+  checkin: Math.floor(100 + Math.random() * 250 + (i > 14 ? 80 : 0)),
+}));
+
+// --- COLORS ---
+const C = {
+  coral: "#E8554E", magenta: "#D4267E", laranja: "#F28C38", amber: "#F2B63C",
+  green: "#48BB78", bgDeep: "#110D10", bgSurface: "#1C1620", bgCard: "#1E1924",
+  bgElevated: "#261F2C", border: "rgba(255,255,255,0.04)", borderAccent: "rgba(232,85,78,0.12)",
+  text1: "#F5ECE4", text2: "#A8969A", text3: "#6B5A60",
+};
+
+// --- TOOLTIP ---
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (!active || !payload?.length) return null;
+  return (
+    <div style={{ background: C.bgElevated, border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px 12px" }}>
+      <p style={{ fontFamily: "'Space Mono', monospace", fontSize: 10, color: C.text3, margin: 0 }}>{label}</p>
+      {payload.map((p: any, i: number) => (
+        <p key={i} style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: p.color || C.coral, margin: "2px 0 0" }}>
+          {p.name}: {p.value.toLocaleString("pt-BR")}
+        </p>
+      ))}
+    </div>
+  );
+};
+
+// --- COMPONENTS ---
+function MetricCard({ value, label, sub, color = C.coral, large = false }: any) {
+  return (
+    <div style={s.metricCard}>
+      <p style={{ fontFamily: "Sora, sans-serif", fontSize: large ? 36 : 28, fontWeight: 700, color, margin: 0, lineHeight: 1 }}>{value}</p>
+      <p style={{ fontSize: 12, color: C.text2, margin: "6px 0 0" }}>{label}</p>
+      {sub && <p style={{ fontFamily: "'Space Mono', monospace", fontSize: 10, color: C.green, margin: "4px 0 0" }}>{sub}</p>}
+    </div>
+  );
+}
+
+function SectionTitle({ children, right }: any) {
+  return (
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", margin: "32px 0 16px" }}>
+      <h3 style={{ fontFamily: "Sora, sans-serif", fontSize: 16, fontWeight: 700, color: C.text1, margin: 0 }}>{children}</h3>
+      {right && <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, color: C.text3, letterSpacing: 2 }}>{right}</span>}
+    </div>
+  );
+}
+
+function ChartCard({ title, tag, children, minH = 220 }: any) {
+  return (
+    <div style={{ ...s.card, minHeight: minH }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+        <p style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: C.text1, margin: 0 }}>{title}</p>
+        {tag && <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 8, color: C.text3, letterSpacing: 2, textTransform: "uppercase" }}>{tag}</span>}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function PieLegend({ data }: any) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+      {data.map((d: any, i: number) => (
+        <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{ width: 10, height: 10, borderRadius: 3, background: d.color, flexShrink: 0 }} />
+          <span style={{ fontSize: 12, color: C.text2, flex: 1 }}>{d.name || d.label}</span>
+          <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 12, fontWeight: 700, color: C.text1 }}>{d.value}%</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ============================================================
+// TAB: TEMPO REAL
+// ============================================================
+function TabRealTime() {
+  const [now, setNow] = useState(0);
 
   useEffect(() => {
-    const checkHealth = async () => {
-      try {
-        await api.get('/health');
-        setIsBackendConnected(true);
-      } catch {
-        setIsBackendConnected(false);
-      }
-    };
-    checkHealth();
-    const interval = setInterval(checkHealth, 30000);
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    const timer = setInterval(() => setTime(new Date()), 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen();
-      setIsFullscreen(true);
-    } else {
-      if (document.exitFullscreen) {
-        document.exitFullscreen();
-        setIsFullscreen(false);
-      }
-    }
-  };
-
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
-
-  const exportToPDF = () => {
-    const data = JSON.stringify({ stats, trends, timestamp: new Date() }, null, 2);
-    const blob = new Blob([data], { type: 'application/pdf' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `relatorio-mam-${new Date().toLocaleDateString()}.pdf`;
-    link.click();
-    alert('Relatório gerado com sucesso! (Simulado)');
-  };
-
-  const [stats, setStats] = useState({
-    totalCheckins: 0,
-    currentOccupancy: 0,
-    entries: 0,
-    exits: 0
-  });
-
-  const [trends, setTrends] = useState<any[]>([]);
-  const [recentEvents, setRecentEvents] = useState<any[]>([]);
-
-  const fetchTrendData = () => {
-    api.get('/analytics/trends/default-exhibition').then(res => {
-      setTrends(res.data);
-    });
-  };
-
-  useEffect(() => {
-    // Initial fetch
-    api.get('/checkins/stats/default-exhibition').then(res => {
-      setStats(res.data);
-    });
-    fetchTrendData();
-
-    // Listen for updates
-    socket.on('occupancy_update', (data) => {
-      setRecentEvents(prev => [data, ...prev].slice(0, 10));
-      
-      // Re-fetch stats and trends on update
-      api.get('/checkins/stats/default-exhibition').then(res => {
-        setStats(res.data);
-      });
-      fetchTrendData();
+    socket.on("visitorCount", (count: number) => {
+      setNow(count);
     });
 
     return () => {
-      socket.off('occupancy_update');
+      socket.off("visitorCount");
     };
   }, []);
 
   return (
-    <div className={`min-h-screen bg-slate-950 text-white p-8 font-sans transition-all ${isFullscreen ? 'p-12' : 'p-8'}`}>
-      <header className="max-w-[1800px] mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-16">
-        <div>
-          <div className="flex items-center gap-4 mb-2">
-             <div className="bg-primary p-2 rounded-xl shadow-lg shadow-primary/20">
-               <BarChart3 className="text-white w-6 h-6" />
-             </div>
-             <h1 className="text-4xl font-sora font-black tracking-tighter text-white uppercase italic">
-                Painel Gestor <span className="text-slate-500 not-italic font-light">| MAM</span>
-             </h1>
-          </div>
-          <p className="text-slate-500 font-medium tracking-wide">Salvador, BA — Monitoramento Multimodal em Tempo Real</p>
+    <>
+      <div style={s.metricsRow}>
+        <MetricCard value={now} label="Pessoas no espaço agora" sub="↑ 12% vs. mesma hora ontem" color={C.coral} large />
+        <MetricCard value="1.842" label="Pulsos hoje" sub="↑ 8% vs. ontem" color={C.text1} large />
+        <MetricCard value="847" label="Check-ins hoje" sub="46% de adesão" color={C.laranja} large />
+        <MetricCard value="34 min" label="Tempo médio no espaço" color={C.text2} />
+      </div>
+
+      <ChartCard title="Fluxo de visitantes por hora" tag="HOJE" minH={260}>
+        <ResponsiveContainer width="100%" height={200}>
+          <BarChart data={FLOW_TODAY} barCategoryGap="20%">
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
+            <XAxis dataKey="h" tick={{ fontSize: 10, fill: C.text3, fontFamily: "'Space Mono', monospace" }} axisLine={false} tickLine={false} />
+            <YAxis tick={{ fontSize: 10, fill: C.text3, fontFamily: "'Space Mono', monospace" }} axisLine={false} tickLine={false} width={35} />
+            <Tooltip content={<CustomTooltip />} />
+            <Bar dataKey="v" name="Visitantes" radius={[4, 4, 0, 0]} fill="url(#barGrad)" />
+            <defs>
+              <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={C.coral} />
+                <stop offset="100%" stopColor={C.magenta} />
+              </linearGradient>
+            </defs>
+          </BarChart>
+        </ResponsiveContainer>
+      </ChartCard>
+
+      <ChartCard title="Comparativo semanal" tag="CÂMERA VS CHECK-IN" minH={260}>
+        <ResponsiveContainer width="100%" height={200}>
+          <BarChart data={WEEKLY} barCategoryGap="25%">
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
+            <XAxis dataKey="d" tick={{ fontSize: 10, fill: C.text3, fontFamily: "'Space Mono', monospace" }} axisLine={false} tickLine={false} />
+            <YAxis tick={{ fontSize: 10, fill: C.text3, fontFamily: "'Space Mono', monospace" }} axisLine={false} tickLine={false} width={35} />
+            <Tooltip content={<CustomTooltip />} />
+            <Bar dataKey="v" name="Câmera" radius={[4, 4, 0, 0]} fill={C.coral} opacity={0.7} />
+            <Bar dataKey="c" name="Check-in" radius={[4, 4, 0, 0]} fill={C.laranja} opacity={0.7} />
+          </BarChart>
+        </ResponsiveContainer>
+        <div style={{ display: "flex", gap: 20, marginTop: 8 }}>
+          <span style={{ fontSize: 11, color: C.text3 }}><span style={{ display: "inline-block", width: 10, height: 10, borderRadius: 2, background: C.coral, marginRight: 6, verticalAlign: "middle", opacity: 0.7 }} />Câmera (total)</span>
+          <span style={{ fontSize: 11, color: C.text3 }}><span style={{ display: "inline-block", width: 10, height: 10, borderRadius: 2, background: C.laranja, marginRight: 6, verticalAlign: "middle", opacity: 0.7 }} />Check-in (voluntário)</span>
         </div>
+      </ChartCard>
+    </>
+  );
+}
 
-          <div className="bg-slate-900 rounded-full px-4 py-2 flex items-center gap-2 border border-slate-800">
-            <div className={`w-2 h-2 rounded-full ${isBackendConnected ? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]' : 'bg-red-500 animate-pulse'}`} />
-            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-              {isBackendConnected ? 'Backend: Online' : 'Backend: Offline'}
-            </span>
-          </div>
+// ============================================================
+// TAB: PERFIL DO PÚBLICO
+// ============================================================
+function TabProfile() {
+  return (
+    <>
+      <div style={{ ...s.metricsRow, gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))" }}>
+        <MetricCard value="847" label="Visitantes com perfil" color={C.text1} />
+        <MetricCard value="46%" label="Taxa de adesão ao check-in" sub="Meta: >30% ✓" color={C.green} />
+        <MetricCard value="29 anos" label="Idade mediana" color={C.laranja} />
+      </div>
 
-          <div className="flex items-center gap-8 bg-slate-900/50 p-4 rounded-[2rem] border border-slate-800/50 backdrop-blur-md">
-          <div className="text-center px-4 border-r border-slate-800">
-             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-1">Hora Local</p>
-             <p className="text-xl font-mono font-bold text-primary">{time.toLocaleTimeString()}</p>
-          </div>
-
-          <div className="flex items-center gap-6 px-4">
-            <div className="text-right hidden sm:block">
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Responsável</p>
-              <p className="text-sm font-bold text-white">{user?.name || 'Administrador'}</p>
-            </div>
-            
-            <button 
-              onClick={toggleFullscreen}
-              className={`p-3 rounded-2xl transition-all flex items-center gap-2 font-bold text-xs uppercase tracking-widest ${isFullscreen ? 'bg-primary text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}
-            >
-              <TrendingUp className="w-4 h-4" />
-              {isFullscreen ? 'Sair do Modo Monitor' : 'Modo Monitor'}
-            </button>
-
-            <button 
-              onClick={handleLogout}
-              className="p-3 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-2xl transition-all"
-              title="Encerrar Sessão"
-            >
-              <Activity className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-      </header>
-
-      <main className="max-w-[1800px] mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
-        <StatCard title="Ocupação Atual" value={stats.currentOccupancy} icon={<Activity className="text-primary" />} trend="+4/min" description="Visitantes no local agora" />
-        <StatCard title="Check-ins Totais" value={stats.totalCheckins} icon={<Users className="text-primary" />} trend="+12%" description="Registros realizados via QR" />
-        <StatCard title="Entradas Detectadas" value={stats.entries} icon={<TrendingUp className="text-green-500" />} description="Fluxo total via Computer Vision" />
-        <StatCard title="Saídas Detectadas" value={stats.exits} icon={<Clock className="text-slate-400" />} description="Fluxo de saída monitorado" />
-      </main>
-
-      <section className="max-w-[1800px] mx-auto grid xl:grid-cols-3 gap-10">
-        <div className="xl:col-span-2 bg-slate-900/30 rounded-[3rem] p-10 border border-slate-800/50 backdrop-blur-sm relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
-             <BarChart3 size={200} />
-          </div>
-          
-          <div className="flex justify-between items-center mb-10">
-            <h2 className="text-2xl font-sora font-black text-white uppercase tracking-tighter flex items-center gap-4">
-               <div className="w-2 h-8 bg-primary rounded-full" />
-               Live Activity Feed
-            </h2>
-            <div className="flex items-center gap-2">
-               <div className="w-3 h-3 bg-green-500 rounded-full animate-ping" />
-               <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Fluxo em tempo real</span>
-            </div>
-          </div>
-
-          <div className="space-y-4 max-h-[500px] overflow-y-auto pr-4 custom-scrollbar">
-            <AnimatePresence initial={false}>
-              {recentEvents.map((event, i) => (
-                <motion.div 
-                   key={event.timestamp + i}
-                   initial={{ opacity: 0, y: 20 }}
-                   animate={{ opacity: 1, y: 0 }}
-                   className="bg-slate-900/80 p-5 rounded-[2rem] flex justify-between items-center border border-slate-800 hover:border-primary/30 transition-all hover:translate-x-2"
-                >
-                  <div className="flex items-center gap-5">
-                    <div className={`p-4 rounded-2xl ${event.type === 'checkin' ? 'bg-primary/20 text-primary' : 'bg-green-500/20 text-green-500'}`}>
-                      {event.type === 'checkin' ? <Users size={22} /> : <Activity size={22} />}
-                    </div>
-                    <div>
-                      <p className="text-base font-black text-white uppercase tracking-tight">
-                        {event.type === 'checkin' ? 'Check-in Visitante' : `Fluxo: ${event.countType}`}
-                      </p>
-                      <p className="text-xs text-slate-500 font-medium">Evento processado às {new Date(event.timestamp).toLocaleTimeString()}</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-[10px] font-black text-slate-600 uppercase tracking-[0.2em] block mb-1">Status</span>
-                    <span className="bg-slate-800 text-slate-400 px-3 py-1 rounded-full text-[10px] font-bold uppercase">Validado</span>
-                  </div>
-                </motion.div>
-              ))}
-              {recentEvents.length === 0 && (
-                <div className="text-center py-24">
-                   <div className="w-20 h-20 bg-slate-900 rounded-full flex items-center justify-center mx-auto mb-6 border border-slate-800">
-                      <Activity className="text-slate-700 w-10 h-10 animate-pulse" />
-                   </div>
-                   <p className="text-slate-600 font-medium italic">Aguardando eventos dos módulos de IA e Totens...</p>
-                </div>
-              )}
-            </AnimatePresence>
-          </div>
-        </div>
-
-        <div className="space-y-8">
-          <div className="bg-slate-900/40 p-10 rounded-[3rem] border border-slate-800/50 backdrop-blur-sm h-full flex flex-col">
-            <div className="flex justify-between items-start mb-10">
-              <div>
-                <h2 className="text-2xl font-sora font-black text-white uppercase tracking-tighter mb-2">Fluxo de Hoje</h2>
-                <p className="text-slate-500 text-xs font-medium">Análise das últimas 12 horas</p>
-              </div>
-              <div className="p-3 bg-primary/10 rounded-2xl">
-                 <TrendingUp className="text-primary w-5 h-5" />
-              </div>
-            </div>
-
-            <div className="flex-1 min-h-[300px] w-full">
+      <div style={s.twoCol}>
+        <ChartCard title="Identidade de gênero" minH={200}>
+          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+            <div style={{ width: 120, height: 120, flexShrink: 0 }}>
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={trends}>
-                  <defs>
-                    <linearGradient id="colorEntries" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
-                  <XAxis 
-                    dataKey="hour" 
-                    stroke="#475569" 
-                    fontSize={10} 
-                    tickLine={false} 
-                    axisLine={false} 
-                  />
-                  <YAxis 
-                    stroke="#475569" 
-                    fontSize={10} 
-                    tickLine={false} 
-                    axisLine={false} 
-                  />
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '1rem' }}
-                    itemStyle={{ color: '#fff', fontSize: '10px', fontWeight: 'bold' }}
-                  />
-                  <Area 
-                    type="monotone" 
-                    dataKey="entries" 
-                    stroke="#3b82f6" 
-                    strokeWidth={4}
-                    fillOpacity={1} 
-                    fill="url(#colorEntries)" 
-                  />
-                  <Area 
-                    type="monotone" 
-                    dataKey="checkins" 
-                    stroke="#10b981" 
-                    strokeWidth={2}
-                    fill="transparent" 
-                  />
-                </AreaChart>
+                <PieChart>
+                  <Pie data={GENDER} dataKey="value" cx="50%" cy="50%" innerRadius={30} outerRadius={55} stroke="none" paddingAngle={2}>
+                    {GENDER.map((d: any, i: number) => <Cell key={i} fill={d.color} />)}
+                  </Pie>
+                </PieChart>
               </ResponsiveContainer>
             </div>
+            <PieLegend data={GENDER} />
+          </div>
+        </ChartCard>
 
-            <div className="mt-8 pt-8 border-t border-slate-800/50 grid grid-cols-2 gap-4">
-               <button className="flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-300 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all">
-                  <Activity size={14} />
-                  Sumário Geral
-               </button>
-               <button 
-                  onClick={exportToPDF}
-                  className="flex items-center justify-center gap-2 bg-primary text-white py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-primary/20"
-               >
-                  <BarChart3 size={14} />
-                  Exportar PDF
-               </button>
+        <ChartCard title="Origem do visitante" minH={200}>
+          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+            <div style={{ width: 120, height: 120, flexShrink: 0 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={ORIGIN} dataKey="value" cx="50%" cy="50%" innerRadius={30} outerRadius={55} stroke="none" paddingAngle={2}>
+                    {ORIGIN.map((d: any, i: number) => <Cell key={i} fill={d.color} />)}
+                  </Pie>
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <PieLegend data={ORIGIN} />
+          </div>
+        </ChartCard>
+      </div>
+
+      <ChartCard title="Distribuição por idade" tag="ANO DE NASCIMENTO AGRUPADO">
+        <ResponsiveContainer width="100%" height={180}>
+          <BarChart data={AGES} barCategoryGap="30%">
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
+            <XAxis dataKey="faixa" tick={{ fontSize: 10, fill: C.text3, fontFamily: "'Space Mono', monospace" }} axisLine={false} tickLine={false} />
+            <YAxis tick={{ fontSize: 10, fill: C.text3 }} axisLine={false} tickLine={false} width={30} unit="%" />
+            <Tooltip content={<CustomTooltip />} />
+            <Bar dataKey="v" name="%" radius={[4, 4, 0, 0]} fill={C.magenta} opacity={0.75} />
+          </BarChart>
+        </ResponsiveContainer>
+      </ChartCard>
+
+      <ChartCard title="Como soube da exposição" tag="PERGUNTA POR VISITA">
+        <ResponsiveContainer width="100%" height={180}>
+          <BarChart data={CHANNELS} layout="vertical" barCategoryGap="20%">
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" horizontal={false} />
+            <XAxis type="number" tick={{ fontSize: 10, fill: C.text3 }} axisLine={false} tickLine={false} unit="%" />
+            <YAxis dataKey="canal" type="category" tick={{ fontSize: 11, fill: C.text2 }} axisLine={false} tickLine={false} width={110} />
+            <Tooltip content={<CustomTooltip />} />
+            <Bar dataKey="v" name="%" radius={[0, 4, 4, 0]} fill={C.laranja} opacity={0.7} />
+          </BarChart>
+        </ResponsiveContainer>
+      </ChartCard>
+    </>
+  );
+}
+
+// ============================================================
+// TAB: HISTÓRICO & RECORRÊNCIA
+// ============================================================
+function TabHistory() {
+  return (
+    <>
+      <div style={s.metricsRow}>
+        <MetricCard value="12.602" label="Total de pulsos no mês" sub="↑ 15% vs. mês anterior" color={C.text1} large />
+        <MetricCard value="5.966" label="Check-ins no mês" color={C.laranja} large />
+        <MetricCard value="32%" label="Taxa de retorno" sub="Visitantes que voltaram" color={C.green} large />
+        <MetricCard value="2.4×" label="Câmera vs. Livro" sub="Estimativa livro: ~5.200" color={C.coral} />
+      </div>
+
+      <div style={s.twoCol}>
+        <ChartCard title="Recorrência" minH={200}>
+          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+            <div style={{ width: 120, height: 120, flexShrink: 0 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={RECURRENCE} dataKey="value" cx="50%" cy="50%" innerRadius={30} outerRadius={55} stroke="none" paddingAngle={3}>
+                    {RECURRENCE.map((d: any, i: number) => <Cell key={i} fill={d.color} />)}
+                  </Pie>
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div>
+              <PieLegend data={RECURRENCE} />
+              <p style={{ fontSize: 11, color: C.text3, marginTop: 10, lineHeight: 1.5 }}>De 847 visitantes com check-in, 271 retornaram pelo menos uma vez.</p>
+            </div>
+          </div>
+        </ChartCard>
+
+        <ChartCard title="Evolução semanal" tag="CÂMERA VS CHECK-IN" minH={200}>
+          <ResponsiveContainer width="100%" height={150}>
+            <LineChart data={MONTHLY}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" />
+              <XAxis dataKey="w" tick={{ fontSize: 10, fill: C.text3, fontFamily: "'Space Mono', monospace" }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 10, fill: C.text3 }} axisLine={false} tickLine={false} width={40} />
+              <Tooltip content={<CustomTooltip />} />
+              <Line type="monotone" dataKey="cam" name="Câmera" stroke={C.coral} strokeWidth={2.5} dot={{ r: 4, fill: C.coral }} />
+              <Line type="monotone" dataKey="checkin" name="Check-in" stroke={C.laranja} strokeWidth={2.5} dot={{ r: 4, fill: C.laranja }} />
+            </LineChart>
+          </ResponsiveContainer>
+        </ChartCard>
+      </div>
+
+      <ChartCard title="Visitantes por dia (últimos 30 dias)" tag="CÂMERA" minH={260}>
+        <ResponsiveContainer width="100%" height={200}>
+          <AreaChart data={DAILY_HISTORY}>
+            <defs>
+              <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={C.coral} stopOpacity={0.3} />
+                <stop offset="100%" stopColor={C.coral} stopOpacity={0} />
+              </linearGradient>
+              <linearGradient id="areaGrad2" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={C.laranja} stopOpacity={0.2} />
+                <stop offset="100%" stopColor={C.laranja} stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
+            <XAxis dataKey="dia" tick={{ fontSize: 9, fill: C.text3 }} axisLine={false} tickLine={false} interval={4} />
+            <YAxis tick={{ fontSize: 10, fill: C.text3 }} axisLine={false} tickLine={false} width={40} />
+            <Tooltip content={<CustomTooltip />} />
+            <Area type="monotone" dataKey="cam" name="Câmera" stroke={C.coral} strokeLinecap={"round"} strokeWidth={2} fill="url(#areaGrad)" />
+            <Area type="monotone" dataKey="checkin" name="Check-in" stroke={C.laranja} strokeLinecap={"round"} strokeWidth={1.5} fill="url(#areaGrad2)" />
+          </AreaChart>
+        </ResponsiveContainer>
+      </ChartCard>
+    </>
+  );
+}
+
+// ============================================================
+// TAB: CADASTRO DE EXPOSIÇÃO
+// ============================================================
+function TabExposition() {
+  const [expo, setExpo] = useState({
+    nome: "Uma História da Arte Brasileira",
+    subtitulo: "Coleções MAM Rio",
+    inicio: "2026-03-11",
+    fim: "2026-06-28",
+    descricao: "80 obras do acervo do MAM Rio chegam a Salvador numa celebração da arte brasileira do século XX. De Portinari a Anita Malfatti, de Di Cavalcanti a Lygia Clark — um percurso que atravessa movimentos, gerações e visões de Brasil.",
+    patrocinador: "Banco do Brasil",
+    status: "ativa",
+  });
+
+  const [obras, setObras] = useState([
+    { id: 1, artista: "Cândido Portinari", titulo: "Retirantes", ano: "1944", sala: "Sala 1", desc: "Óleo sobre tela que retrata a migração nordestina.", audio: true },
+    { id: 2, artista: "Anita Malfatti", titulo: "A Boba", ano: "1915–16", sala: "Sala 2", desc: "Obra-chave do modernismo brasileiro.", audio: true },
+    { id: 3, artista: "Di Cavalcanti", titulo: "Cinco Moças", ano: "1930", sala: "Sala 2", desc: "Mulatas em cores tropicais.", audio: false },
+    { id: 4, artista: "Lygia Clark", titulo: "Bicho", ano: "1960", sala: "Sala 3", desc: "Escultura articulada em metal.", audio: true },
+    { id: 5, artista: "Alfredo Volpi", titulo: "Bandeirinhas", ano: "c. 1960", sala: "Sala 3", desc: "Têmpera sobre tela.", audio: false },
+    { id: 6, artista: "Iberê Camargo", titulo: "Núcleo", ano: "1963", sala: "Sala 4", desc: "Expressionismo abstrato.", audio: true },
+  ]);
+
+  const [outras, setOutras] = useState([
+    { id: 1, nome: "Walter Smetak", sala: "Galeria 2" },
+    { id: 2, nome: "Xiló", sala: "Espaço Educativo" },
+  ]);
+
+  const [editingObra, setEditingObra] = useState<number | null>(null);
+  const [showPreview, setShowPreview] = useState(false);
+  const [showPoster, setShowPoster] = useState(false);
+
+  const statusColors: any = { ativa: C.green, programada: C.amber, encerrada: C.text3 };
+
+  if (showPreview) {
+    return (
+      <>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 20, marginBottom: 16 }}>
+          <h3 style={{ fontFamily: "Sora, sans-serif", fontSize: 16, fontWeight: 700, color: C.text1, margin: 0 }}>Preview do guia</h3>
+          <button style={s.btnSecondary} onClick={() => setShowPreview(false)}>← Voltar ao cadastro</button>
+        </div>
+        <div style={{ display: "flex", justifyContent: "center" }}>
+          <div style={{ width: 375, background: "#110D10", borderRadius: 36, border: "2px solid rgba(255,255,255,0.06)", overflow: "hidden", boxShadow: "0 20px 60px rgba(0,0,0,0.5)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", padding: "14px 28px 8px", color: C.text1, fontSize: 11, fontWeight: 600 }}>
+              <span>14:32</span>
+              <span style={{ fontSize: 10, color: C.text3 }}>●●●●○</span>
+            </div>
+            <div style={{ padding: "0 20px 20px", borderBottom: `1px solid ${C.border}` }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+                <span style={{ fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 11, color: C.text1 }}>PULSO</span>
+                <span style={{ fontFamily: "Sora, sans-serif", fontWeight: 300, fontSize: 7, color: C.text3, letterSpacing: 2 }}>CULTURAL</span>
+              </div>
+              <h2 style={{ fontFamily: "Sora, sans-serif", fontSize: 18, fontWeight: 700, color: C.text1, lineHeight: 1.25, margin: "0 0 6px" }}>{expo.nome}</h2>
+              <p style={{ fontSize: 12, color: C.text2 }}>{expo.subtitulo}</p>
+            </div>
+            <div style={{ padding: "16px 20px 24px" }}>
+              <p style={{ fontSize: 12, color: C.text2, lineHeight: 1.7, marginBottom: 16 }}>{expo.descricao}</p>
+              {obras.slice(0, 3).map(w => (
+                <div key={w.id} style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${C.border}`, borderRadius: 10, padding: 12, marginBottom: 6 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <div>
+                      <p style={{ fontFamily: "Sora, sans-serif", fontSize: 12, fontWeight: 600, color: C.text1, margin: 0 }}>{w.titulo}</p>
+                      <p style={{ fontSize: 10, color: C.text3, margin: "1px 0 0" }}>{w.artista}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
-      </section>
+      </>
+    );
+  }
+
+  if (showPoster) {
+    return (
+      <>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 20, marginBottom: 16 }}>
+          <h3 style={{ fontFamily: "Sora, sans-serif", fontSize: 16, fontWeight: 700, color: C.text1, margin: 0 }}>Cartaz para impressão</h3>
+          <button style={s.btnSecondary} onClick={() => setShowPoster(false)}>← Voltar</button>
+        </div>
+        <div style={{ display: "flex", justifyContent: "center" }}>
+          <div style={{ width: 400, height: 560, background: "#110D10", borderRadius: 12, padding: 40, border: "1px solid rgba(255,255,255,0.06)", textAlign: "center" }}>
+            <h2 style={{ fontFamily: "Sora, sans-serif", fontSize: 24, fontWeight: 800, color: C.text1, marginBottom: 8 }}>{expo.nome}</h2>
+            <p style={{ color: C.text2, marginBottom: 32 }}>{expo.subtitulo}</p>
+            <div style={{ width: 160, height: 160, background: "white", margin: "0 auto 32px", borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <span style={{ color: "black", fontSize: 12 }}>QR CODE</span>
+            </div>
+            <p style={{ fontFamily: "Sora, sans-serif", fontSize: 18, fontWeight: 700 }}>Escaneie para acessar o guia</p>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <SectionTitle right="DADOS GERAIS">Exposição principal</SectionTitle>
+      <div style={s.card}>
+        <div style={s.formGrid}>
+          <div style={s.formGroup}>
+            <label style={s.formLabel}>Nome</label>
+            <input style={s.formInput} value={expo.nome} onChange={e => setExpo({...expo, nome: e.target.value})} />
+          </div>
+          <div style={s.formGroup}>
+            <label style={s.formLabel}>Data Início</label>
+            <input style={s.formInput} type="date" value={expo.inicio} onChange={e => setExpo({...expo, inicio: e.target.value})} />
+          </div>
+        </div>
+        <div style={{ marginTop: 16 }}>
+          <label style={s.formLabel}>Descrição</label>
+          <textarea style={{ ...s.formInput, minHeight: 60 }} value={expo.descricao} onChange={e => setExpo({...expo, descricao: e.target.value})} />
+        </div>
+      </div>
+
+      <SectionTitle right={`${obras.length} OBRAS`}>Obras</SectionTitle>
+      {obras.map((w, idx) => (
+        <div key={w.id} style={{ ...s.card, marginBottom: 8, padding: editingObra === w.id ? 20 : 12 }}>
+          {editingObra === w.id ? (
+            <div>
+              <input style={s.formInput} value={w.titulo} onChange={e => { const n = [...obras]; n[idx] = {...w, titulo: e.target.value}; setObras(n); }} />
+              <button style={{ ...s.btnSecondary, marginTop: 8, padding: "4px 12px" }} onClick={() => setEditingObra(null)}>Ok</button>
+            </div>
+          ) : (
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <span style={{ color: C.text1, fontSize: 14 }}>{idx + 1}. {w.titulo}</span>
+              <button onClick={() => setEditingObra(w.id)} style={{ background: "none", border: "none", cursor: "pointer", color: C.text3 }}>Editar</button>
+            </div>
+          )}
+        </div>
+      ))}
+
+      <div style={{ display: "flex", gap: 12, marginTop: 24 }}>
+        <button style={s.btnPrimary} onClick={() => setShowPreview(true)}>👁 Ver Guia</button>
+        <button style={s.btnSecondary} onClick={() => setShowPoster(true)}>🖨 Ver Cartaz</button>
+      </div>
+    </>
+  );
+}
+
+// ============================================================
+// TAB: RELATÓRIO DE IMPACTO
+// ============================================================
+function TabReport() {
+  return (
+    <>
+      <div style={{ ...s.card, background: "linear-gradient(135deg, rgba(232,85,78,0.1), rgba(212,38,126,0.1))", textAlign: "center", padding: 40 }}>
+        <p style={{ color: C.coral, fontWeight: 800, fontSize: 48, margin: 0 }}>2.4×</p>
+        <p style={{ fontSize: 16, fontWeight: 500 }}>mais visitantes que o livro de assinaturas</p>
+      </div>
+      
+      <SectionTitle>Destaques</SectionTitle>
+      <div style={s.card}>
+        {[
+          "46% dos visitantes usaram o guia digital.",
+          "32% retornaram ao espaço no mesmo mês.",
+          "O tempo médio de visita aumentou em 12 min."
+        ].map((t, i) => (
+          <p key={i} style={{ fontSize: 14, color: C.text2, marginBottom: 12 }}>• {t}</p>
+        ))}
+      </div>
+    </>
+  );
+}
+
+// ============================================================
+// MAIN DASHBOARD
+// ============================================================
+export function Dashboard() {
+  const [tab, setTab] = useState("realtime");
+  const tabs = [
+    { id: "realtime", label: "Tempo real", icon: "⚡" },
+    { id: "profile", label: "Público", icon: "👥" },
+    { id: "history", label: "Histórico", icon: "📊" },
+    { id: "expo", label: "Exposição", icon: "🖼" },
+    { id: "report", label: "Impacto", icon: "📋" },
+  ];
+
+  return (
+    <div style={s.root}>
+      <nav style={s.nav}>
+        <div style={s.navBrand}>
+          <span style={{ fontFamily: "Sora, sans-serif", fontWeight: 700, fontSize: 14, color: C.text1 }}>PULSO</span>
+          <span style={{ fontFamily: "Sora, sans-serif", fontWeight: 300, fontSize: 8, color: C.text3, letterSpacing: 2, marginLeft: 4 }}>CULTURAL</span>
+        </div>
+        <div style={s.navTabs}>
+          {tabs.map(t => (
+            <button key={t.id} onClick={() => setTab(t.id)} style={tab === t.id ? s.navTabActive : s.navTab}>
+              <span style={{ fontSize: 14 }}>{t.icon}</span>
+              <span>{t.label}</span>
+            </button>
+          ))}
+        </div>
+      </nav>
+
+      <main style={s.main}>
+        <header style={s.header}>
+          <h1 style={s.pageTitle}>{tabs.find(t => t.id === tab)?.label}</h1>
+          <div style={s.liveTag}><span style={s.liveDot} /><span>AO VIVO</span></div>
+        </header>
+
+        <div style={s.content}>
+          {tab === "realtime" && <TabRealTime />}
+          {tab === "profile" && <TabProfile />}
+          {tab === "history" && <TabHistory />}
+          {tab === "expo" && <TabExposition />}
+          {tab === "report" && <TabReport />}
+        </div>
+      </main>
     </div>
   );
 }
 
-function StatCard({ title, value, icon, trend, description }: any) {
-  return (
-    <div className="bg-slate-900/50 p-8 rounded-[2.5rem] border border-slate-800/50 hover:border-primary/50 transition-all hover:bg-slate-900 group">
-      <div className="flex justify-between items-start mb-8">
-        <div className="p-4 bg-slate-950 rounded-2xl border border-slate-800 group-hover:scale-110 transition-transform">
-          {icon}
-        </div>
-        {trend && (
-          <div className="flex flex-col items-end">
-            <span className="text-[10px] font-black py-1 px-3 bg-primary/10 rounded-full text-primary border border-primary/10">{trend}</span>
-          </div>
-        )}
-      </div>
-      <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.3em] mb-2">{title}</p>
-      <p className="text-6xl font-sora font-black tracking-tighter mb-4 tabular-nums">{value}</p>
-      <p className="text-slate-600 text-[10px] font-bold uppercase tracking-widest">{description}</p>
-    </div>
-  );
-}
+// ============================================================
+// STYLES
+// ============================================================
+const s: any = {
+  root: { display: "flex", minHeight: "100vh", background: C.bgDeep, color: C.text1 },
+  nav: { 
+    width: 200, background: C.bgSurface, borderRight: `1px solid ${C.border}`, 
+    display: "flex", flexDirection: "column", padding: "20px 0" 
+  },
+  navBrand: { padding: "0 20px 24px", borderBottom: `1px solid ${C.border}`, marginBottom: 16 },
+  navTabs: { display: "flex", flexDirection: "column", gap: 4, padding: "0 10px" },
+  navTab: { 
+    display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 10, 
+    background: "none", border: "none", color: C.text3, cursor: "pointer", textAlign: "left" 
+  },
+  navTabActive: { 
+    display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 10, 
+    background: "rgba(232,85,78,0.1)", border: "none", color: C.coral, fontWeight: 600, textAlign: "left" 
+  },
+  main: { flex: 1, display: "flex", flexDirection: "column" },
+  header: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "24px 32px", borderBottom: `1px solid ${C.border}` },
+  pageTitle: { fontFamily: "Sora, sans-serif", fontSize: 24, fontWeight: 700, margin: 0 },
+  liveTag: { display: "flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 100, background: "rgba(232,85,78,0.1)", color: C.coral, fontSize: 10, fontWeight: 700 },
+  liveDot: { width: 6, height: 6, borderRadius: "50%", background: C.coral },
+  content: { padding: "24px 32px", flex: 1, overflowY: "auto" },
+  metricsRow: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 16 },
+  metricCard: { background: C.bgCard, border: `1px solid ${C.border}`, borderRadius: 14, padding: "20px" },
+  card: { background: C.bgCard, border: `1px solid ${C.border}`, borderRadius: 14, padding: 20, marginTop: 16 },
+  twoCol: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 16 },
+  btnPrimary: { background: "linear-gradient(135deg, #E8554E, #D4267E)", border: "none", borderRadius: 12, padding: "14px 24px", color: "white", fontWeight: 600, cursor: "pointer" },
+  btnSecondary: { background: "transparent", border: "1.5px solid rgba(232,85,78,0.5)", borderRadius: 12, padding: "14px 24px", color: C.coral, fontWeight: 600, cursor: "pointer" },
+  formGrid: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 },
+  formGroup: { display: "flex", flexDirection: "column", gap: 4 },
+  formLabel: { fontSize: 11, color: C.text3 },
+  formInput: { background: "rgba(255,255,255,0.05)", border: `1px solid rgba(255,255,255,0.1)`, borderRadius: 8, padding: "10px", color: C.text1, width: "100%", marginBottom: 8 }
+};

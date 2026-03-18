@@ -20,6 +20,19 @@ async function main() {
     }
   });
 
+  // 1.1 Create Default User
+  await prisma.user.upsert({
+    where: { email: 'admin@mam.ba.gov.br' },
+    update: {},
+    create: {
+      email: 'admin@mam.ba.gov.br',
+      passwordHash: 'admin123',
+      name: 'Administrador MAM',
+      role: 'GESTOR',
+      museumId: museum.id
+    }
+  });
+
   // 2. Create Exhibition
   const exhibition = await prisma.exhibition.upsert({
     where: { id: 'default-exhibition' }, // Using the ID used in frontend for now
