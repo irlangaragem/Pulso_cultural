@@ -1,0 +1,173 @@
+// schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  passwordHash  String
+  name          String
+  role          UserRole  @default(GESTOR)
+  museumId      String
+  museum        Museum    @relation(fields: [museumId], references: [id])
+  active        Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Museum {
+  id              String       @id @default(cuid())
+  name            String
+  slug            String       @unique
+  address         String
+  city            String
+  state           String
+  openingHours    Json         // { mon: "10:00-18:00", ... }
+  users           User[]
+  exhibitions     Exhibition[]
+  cameras         Camera[]
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+}
+
+model Exhibition {
+  id              String       @id @default(cuid())
+  museumId        String
+  museum          Museum       @relation(fields: [museumId], references: [id])
+  name            String
+  subtitle        String?
+  description     String       @db.Text
+  startDate       DateTime
+  endDate         DateTime
+  sponsor         String?
+  coverImage      String?
+  status          ExhibitionStatus @default(DRAFT)
+  qrCode          String?      @unique
+  works           Work[]
+  checkins        Checkin[]
+  cameraCounts    CameraCount[]
+  otherExhibitions Json?       // [{ name: "", room: "" }]
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  
+  @@index([museumId, status])
+}
+
+model Work {
+  id            String      @id @default(cuid())
+  exhibitionId  String
+  exhibition    Exhibition  @relation(fields: [exhibitionId], references: [id])
+  artist        String
+  title         String
+  year          String
+  room          String
+  description   String      @db.Text
+  audioUrl      String?
+  audioDuration Int?        // em segundos
+  order         Int
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  
+  @@index([exhibitionId])
+}
+
+model Visitor {
+  id            String      @id @default(cuid())
+  cpfHash       String      @unique // CPF criptografado
+  name          String
+  birthYear     Int
+  gender        Gender
+  origin        Origin
+  checkins      Checkin[]
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  
+  @@index([cpfHash])
+}
+
+model Checkin {
+  id            String      @id @default(cuid())
+  visitorId     String
+  visitor       Visitor     @relation(fields: [visitorId], references: [id])
+  exhibitionId  String
+  exhibition    Exhibition  @relation(fields: [exhibitionId], references: [id])
+  channel       Channel     // REDES_SOCIAIS, INDICACAO, etc
+  sharedAt      DateTime?   // quando compartilhou nas redes
+  createdAt     DateTime    @default(now())
+  
+  @@index([visitorId, exhibitionId])
+  @@index([exhibitionId, createdAt])
+}
+
+model Camera {
+  id            String      @id @default(cuid())
+  museumId      String
+  museum        Museum      @relation(fields: [museumId], references: [id])
+  name          String
+  location      String
+  ipAddress     String
+  active        Boolean     @default(true)
+  counts        CameraCount[]
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+model CameraCount {
+  id            String      @id @default(cuid())
+  cameraId      String
+  camera        Camera      @relation(fields: [cameraId], references: [id])
+  exhibitionId  String?
+  exhibition    Exhibition? @relation(fields: [exhibitionId], references: [id])
+  type          CountType   // ENTRADA ou SAIDA
+  timestamp     DateTime    @default(now())
+  
+  @@index([cameraId, timestamp])
+  @@index([exhibitionId, timestamp])
+}
+
+// Enums
+enum UserRole {
+  ADMIN
+  GESTOR
+}
+
+enum ExhibitionStatus {
+  DRAFT
+  ACTIVE
+  ENDED
+}
+
+enum Gender {
+  FEMININO
+  MASCULINO
+  NAO_BINARIO
+  PREFIRO_NAO_DIZER
+}
+
+enum Origin {
+  SALVADOR
+  INTERIOR_BA
+  OUTRO_ESTADO
+  INTERNACIONAL
+}
+
+enum Channel {
+  REDES_SOCIAIS
+  INDICACAO
+  PASSOU_NA_FRENTE
+  JORNAL_TV
+  ESCOLA_FACULDADE
+  OUTRO
+}
+
+enum CountType {
+  ENTRADA
+  SAIDA
+}
