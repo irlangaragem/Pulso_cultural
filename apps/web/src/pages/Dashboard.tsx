@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
 import { api } from '../services/api';
-import { BarChart3, Users, Activity, TrendingUp, Clock, Layout } from 'lucide-react';
+import { BarChart3, Users, Activity, TrendingUp, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '../store/useAuthStore';
 import { useNavigate } from 'react-router-dom';
@@ -285,7 +285,7 @@ export function Dashboard() {
 
             <div className="mt-8 pt-8 border-t border-slate-800/50 grid grid-cols-2 gap-4">
                <button className="flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-300 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all">
-                  <Layout size={14} />
+                  <Activity size={14} />
                   Sumário Geral
                </button>
                <button 

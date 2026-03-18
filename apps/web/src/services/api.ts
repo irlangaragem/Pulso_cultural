@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { InternalAxiosRequestConfig } from 'axios';
+
 import { useAuthStore } from '../store/useAuthStore';
 
 const api = axios.create({

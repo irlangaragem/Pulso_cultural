@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { Headphones, Play, Pause, ChevronRight, Music, Info, BarChart3 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Headphones, Play, Pause, ChevronRight, Info, BarChart3 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Howl } from 'howler';
 import { useNavigate } from 'react-router-dom';
+// @ts-ignore
 import { api } from '../services/api';
 
 export function Guide() {
