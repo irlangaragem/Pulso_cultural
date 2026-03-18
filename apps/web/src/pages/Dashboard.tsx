@@ -1,11 +1,7 @@
 import { useState, useEffect } from "react";
 import { BarChart, Bar, LineChart, Line, AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import io from "socket.io-client";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3333";
-console.log("Dashboard: Socket Connection URL:", API_URL);
-const socket = io(API_URL);
-
+const RAILWAY_API_URL = "https://pulsocultural-production.up.railway.app";
 // ============================================================
 // PULSO CULTURAL — Dashboard do Gestor
 // MAM Bahia · Protótipo
@@ -137,25 +133,40 @@ function PieLegend({ data }: any) {
 // TAB: TEMPO REAL
 // ============================================================
 function TabRealTime() {
-  const [now, setNow] = useState(0);
+  const [streamData, setStreamData] = useState<any>(null);
+  const [resumoHoje, setResumoHoje] = useState<any>(null);
 
   useEffect(() => {
-    socket.on("visitorCount", (count: number) => {
-      setNow(count);
-    });
+    fetch(`${RAILWAY_API_URL}/resumo/hoje`)
+      .then(res => res.json())
+      .then(data => setResumoHoje(data))
+      .catch(err => console.error("Erro resumo/hoje:", err));
+
+    const eventSource = new EventSource(`${RAILWAY_API_URL}/stream`);
+    eventSource.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        setStreamData(data);
+      } catch (err) {}
+    };
 
     return () => {
-      socket.off("visitorCount");
+      eventSource.close();
     };
   }, []);
+
+  const metric1 = streamData?.ocupacao_atual ?? resumoHoje?.ocupacao_atual ?? 0;
+  const metric2 = streamData?.entradas_hoje ?? resumoHoje?.entradas_hoje ?? 0;
+  const metric3 = streamData?.saidas_hoje ?? resumoHoje?.saidas_hoje ?? 0;
+  const metric4 = streamData?.ocupacao_pico ?? resumoHoje?.ocupacao_pico ?? 0;
 
   return (
     <>
       <div style={s.metricsRow}>
-        <MetricCard value={now} label="Pessoas no espaço agora" sub="↑ 12% vs. mesma hora ontem" color={C.coral} large />
-        <MetricCard value="1.842" label="Pulsos hoje" sub="↑ 8% vs. ontem" color={C.text1} large />
-        <MetricCard value="847" label="Check-ins hoje" sub="46% de adesão" color={C.laranja} large />
-        <MetricCard value="34 min" label="Tempo médio no espaço" color={C.text2} />
+        <MetricCard value={metric1} label="Ocupação atual" color={C.coral} large />
+        <MetricCard value={metric2} label="Entradas hoje" color={C.text1} large />
+        <MetricCard value={metric3} label="Saídas hoje" color={C.laranja} large />
+        <MetricCard value={metric4} label="Ocupação pico" color={C.text2} large />
       </div>
 
       <ChartCard title="Fluxo de visitantes por hora" tag="HOJE" minH={260}>
@@ -271,6 +282,24 @@ function TabProfile() {
 // TAB: HISTÓRICO & RECORRÊNCIA
 // ============================================================
 function TabHistory() {
+  const [historicoDiario, setHistoricoDiario] = useState<any[]>(DAILY_HISTORY);
+
+  useEffect(() => {
+    fetch(`${RAILWAY_API_URL}/resumo/historico`)
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          const formatado = data.map((d: any) => {
+            const dateParts = d.data.split('-');
+            const dateStr = dateParts.length === 3 ? `${dateParts[2]}/${dateParts[1]}` : d.data;
+            return { dia: dateStr, entradas: d.entradas, saidas: d.saidas };
+          });
+          setHistoricoDiario(formatado.reverse());
+        }
+      })
+      .catch(err => console.error(err));
+  }, []);
+
   return (
     <>
       <div style={s.metricsRow}>
@@ -313,9 +342,9 @@ function TabHistory() {
         </ChartCard>
       </div>
 
-      <ChartCard title="Visitantes por dia (últimos 30 dias)" tag="CÂMERA" minH={260}>
+      <ChartCard title="Visitantes por dia" tag="CÂMERA" minH={260}>
         <ResponsiveContainer width="100%" height={200}>
-          <AreaChart data={DAILY_HISTORY}>
+          <AreaChart data={historicoDiario}>
             <defs>
               <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor={C.coral} stopOpacity={0.3} />
@@ -327,11 +356,11 @@ function TabHistory() {
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
-            <XAxis dataKey="dia" tick={{ fontSize: 9, fill: C.text3 }} axisLine={false} tickLine={false} interval={4} />
+            <XAxis dataKey="dia" tick={{ fontSize: 9, fill: C.text3 }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
             <YAxis tick={{ fontSize: 10, fill: C.text3 }} axisLine={false} tickLine={false} width={40} />
             <Tooltip content={<CustomTooltip />} />
-            <Area type="monotone" dataKey="cam" name="Câmera" stroke={C.coral} strokeLinecap={"round"} strokeWidth={2} fill="url(#areaGrad)" />
-            <Area type="monotone" dataKey="checkin" name="Check-in" stroke={C.laranja} strokeLinecap={"round"} strokeWidth={1.5} fill="url(#areaGrad2)" />
+            <Area type="monotone" dataKey="entradas" name="Entradas" stroke={C.coral} strokeLinecap={"round"} strokeWidth={2} fill="url(#areaGrad)" />
+            <Area type="monotone" dataKey="saidas" name="Saídas" stroke={C.laranja} strokeLinecap={"round"} strokeWidth={1.5} fill="url(#areaGrad2)" />
           </AreaChart>
         </ResponsiveContainer>
       </ChartCard>
