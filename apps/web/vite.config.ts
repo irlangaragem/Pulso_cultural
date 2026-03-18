@@ -11,7 +11,9 @@ export default defineConfig({
     port: 5173,
   },
   preview: {
-    allowedHosts: true,
+    host: true,
+    port: 5173,
+    allowedHosts: ['pulsocultural-production-ca3b.up.railway.app', '.railway.app', '.up.railway.app'],
   },
   css: {
     postcss: {
