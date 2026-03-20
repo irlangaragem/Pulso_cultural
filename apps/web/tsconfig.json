@@ -5,7 +5,6 @@
     { "path": "./tsconfig.node.json" }
   ],
   "compilerOptions": {
-    // ... opções que já existem ...
     "noUnusedLocals": false,
     "noUnusedParameters": false
   }

@@ -391,16 +391,16 @@ function TabExposition() {
     { id: 6, artista: "Iberê Camargo", titulo: "Núcleo", ano: "1963", sala: "Sala 4", desc: "Expressionismo abstrato.", audio: true },
   ]);
 
-  const [outras, setOutras] = useState([
-    { id: 1, nome: "Walter Smetak", sala: "Galeria 2" },
-    { id: 2, nome: "Xiló", sala: "Espaço Educativo" },
-  ]);
+  // const [outras, setOutras] = useState([
+  //   { id: 1, nome: "Walter Smetak", sala: "Galeria 2" },
+  //   { id: 2, nome: "Xiló", sala: "Espaço Educativo" },
+  // ]);
 
   const [editingObra, setEditingObra] = useState<number | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [showPoster, setShowPoster] = useState(false);
 
-  const statusColors: any = { ativa: C.green, programada: C.amber, encerrada: C.text3 };
+  // const statusColors: any = { ativa: C.green, programada: C.amber, encerrada: C.text3 };
 
   if (showPreview) {
     return (
