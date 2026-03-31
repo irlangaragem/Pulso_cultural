@@ -12,8 +12,10 @@ export function CheckIn() {
     gender: 'PREFIRO_NAO_DIZER',
     origin: 'SALVADOR',
     channel: 'OUTRO',
-    exhibitionId: 'default-exhibition' // For MVP simplification
+    exhibitionId: 'default-exhibition', // For MVP simplification
+    email: ''
   });
+  const [showEmail, setShowEmail] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -62,6 +64,52 @@ export function CheckIn() {
                 onChange={e => setFormData({...formData, cpf: e.target.value})}
               />
             </div>
+
+            <label className="mt-4 flex items-center gap-3 cursor-pointer group w-fit">
+              <div className="relative flex items-center justify-center w-5 h-5">
+                <input
+                  type="checkbox"
+                  className="peer appearance-none w-5 h-5 border-2 border-slate-200 rounded bg-white checked:bg-primary checked:border-primary transition-all cursor-pointer"
+                  checked={showEmail}
+                  onChange={(e) => {
+                    setShowEmail(e.target.checked);
+                    if (!e.target.checked) {
+                      setFormData(prev => ({ ...prev, email: '' }));
+                    }
+                  }}
+                />
+                <svg
+                  className="absolute w-3.5 h-3.5 text-white opacity-0 peer-checked:opacity-100 pointer-events-none transition-opacity"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <span className="text-sm font-semibold text-slate-500 group-hover:text-slate-700 transition-colors">
+                Desejo informar meu e-mail
+              </span>
+            </label>
+
+            {showEmail && (
+              <motion.div 
+                initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                animate={{ opacity: 1, height: 'auto', marginTop: 16 }}
+                className="overflow-hidden"
+              >
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">E-mail</label>
+                <input
+                  type="email"
+                  required={showEmail}
+                  placeholder="seu@email.com"
+                  className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 focus:border-primary outline-none transition-all"
+                  value={formData.email}
+                  onChange={e => setFormData({...formData, email: e.target.value})}
+                />
+              </motion.div>
+            )}
           </div>
 
           <div>
