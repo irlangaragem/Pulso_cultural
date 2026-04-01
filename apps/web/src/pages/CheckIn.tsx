@@ -19,6 +19,17 @@ export function CheckIn() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  const handleCPFChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value.replace(/\D/g, '');
+    if (value.length > 11) value = value.slice(0, 11);
+    
+    value = value.replace(/(\d{3})(\d)/, '$1.$2');
+    value = value.replace(/(\d{3})(\d)/, '$1.$2');
+    value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+    
+    setFormData({ ...formData, cpf: value });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -53,19 +64,21 @@ export function CheckIn() {
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">CPF</label>
-            <div className="relative">
-              <input
-                type="text"
-                required
-                placeholder="000.000.000-00"
-                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 focus:border-primary outline-none transition-all"
-                value={formData.cpf}
-                onChange={e => setFormData({...formData, cpf: e.target.value})}
-              />
+            <div className={showEmail ? 'hidden' : 'block'}>
+              <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">CPF</label>
+              <div className="relative">
+                <input
+                  type="text"
+                  required={!showEmail}
+                  placeholder="000.000.000-00"
+                  className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 focus:border-primary outline-none transition-all"
+                  value={formData.cpf}
+                  onChange={handleCPFChange}
+                />
+              </div>
             </div>
 
-            <label className="mt-4 flex items-center gap-3 cursor-pointer group w-fit">
+            <label className={`${showEmail ? '' : 'mt-4'} flex items-center gap-3 cursor-pointer group w-fit`}>
               <div className="relative flex items-center justify-center w-5 h-5">
                 <input
                   type="checkbox"
