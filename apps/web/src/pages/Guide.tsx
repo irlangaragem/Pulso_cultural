@@ -32,6 +32,34 @@ export function Guide() {
     return () => clearInterval(interval);
   }, [sound, playingId]);
 
+  // cognitive maintenance: suicide interface upon 12m inactivity
+  useEffect(() => {
+    let timeoutId: any;
+    const resetTimer = () => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        if (sound) sound.stop();
+        navigate('/');
+      }, 12 * 60 * 1000); // 12 minutes
+    };
+
+    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'touchmove'];
+    events.forEach(e => window.addEventListener(e, resetTimer));
+    resetTimer();
+
+    return () => {
+      clearTimeout(timeoutId);
+      events.forEach(e => window.removeEventListener(e, resetTimer));
+    };
+  }, [navigate, sound]);
+
+  // cleanup sound on unmount
+  useEffect(() => {
+    return () => {
+      if (sound) sound.stop();
+    };
+  }, [sound]);
+
   const togglePlay = (work: any) => {
     if (playingId === work.id) {
       sound?.pause();

@@ -36,7 +36,7 @@ export function CheckIn() {
 
     const currentYear = new Date().getFullYear();
     const bYear = Number(formData.birthYear);
-    if (bYear > currentYear || currentYear - bYear > 120 || bYear < 1000) {
+    if (isNaN(bYear) || bYear > currentYear || currentYear - bYear > 120 || bYear < 1000) {
       alert(`Ano de nascimento inválido. Por favor, insira um ano entre ${currentYear - 120} e ${currentYear}.`);
       return;
     }
@@ -46,21 +46,31 @@ export function CheckIn() {
       return;
     }
 
+    if (formData.name.trim().length === 0) {
+      alert('Por favor, insira um nome válido.');
+      return;
+    }
+
     setLoading(true);
     try {
-      // Save locally first
-      localDb.saveVisitor({
-        cpf: formData.cpf,
-        name: formData.name,
-        birthYear: bYear,
-        gender: formData.gender,
-        origin: formData.origin,
-        email: formData.email
-      });
+      try {
+        // Save locally first
+        localDb.saveVisitor({
+          cpf: formData.cpf,
+          name: formData.name.trim(),
+          birthYear: bYear,
+          gender: formData.gender,
+          origin: formData.origin,
+          email: formData.email
+        });
+      } catch (e) {
+        console.warn('Falha ao salvar no banco local (possível limite de cota).', e);
+      }
 
       // Maintain API hit if needed, or simply let local DB handle it.
       await api.post('/checkins', {
         ...formData,
+        name: formData.name.trim(),
         birthYear: bYear
       }).catch(e => {
         console.warn('Backend indisponível, mas salvo localmente', e);

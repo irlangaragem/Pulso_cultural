@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 
 export function ProtectedRoute() {
   const token = useAuthStore((state) => state.token);
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 768);
 
   useEffect(() => {
     const checkMobile = () => {

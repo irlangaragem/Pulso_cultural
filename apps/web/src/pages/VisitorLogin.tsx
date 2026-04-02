@@ -3,41 +3,75 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Layout, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { localDb } from '../services/localDb';
+import { api } from '../services/api';
+import { formatCPF, isValidCPF } from '../utils/cpf';
 
 export function VisitorLogin() {
   const [cpf, setCpf] = useState('');
-  const [origin, setOrigin] = useState('INDICAÇÃO');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleCPFChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value.replace(/\D/g, '');
-    if (value.length > 11) value = value.slice(0, 11);
-    
-    value = value.replace(/(\d{3})(\d)/, '$1.$2');
-    value = value.replace(/(\d{3})(\d)/, '$1.$2');
-    value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
-    
-    setCpf(value);
+    setCpf(formatCPF(e.target.value));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (cpf.length < 14) {
-      setError('CPF incompleto ou inválido.');
+    if (!isValidCPF(cpf)) {
+      setError('CPF inválido.');
       return;
     }
 
-    const visitor = localDb.getVisitorByCPF(cpf);
-    if (visitor) {
-      // update origin and keep going
-      localDb.saveVisitor({
-        ...visitor,
-        origin
-      });
-      navigate('/guide');
-    } else {
-      setError('Cadastro não encontrado.');
+    // Local check
+    let visitor = localDb.getVisitorByCPF(cpf);
+    
+    setLoading(true);
+    setError('');
+
+    try {
+      if (!visitor) {
+        // Fallback to backend checks
+        try {
+          const rawCpf = cpf.replace(/\D/g, '');
+          const response = await api.get(`/checkins/verify/${rawCpf}`);
+          // Backend found the user! Let's persist them locally so they are here next time
+          if (response.data) {
+            visitor = localDb.saveVisitor({
+              cpf,
+              name: response.data.name,
+              birthYear: response.data.birthYear,
+              gender: response.data.gender,
+              origin: response.data.origin,
+              email: response.data.email
+            });
+          }
+        } catch (err) {
+          // Keep visitor undefined
+        }
+      }
+
+      if (visitor) {
+        // Track their return checkin at the backend for dashboard analytics
+        await api.post('/checkins', {
+          cpf: visitor.cpf,
+          name: visitor.name,
+          birthYear: visitor.birthYear,
+          gender: visitor.gender,
+          origin: visitor.origin, // used the predefined origin
+          channel: 'OUTRO_RETORNO',
+          exhibitionId: 'default-exhibition',
+          email: visitor.email
+        }).catch(e => {
+          console.warn('Backend unavailable for metrics, but access granted.', e);
+        });
+        
+        navigate('/guide');
+      } else {
+        setError('Cadastro não encontrado, por favor faça seu Check-in.');
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -69,23 +103,6 @@ export function VisitorLogin() {
             />
           </div>
 
-          <div>
-             <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Origem</label>
-              <select
-                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 focus:border-primary outline-none transition-all appearance-none text-sm"
-                value={origin}
-                onChange={e => setOrigin(e.target.value)}
-              >
-                <option value="INDICAÇÃO">Indicação de alguém</option>
-                <option value="ESCOLA">Escola ou excursão</option>
-                <option value="REDES_SOCIAIS">Redes sociais / internet</option>
-                <option value="PASSEI_EM_FRENTE">Passei em frente</option>
-                <option value="EVENTO">Evento ou atividade</option>
-                <option value="TURISMO">Turismo / viagem</option>
-                <option value="DIVULGACAO">Divulgação (TV, cartaz, mídia)</option>
-                <option value="OUTRO">Outro</option>
-              </select>
-          </div>
 
           {error && (
             <motion.div 
@@ -99,9 +116,10 @@ export function VisitorLogin() {
 
           <button
             type="submit"
+            disabled={loading}
             className="w-full bg-primary text-white py-5 rounded-2xl font-black text-lg shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
           >
-            Acessar
+            {loading ? 'Acessando...' : 'Acessar'}
             <ArrowRight className="w-5 h-5" />
           </button>
         </form>

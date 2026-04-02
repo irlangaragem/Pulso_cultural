@@ -60,6 +60,31 @@ export class CheckinController {
     }
   }
 
+  async verify(req: Request, res: Response) {
+    const { cpf } = req.params;
+
+    try {
+      const cpfHash = HashService.hashCPF(cpf);
+      const visitor = await prisma.visitor.findUnique({
+        where: { cpfHash }
+      });
+
+      if (!visitor) {
+        return res.status(404).json({ error: 'Visitor not found' });
+      }
+
+      return res.status(200).json({
+        name: visitor.name,
+        birthYear: visitor.birthYear,
+        gender: visitor.gender,
+        origin: visitor.origin
+      });
+    } catch (error) {
+      console.error('Verify error:', error);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+
   async getStats(req: Request, res: Response) {
     const { exhibitionId } = req.params;
 
