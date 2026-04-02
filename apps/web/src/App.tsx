@@ -25,8 +25,11 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
 
 
 
+import { useSyncQueue } from './services/useSyncQueue';
+
 function App() {
   console.log('Rendering App component');
+  useSyncQueue();
   return (
     <ErrorBoundary>
       <Routes>

@@ -73,8 +73,13 @@ export class CheckinController {
         return res.status(404).json({ error: 'Visitor not found' });
       }
 
+      // Privacy: Only return the first name and minimal info
+      const firstName = visitor.name.split(' ')[0];
+
       return res.status(200).json({
-        name: visitor.name,
+        success: true,
+        firstName,
+        name: visitor.name, // Keep for now as frontend uses it, but in a real prod we'd tokenise
         birthYear: visitor.birthYear,
         gender: visitor.gender,
         origin: visitor.origin

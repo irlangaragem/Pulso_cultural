@@ -51,33 +51,31 @@ export function CheckIn() {
       return;
     }
 
+    const checkinData = {
+      ...formData,
+      name: formData.name.trim(),
+      birthYear: bYear,
+      gender: formData.gender,
+      origin: formData.origin,
+      channel: 'TOTEM_PRESENCIAL',
+      exhibitionId: 'default-exhibition'
+    };
+
     setLoading(true);
     try {
       try {
         // Save locally first
-        localDb.saveVisitor({
-          cpf: formData.cpf,
-          name: formData.name.trim(),
-          birthYear: bYear,
-          gender: formData.gender,
-          origin: formData.origin,
-          email: formData.email
-        });
+        localDb.saveVisitor(checkinData);
       } catch (e) {
         console.warn('Falha ao salvar no banco local (possível limite de cota).', e);
       }
 
-      // Maintain API hit if needed, or simply let local DB handle it.
-      await api.post('/checkins', {
-        ...formData,
-        name: formData.name.trim(),
-        birthYear: bYear
-      }).catch(e => {
-        console.warn('Backend indisponível, mas salvo localmente', e);
-      });
+      await api.post('/checkins', checkinData);
       navigate('/guide');
     } catch (error) {
-      alert('Erro ao realizar check-in. Tente novamente.');
+      console.error('Checkin failed, saving for sync:', error);
+      localDb.addToSyncQueue(checkinData);
+      navigate('/guide');
     } finally {
       setLoading(false);
     }

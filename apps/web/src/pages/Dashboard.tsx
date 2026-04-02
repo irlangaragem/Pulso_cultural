@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { BarChart, Bar, LineChart, Line, AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
-const RAILWAY_API_URL = "https://pulsocultural-production.up.railway.app";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "https://pulsocultural-production.up.railway.app";
 // ============================================================
 // PULSO CULTURAL — Dashboard do Gestor
 // MAM Bahia · Protótipo
@@ -24,24 +24,6 @@ const MONTHLY = [
   { w: "Sem 3", cam: 3456, checkin: 1689 }, { w: "Sem 4", cam: 3210, checkin: 1534 },
 ];
 
-const GENDER = [
-  { name: "Feminino", value: 48, color: "#D4267E" },
-  { name: "Masculino", value: 38, color: "#E8554E" },
-  { name: "Não-binário", value: 8, color: "#F28C38" },
-  { name: "Não informado", value: 6, color: "#3D3240" },
-];
-
-const AGES = [
-  { faixa: "< 18", v: 8 }, { faixa: "18-24", v: 22 }, { faixa: "25-34", v: 31 },
-  { faixa: "35-44", v: 18 }, { faixa: "45-59", v: 14 }, { faixa: "60+", v: 7 },
-];
-
-const ORIGIN = [
-  { name: "Salvador", value: 52, color: "#E8554E" },
-  { name: "Interior BA", value: 18, color: "#D4267E" },
-  { name: "Outro estado", value: 22, color: "#F28C38" },
-  { name: "Internacional", value: 8, color: "#F2B63C" },
-];
 
 const CHANNELS = [
   { canal: "Redes sociais", v: 34 }, { canal: "Indicação", v: 24 },
@@ -137,12 +119,12 @@ function TabRealTime() {
   const [resumoHoje, setResumoHoje] = useState<any>(null);
 
   useEffect(() => {
-    fetch(`${RAILWAY_API_URL}/resumo/hoje`)
+    fetch(`${API_BASE_URL}/resumo/hoje`)
       .then(res => res.json())
       .then(data => setResumoHoje(data))
       .catch(err => console.error("Erro resumo/hoje:", err));
 
-    const eventSource = new EventSource(`${RAILWAY_API_URL}/stream`);
+    const eventSource = new EventSource(`${API_BASE_URL}/stream`);
     eventSource.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
@@ -211,10 +193,43 @@ function TabRealTime() {
 // TAB: PERFIL DO PÚBLICO
 // ============================================================
 function TabProfile() {
+  const [demoData, setDemoData] = useState<any>({ gender: [], ages: [], origin: [] });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/analytics/demographics/default-exhibition`)
+      .then(res => res.json())
+      .then(data => {
+        setDemoData(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error("Erro demographics:", err);
+        setLoading(false);
+      });
+  }, []);
+
+  if (loading) {
+    return <div className="text-slate-400 py-12 text-center">Carregando dados demográficos...</div>;
+  }
+
+  const GENDER_COLORS = ["#D4267E", "#E8554E", "#F28C38", "#3D3240"];
+  const ORIGIN_COLORS = ["#E8554E", "#D4267E", "#F28C38", "#F2B63C", "#48BB78"];
+
+  const genderWithColors = demoData.gender.map((g: any, i: number) => ({
+    ...g,
+    color: GENDER_COLORS[i % GENDER_COLORS.length]
+  }));
+
+  const originWithColors = demoData.origin.map((o: any, i: number) => ({
+    ...o,
+    color: ORIGIN_COLORS[i % ORIGIN_COLORS.length]
+  }));
+
   return (
     <>
       <div style={{ ...s.metricsRow, gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))" }}>
-        <MetricCard value="847" label="Visitantes com perfil" color={C.text1} />
+        <MetricCard value={demoData.total || "---"} label="Visitantes com perfil" color={C.text1} />
         <MetricCard value="46%" label="Taxa de adesão ao check-in" sub="Meta: >30% ✓" color={C.green} />
         <MetricCard value="29 anos" label="Idade mediana" color={C.laranja} />
       </div>
@@ -225,13 +240,13 @@ function TabProfile() {
             <div style={{ width: 120, height: 120, flexShrink: 0 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={GENDER} dataKey="value" cx="50%" cy="50%" innerRadius={30} outerRadius={55} stroke="none" paddingAngle={2}>
-                    {GENDER.map((d: any, i: number) => <Cell key={i} fill={d.color} />)}
+                  <Pie data={genderWithColors} dataKey="value" cx="50%" cy="50%" innerRadius={30} outerRadius={55} stroke="none" paddingAngle={2}>
+                    {genderWithColors.map((d: any, i: number) => <Cell key={i} fill={d.color} />)}
                   </Pie>
                 </PieChart>
               </ResponsiveContainer>
             </div>
-            <PieLegend data={GENDER} />
+            <PieLegend data={genderWithColors} />
           </div>
         </ChartCard>
 
@@ -240,20 +255,20 @@ function TabProfile() {
             <div style={{ width: 120, height: 120, flexShrink: 0 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={ORIGIN} dataKey="value" cx="50%" cy="50%" innerRadius={30} outerRadius={55} stroke="none" paddingAngle={2}>
-                    {ORIGIN.map((d: any, i: number) => <Cell key={i} fill={d.color} />)}
+                  <Pie data={originWithColors} dataKey="value" cx="50%" cy="50%" innerRadius={30} outerRadius={55} stroke="none" paddingAngle={2}>
+                    {originWithColors.map((d: any, i: number) => <Cell key={i} fill={d.color} />)}
                   </Pie>
                 </PieChart>
               </ResponsiveContainer>
             </div>
-            <PieLegend data={ORIGIN} />
+            <PieLegend data={originWithColors} />
           </div>
         </ChartCard>
       </div>
 
       <ChartCard title="Distribuição por idade" tag="ANO DE NASCIMENTO AGRUPADO">
         <ResponsiveContainer width="100%" height={180}>
-          <BarChart data={AGES} barCategoryGap="30%">
+          <BarChart data={demoData.ages} barCategoryGap="30%">
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
             <XAxis dataKey="faixa" tick={{ fontSize: 10, fill: C.text3, fontFamily: "'Space Mono', monospace" }} axisLine={false} tickLine={false} />
             <YAxis tick={{ fontSize: 10, fill: C.text3 }} axisLine={false} tickLine={false} width={30} unit="%" />
@@ -285,7 +300,7 @@ function TabHistory() {
   const [historicoDiario, setHistoricoDiario] = useState<any[]>(DAILY_HISTORY);
 
   useEffect(() => {
-    fetch(`${RAILWAY_API_URL}/resumo/historico`)
+    fetch(`${API_BASE_URL}/resumo/historico`)
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {

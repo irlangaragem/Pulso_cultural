@@ -36,9 +36,9 @@ export function VisitorLogin() {
           const rawCpf = cpf.replace(/\D/g, '');
           const response = await api.get(`/checkins/verify/${rawCpf}`);
           // Backend found the user! Let's persist them locally so they are here next time
-          if (response.data) {
+          if (response.data && response.data.success) {
             visitor = localDb.saveVisitor({
-              cpf,
+              cpf: rawCpf,
               name: response.data.name,
               birthYear: response.data.birthYear,
               gender: response.data.gender,
@@ -47,24 +47,30 @@ export function VisitorLogin() {
             });
           }
         } catch (err) {
-          // Keep visitor undefined
+          console.warn('Busca remota falhou ou não existe', err);
         }
       }
 
       if (visitor) {
-        // Track their return checkin at the backend for dashboard analytics
-        await api.post('/checkins', {
-          cpf: visitor.cpf,
-          name: visitor.name,
-          birthYear: visitor.birthYear,
-          gender: visitor.gender,
-          origin: visitor.origin, // used the predefined origin
+        const confirmedVisitor = visitor; // Type-safe constant
+        const checkinData = {
+          cpf: confirmedVisitor.cpf,
+          name: confirmedVisitor.name,
+          birthYear: confirmedVisitor.birthYear,
+          gender: confirmedVisitor.gender,
+          origin: confirmedVisitor.origin,
           channel: 'OUTRO_RETORNO',
           exhibitionId: 'default-exhibition',
-          email: visitor.email
-        }).catch(e => {
-          console.warn('Backend unavailable for metrics, but access granted.', e);
-        });
+          email: confirmedVisitor.email
+        };
+
+        // Track their return checkin at the backend for dashboard analytics
+        try {
+          await api.post('/checkins', checkinData);
+        } catch (e) {
+          console.warn('API sync failed, adding to queue', e);
+          localDb.addToSyncQueue(checkinData);
+        }
         
         navigate('/guide');
       } else {
