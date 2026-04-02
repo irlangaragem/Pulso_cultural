@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { BarChart, Bar, LineChart, Line, AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "https://pulsocultural-production.up.railway.app";
 // ============================================================
@@ -7,40 +7,10 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || "https://pulsocultural-prod
 // MAM Bahia · Protótipo
 // ============================================================
 
-// --- MOCK DATA ---
-const FLOW_TODAY = [
-  { h: "8h", v: 12 }, { h: "9h", v: 34 }, { h: "10h", v: 78 }, { h: "11h", v: 145 },
-  { h: "12h", v: 186 }, { h: "13h", v: 163 }, { h: "14h", v: 231 }, { h: "15h", v: 278 },
-  { h: "16h", v: 245 }, { h: "17h", v: 167 }, { h: "18h", v: 42 },
-];
-
-const WEEKLY = [
-  { d: "Seg", v: 0, c: 0 }, { d: "Ter", v: 412, c: 186 }, { d: "Qua", v: 389, c: 162 },
-  { d: "Qui", v: 445, c: 201 }, { d: "Sex", v: 523, v_checkin: 245 }, { d: "Sáb", v: 687, c: 342 }, { d: "Dom", v: 612, c: 298 },
-];
-
-const MONTHLY = [
-  { w: "Sem 1", cam: 2834, checkin: 1287 }, { w: "Sem 2", cam: 3102, checkin: 1456 },
-  { w: "Sem 3", cam: 3456, checkin: 1689 }, { w: "Sem 4", cam: 3210, checkin: 1534 },
-];
-
-
-const CHANNELS = [
-  { canal: "Redes sociais", v: 34 }, { canal: "Indicação", v: 24 },
-  { canal: "Passei na frente", v: 19 }, { canal: "Jornal / TV", v: 12 },
-  { canal: "Escola", v: 8 }, { canal: "Outro", v: 3 },
-];
-
-const RECURRENCE = [
-  { label: "1ª visita", value: 68, color: "#E8554E" },
-  { label: "Retorno", value: 32, color: "#48BB78" },
-];
-
-const DAILY_HISTORY = Array.from({ length: 30 }, (_, i) => ({
-  dia: `${i + 1}`,
-  cam: Math.floor(250 + Math.random() * 500 + (i > 14 ? 150 : 0)),
-  checkin: Math.floor(100 + Math.random() * 250 + (i > 14 ? 80 : 0)),
-}));
+// ============================================================
+// PULSO CULTURAL — Dashboard do Gestor
+// MAM Bahia · Protótipo
+// ============================================================
 
 // --- COLORS ---
 const C = {
@@ -117,12 +87,18 @@ function PieLegend({ data }: any) {
 function TabRealTime() {
   const [streamData, setStreamData] = useState<any>(null);
   const [resumoHoje, setResumoHoje] = useState<any>(null);
+  const [trends, setTrends] = useState<any[]>([]);
 
   useEffect(() => {
     fetch(`${API_BASE_URL}/resumo/hoje`)
       .then(res => res.json())
       .then(data => setResumoHoje(data))
       .catch(err => console.error("Erro resumo/hoje:", err));
+
+    fetch(`${API_BASE_URL}/analytics/trends/default-exhibition`)
+      .then(res => res.json())
+      .then(data => setTrends(data.map((d: any) => ({ h: d.hour, v: d.entries })) ))
+      .catch(err => console.error("Erro trends:", err));
 
     const eventSource = new EventSource(`${API_BASE_URL}/stream`);
     eventSource.onmessage = (event) => {
@@ -137,8 +113,8 @@ function TabRealTime() {
     };
   }, []);
 
-  const metric1 = streamData?.ocupacao_atual ?? resumoHoje?.ocupacao_atual ?? 0;
-  const metric2 = streamData?.entradas_hoje ?? resumoHoje?.entradas_hoje ?? 0;
+  const metric1 = streamData?.ocupacao_atual ?? resumoHoje?.pessoasNoEspaco ?? 0;
+  const metric2 = streamData?.entradas_hoje ?? resumoHoje?.entradasHoje ?? 0;
   const metric3 = streamData?.saidas_hoje ?? resumoHoje?.saidas_hoje ?? 0;
   const metric4 = streamData?.ocupacao_pico ?? resumoHoje?.ocupacao_pico ?? 0;
 
@@ -148,17 +124,17 @@ function TabRealTime() {
         <MetricCard value={metric1} label="Ocupação atual" color={C.coral} large />
         <MetricCard value={metric2} label="Entradas hoje" color={C.text1} large />
         <MetricCard value={metric3} label="Saídas hoje" color={C.laranja} large />
-        <MetricCard value={metric4} label="Ocupação pico" color={C.text2} large />
+        <MetricCard value={metric4 || "-"} label="Ocupação pico" color={C.text2} large />
       </div>
 
-      <ChartCard title="Fluxo de visitantes por hora" tag="HOJE" minH={260}>
+      <ChartCard title="Fluxo de visitantes por hora" tag="ÚLTIMAS 12H - REAL" minH={260}>
         <ResponsiveContainer width="100%" height={200}>
-          <BarChart data={FLOW_TODAY} barCategoryGap="20%">
+          <BarChart data={trends} barCategoryGap="20%">
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
             <XAxis dataKey="h" tick={{ fontSize: 10, fill: C.text3, fontFamily: "'Space Mono', monospace" }} axisLine={false} tickLine={false} />
             <YAxis tick={{ fontSize: 10, fill: C.text3, fontFamily: "'Space Mono', monospace" }} axisLine={false} tickLine={false} width={35} />
             <Tooltip content={<CustomTooltip />} />
-            <Bar dataKey="v" name="Visitantes" radius={[4, 4, 0, 0]} fill="url(#barGrad)" />
+            <Bar dataKey="v" name="Entradas" radius={[4, 4, 0, 0]} fill="url(#barGrad)" />
             <defs>
               <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor={C.coral} />
@@ -168,23 +144,6 @@ function TabRealTime() {
           </BarChart>
         </ResponsiveContainer>
       </ChartCard>
-
-      <ChartCard title="Comparativo semanal" tag="CÂMERA VS CHECK-IN" minH={260}>
-        <ResponsiveContainer width="100%" height={200}>
-          <BarChart data={WEEKLY} barCategoryGap="25%">
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
-            <XAxis dataKey="d" tick={{ fontSize: 10, fill: C.text3, fontFamily: "'Space Mono', monospace" }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fontSize: 10, fill: C.text3, fontFamily: "'Space Mono', monospace" }} axisLine={false} tickLine={false} width={35} />
-            <Tooltip content={<CustomTooltip />} />
-            <Bar dataKey="v" name="Câmera" radius={[4, 4, 0, 0]} fill={C.coral} opacity={0.7} />
-            <Bar dataKey="c" name="Check-in" radius={[4, 4, 0, 0]} fill={C.laranja} opacity={0.7} />
-          </BarChart>
-        </ResponsiveContainer>
-        <div style={{ display: "flex", gap: 20, marginTop: 8 }}>
-          <span style={{ fontSize: 11, color: C.text3 }}><span style={{ display: "inline-block", width: 10, height: 10, borderRadius: 2, background: C.coral, marginRight: 6, verticalAlign: "middle", opacity: 0.7 }} />Câmera (total)</span>
-          <span style={{ fontSize: 11, color: C.text3 }}><span style={{ display: "inline-block", width: 10, height: 10, borderRadius: 2, background: C.laranja, marginRight: 6, verticalAlign: "middle", opacity: 0.7 }} />Check-in (voluntário)</span>
-        </div>
-      </ChartCard>
     </>
   );
 }
@@ -193,7 +152,7 @@ function TabRealTime() {
 // TAB: PERFIL DO PÚBLICO
 // ============================================================
 function TabProfile() {
-  const [demoData, setDemoData] = useState<any>({ gender: [], ages: [], origin: [] });
+  const [demoData, setDemoData] = useState<any>({ gender: [], ages: [], origin: [], total: 0 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -229,7 +188,7 @@ function TabProfile() {
   return (
     <>
       <div style={{ ...s.metricsRow, gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))" }}>
-        <MetricCard value={demoData.total || "---"} label="Visitantes com perfil" color={C.text1} />
+        <MetricCard value={demoData.total || 0} label="Visitantes cadastrados" color={C.text1} />
         <MetricCard value="46%" label="Taxa de adesão ao check-in" sub="Meta: >30% ✓" color={C.green} />
         <MetricCard value="29 anos" label="Idade mediana" color={C.laranja} />
       </div>
@@ -278,9 +237,9 @@ function TabProfile() {
         </ResponsiveContainer>
       </ChartCard>
 
-      <ChartCard title="Como soube da exposição" tag="PERGUNTA POR VISITA">
+      <ChartCard title="Como soube da exposição" tag="PERGUNTA NA ENTRADA">
         <ResponsiveContainer width="100%" height={180}>
-          <BarChart data={CHANNELS} layout="vertical" barCategoryGap="20%">
+          <BarChart data={originWithColors.map((o: any) => ({ canal: o.name, v: o.value }))} layout="vertical" barCategoryGap="20%">
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" horizontal={false} />
             <XAxis type="number" tick={{ fontSize: 10, fill: C.text3 }} axisLine={false} tickLine={false} unit="%" />
             <YAxis dataKey="canal" type="category" tick={{ fontSize: 11, fill: C.text2 }} axisLine={false} tickLine={false} width={110} />
@@ -297,9 +256,15 @@ function TabProfile() {
 // TAB: HISTÓRICO & RECORRÊNCIA
 // ============================================================
 function TabHistory() {
-  const [historicoDiario, setHistoricoDiario] = useState<any[]>(DAILY_HISTORY);
+  const [historicoDiario, setHistoricoDiario] = useState<any[]>([]);
+  const [resumo, setResumo] = useState<any>(null);
 
   useEffect(() => {
+    fetch(`${API_BASE_URL}/historico`)
+      .then(res => res.json())
+      .then(data => setResumo(data))
+      .catch(err => console.error(err));
+
     fetch(`${API_BASE_URL}/resumo/historico`)
       .then(res => res.json())
       .then(data => {
@@ -315,13 +280,18 @@ function TabHistory() {
       .catch(err => console.error(err));
   }, []);
 
+  const recurrenceData = [
+    { label: "1ª visita", value: 100 - (resumo?.retorno || 0), color: "#E8554E" },
+    { label: "Retorno", value: resumo?.retorno || 0, color: "#48BB78" },
+  ];
+
   return (
     <>
       <div style={s.metricsRow}>
-        <MetricCard value="12.602" label="Total de pulsos no mês" sub="↑ 15% vs. mês anterior" color={C.text1} large />
-        <MetricCard value="5.966" label="Check-ins no mês" color={C.laranja} large />
-        <MetricCard value="32%" label="Taxa de retorno" sub="Visitantes que voltaram" color={C.green} large />
-        <MetricCard value="2.4×" label="Câmera vs. Livro" sub="Estimativa livro: ~5.200" color={C.coral} />
+        <MetricCard value={resumo?.camera || 0} label="Total de pulsos históricos" sub="Pelo sensor de entrada" color={C.text1} large />
+        <MetricCard value={resumo?.checkins || 0} label="Check-ins realizados" color={C.laranja} large />
+        <MetricCard value={`${resumo?.retorno || 0}%`} label="Taxa de recorrência" sub="Visitantes que retornaram" color={C.green} large />
+        <MetricCard value={`${resumo?.multiplicador || 0}×`} label="Câmera vs. Check-in" sub="Fator de amostragem" color={C.coral} />
       </div>
 
       <div style={s.twoCol}>
@@ -330,34 +300,23 @@ function TabHistory() {
             <div style={{ width: 120, height: 120, flexShrink: 0 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={RECURRENCE} dataKey="value" cx="50%" cy="50%" innerRadius={30} outerRadius={55} stroke="none" paddingAngle={3}>
-                    {RECURRENCE.map((d: any, i: number) => <Cell key={i} fill={d.color} />)}
+                  <Pie data={recurrenceData} dataKey="value" cx="50%" cy="50%" innerRadius={30} outerRadius={55} stroke="none" paddingAngle={3}>
+                    {recurrenceData.map((d: any, i: number) => <Cell key={i} fill={d.color} />)}
                   </Pie>
                 </PieChart>
               </ResponsiveContainer>
             </div>
             <div>
-              <PieLegend data={RECURRENCE} />
-              <p style={{ fontSize: 11, color: C.text3, marginTop: 10, lineHeight: 1.5 }}>De 847 visitantes com check-in, 271 retornaram pelo menos uma vez.</p>
+              <PieLegend data={recurrenceData} />
+              <p style={{ fontSize: 11, color: C.text3, marginTop: 10, lineHeight: 1.5 }}>
+                No total acumulado de {resumo?.checkins || 0} check-ins, {resumo?.retorno || 0}% correspondem a visitantes que voltaram ao museu.
+              </p>
             </div>
           </div>
         </ChartCard>
-
-        <ChartCard title="Evolução semanal" tag="CÂMERA VS CHECK-IN" minH={200}>
-          <ResponsiveContainer width="100%" height={150}>
-            <LineChart data={MONTHLY}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" />
-              <XAxis dataKey="w" tick={{ fontSize: 10, fill: C.text3, fontFamily: "'Space Mono', monospace" }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 10, fill: C.text3 }} axisLine={false} tickLine={false} width={40} />
-              <Tooltip content={<CustomTooltip />} />
-              <Line type="monotone" dataKey="cam" name="Câmera" stroke={C.coral} strokeWidth={2.5} dot={{ r: 4, fill: C.coral }} />
-              <Line type="monotone" dataKey="checkin" name="Check-in" stroke={C.laranja} strokeWidth={2.5} dot={{ r: 4, fill: C.laranja }} />
-            </LineChart>
-          </ResponsiveContainer>
-        </ChartCard>
       </div>
 
-      <ChartCard title="Visitantes por dia" tag="CÂMERA" minH={260}>
+      <ChartCard title="Fluxo por período" tag="ENTRADAS VS SAÍDAS" minH={260}>
         <ResponsiveContainer width="100%" height={200}>
           <AreaChart data={historicoDiario}>
             <defs>
