@@ -41,12 +41,14 @@ export function Feedback() {
         <p className="text-slate-500 font-medium mb-12 max-w-xs mx-auto">
           Sua avaliação ajuda o MAM Salvador a criar experiências cada vez melhores.
         </p>
-        <button 
+        <motion.button 
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
           onClick={() => navigate('/')}
-          className="bg-slate-900 text-white px-12 py-5 rounded-2xl font-black uppercase text-sm tracking-widest shadow-xl"
+          className="bg-slate-900 text-white px-12 py-5 rounded-2xl font-black uppercase text-sm tracking-widest shadow-xl transition-all"
         >
           Voltar ao Início
-        </button>
+        </motion.button>
       </div>
     );
   }
@@ -70,13 +72,15 @@ export function Feedback() {
               <h2 className="text-lg font-bold text-slate-800 mb-6 uppercase tracking-tight">Como foi sua experiência?</h2>
               <div className="flex justify-center gap-3">
                 {[1, 2, 3, 4, 5].map((star) => (
-                  <button
+                  <motion.button
                     key={star}
                     type="button"
+                    whileHover={{ scale: 1.2, rotate: 10 }}
+                    whileTap={{ scale: 0.8 }}
                     onMouseEnter={() => setHoverRating(star)}
                     onMouseLeave={() => setHoverRating(0)}
                     onClick={() => setRating(star)}
-                    className="p-1 transition-transform active:scale-90"
+                    className="p-1 transition-transform"
                   >
                     <Star 
                       size={40} 
@@ -84,7 +88,7 @@ export function Feedback() {
                         star <= (hoverRating || rating) ? 'text-yellow-400 fill-yellow-400' : 'text-slate-200'
                       }`} 
                     />
-                  </button>
+                  </motion.button>
                 ))}
               </div>
             </section>
@@ -102,24 +106,26 @@ export function Feedback() {
               />
             </section>
 
-            <button
+            <motion.button
               type="submit"
               disabled={rating === 0 || isSubmitting}
+              whileHover={rating > 0 ? { scale: 1.01 } : {}}
+              whileTap={rating > 0 ? { scale: 0.98 } : {}}
               className={`w-full p-6 rounded-2xl font-black uppercase text-sm tracking-widest flex items-center justify-center gap-3 transition-all ${
                 rating === 0 
-                  ? 'bg-slate-100 text-slate-300' 
-                  : 'bg-primary text-white shadow-xl shadow-primary/30 active:scale-[0.98]'
+                  ? 'bg-slate-100 text-slate-300 cursor-not-allowed' 
+                  : 'bg-primary text-white shadow-xl shadow-primary/30'
               }`}
             >
               {isSubmitting ? (
                 <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
               ) : (
                 <>
-                  Enviar Avaliação
+                  Concluir e Enviar Feedback
                   <Send size={18} />
                 </>
               )}
-            </button>
+            </motion.button>
           </form>
         </div>
 

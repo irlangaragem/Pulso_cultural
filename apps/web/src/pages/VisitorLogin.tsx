@@ -11,6 +11,7 @@ export function VisitorLogin() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [origin, setOrigin] = useState('INDICAÇÃO');
   const navigate = useNavigate();
 
   const handleCPFChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -58,7 +59,7 @@ export function VisitorLogin() {
           name: visitor.name,
           birthYear: visitor.birthYear,
           gender: visitor.gender,
-          origin: visitor.origin,
+          origin: origin, // User selected origin for this specific visit
           channel: 'OUTRO_RETORNO',
           exhibitionId: 'default-exhibition',
           email: visitor.email
@@ -108,6 +109,24 @@ export function VisitorLogin() {
               value={cpf}
               onChange={handleCPFChange}
             />
+          </div>
+
+          <div>
+             <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Origem da Visita</label>
+              <select
+                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 focus:border-primary outline-none transition-all appearance-none text-sm font-medium"
+                value={origin}
+                onChange={e => setOrigin(e.target.value)}
+              >
+                <option value="INDICAÇÃO">Indicação de alguém</option>
+                <option value="ESCOLA">Escola ou excursão</option>
+                <option value="REDES_SOCIAIS">Redes sociais / internet</option>
+                <option value="PASSEI_EM_FRENTE">Passei em frente</option>
+                <option value="EVENTO">Evento ou atividade</option>
+                <option value="TURISMO">Turismo / viagem</option>
+                <option value="DIVULGACAO">Divulgação (TV, cartaz, mídia)</option>
+                <option value="OUTRO">Outro</option>
+              </select>
           </div>
 
 
