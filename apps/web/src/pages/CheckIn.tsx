@@ -21,6 +21,7 @@ export function CheckIn() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [step, setStep] = useState(1);
+  const [showLoginRedirect, setShowLoginRedirect] = useState(false);
   const navigate = useNavigate();
 
   const handleCPFChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -32,6 +33,7 @@ export function CheckIn() {
     value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
     
     setFormData({ ...formData, cpf: value });
+    setShowLoginRedirect(false); // Reset on change
   };
 
   const validateStep1 = () => {
@@ -57,7 +59,36 @@ export function CheckIn() {
     e.preventDefault();
 
     if (step === 1) {
-      if (validateStep1()) setStep(2);
+      if (!validateStep1()) return;
+      
+      setLoading(true);
+      try {
+        const rawCpf = formData.cpf.replace(/\D/g, '');
+        // 1. Check localDb
+        const localVisitor = localDb.getVisitorByCPF(rawCpf);
+        if (localVisitor) {
+          setError('Você já possui uma conta! Por favor, utilize a tela de Acesso para Visitantes.');
+          setShowLoginRedirect(true);
+          return;
+        }
+
+        // 2. Check remote
+        try {
+          const response = await api.get(`/checkins/verify/${rawCpf}`);
+          if (response.data && response.data.success) {
+            setError('Este CPF já está registrado. Por favor, acesse pelo Login.');
+            setShowLoginRedirect(true);
+            return;
+          }
+        } catch (err) {
+          // If 404, it means doesn't exist, which is what we want for a new check-in
+          console.log('Async check: User not found (OK for new check-in)');
+        }
+
+        setStep(2);
+      } finally {
+        setLoading(false);
+      }
       return;
     }
 
@@ -247,9 +278,18 @@ export function CheckIn() {
             <motion.div 
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="p-4 bg-red-50 border border-red-100 rounded-2xl text-red-600 text-[10px] font-black uppercase tracking-widest text-center"
+              className="p-4 bg-red-50 border border-red-100 rounded-2xl text-red-600 text-[10px] font-black uppercase tracking-widest text-center flex flex-col gap-3"
             >
-              ⚠️ {error}
+              <span>⚠️ {error}</span>
+              {showLoginRedirect && (
+                <button
+                  type="button"
+                  onClick={() => navigate('/')}
+                  className="bg-red-600 text-white py-3 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-700 transition-colors shadow-lg shadow-red-200"
+                >
+                  Ir para Acesso de Visitantes
+                </button>
+              )}
             </motion.div>
           )}
 
