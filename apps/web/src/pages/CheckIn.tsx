@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import { localDb } from '../services/localDb';
-import { ClipboardCheck, ArrowRight } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { ClipboardCheck, ChevronRight } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export function CheckIn() {
   const [formData, setFormData] = useState({
@@ -18,6 +18,8 @@ export function CheckIn() {
   });
   const [showEmail, setShowEmail] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
   const navigate = useNavigate();
 
   const handleCPFChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -42,12 +44,12 @@ export function CheckIn() {
     }
 
     if (formData.cpf.length < 14) {
-      alert('CPF incompleto.');
+      setError('Por favor, insira um CPF válido com 11 dígitos.');
       return;
     }
 
-    if (formData.name.trim().length === 0) {
-      alert('Por favor, insira um nome válido.');
+    if (!formData.name.trim() || formData.name.trim().split(' ').length < 2) {
+      setError('Por favor, insira seu nome completo.');
       return;
     }
 
@@ -75,11 +77,13 @@ export function CheckIn() {
     } catch (error) {
       console.error('Checkin failed, saving for sync:', error);
       localDb.addToSyncQueue(checkinData);
-      navigate('/guide');
+      setSuccess(true);
+      setTimeout(() => navigate('/guide'), 1500);
     } finally {
-      setLoading(false);
+      // Keep loading false, success might be true
     }
   };
+
 
   return (
     <div className="min-h-screen bg-slate-50 py-12 px-4 flex items-center justify-center">
@@ -93,7 +97,12 @@ export function CheckIn() {
             <ClipboardCheck className="w-8 h-8" />
           </div>
           <h1 className="text-3xl font-sora font-black text-slate-900 uppercase">PULSO</h1>
-          <p className="text-slate-500 text-sm mt-2">Identificação para acesso e guia digital</p>
+          <div className="flex items-center justify-center gap-2 mt-2">
+            <div className="px-2 py-1 bg-primary/10 rounded-md">
+              <span className="text-[10px] font-black text-primary uppercase">Cadastro Único</span>
+            </div>
+            <p className="text-slate-400 text-xs font-medium">Finalize para liberar o Guia</p>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
@@ -216,19 +225,51 @@ export function CheckIn() {
               </select>
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-primary text-white py-5 rounded-2xl font-black text-lg shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 mt-4"
-          >
-            {loading ? 'Processando...' : (
-              <>
-                Finalizar Check-in
-                <ArrowRight className="w-5 h-5" />
-              </>
-            )}
-          </button>
+          {error && (
+            <motion.div 
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="p-4 bg-red-50 border border-red-100 rounded-2xl text-red-600 text-xs font-bold"
+            >
+              ⚠️ {error}
+            </motion.div>
+          )}
+
+          <div className="pt-4">
+            <motion.button 
+              type="submit"
+              disabled={loading || success}
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.98 }}
+              className={`w-full bg-slate-900 text-white p-5 rounded-3xl font-black uppercase text-sm tracking-widest flex items-center justify-center gap-2 shadow-2xl transition-all ${loading || success ? 'opacity-70 cursor-not-allowed' : 'active:scale-[0.98]'}`}
+            >
+              {loading ? 'Processando...' : success ? 'Sucesso!' : 'Confirmar Check-in'}
+              <ChevronRight size={18} />
+            </motion.button>
+          </div>
         </form>
+
+        <AnimatePresence>
+          {success && (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-white/90 backdrop-blur-sm flex flex-col items-center justify-center rounded-3xl z-50 p-8 text-center"
+            >
+              <motion.div 
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: "spring", stiffness: 200, damping: 15 }}
+                className="w-20 h-20 bg-green-500 text-white rounded-full flex items-center justify-center mb-6 shadow-xl shadow-green-200"
+              >
+                <ClipboardCheck size={40} />
+              </motion.div>
+              <h2 className="text-2xl font-sora font-black text-slate-900 uppercase">Check-in Realizado!</h2>
+              <p className="text-slate-500 mt-2">Bem-vindo ao Pulso Cultural. Redirecionando para o guia...</p>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.div>
     </div>
   );

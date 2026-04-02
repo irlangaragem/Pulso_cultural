@@ -127,7 +127,9 @@ export function Guide() {
                   <p className="text-xs text-slate-500 font-medium">{work.artist}</p>
                 </div>
                 
-                <button 
+                <motion.button 
+                   whileHover={{ scale: 1.1 }}
+                   whileTap={{ scale: 0.9 }}
                    onClick={() => togglePlay(work)}
                    className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all ${playingId === work.id ? 'bg-primary text-white shadow-lg shadow-primary/30' : 'bg-slate-50 text-slate-400 hover:bg-slate-100'}`}
                 >
@@ -136,7 +138,7 @@ export function Guide() {
                   ) : (
                     playingId === work.id ? <Pause fill="white" /> : <Play fill="currentColor" className="ml-1" />
                   )}
-                </button>
+                </motion.button>
              </div>
 
              {playingId === work.id && (
@@ -170,13 +172,17 @@ export function Guide() {
 
       <footer className="fixed bottom-0 left-0 w-full p-6 pointer-events-none">
          <div className="max-w-2xl mx-auto pointer-events-auto">
-            <button 
+            <motion.button 
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => navigate('/feedback')}
-              className="w-full bg-slate-900 text-white p-5 rounded-2xl font-black uppercase text-sm tracking-widest flex items-center justify-center gap-2 shadow-2xl active:scale-[0.98] transition-transform"
+              className="w-full bg-slate-900 text-white p-5 rounded-2xl font-black uppercase text-sm tracking-widest flex items-center justify-center gap-2 shadow-2xl active:scale-[0.98] transition-all"
             >
-               Concluir Experiência
+               Finalizar e Avaliar
                <ChevronRight size={18} />
-            </button>
+            </motion.button>
          </div>
       </footer>
     </div>
