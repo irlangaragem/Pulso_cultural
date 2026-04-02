@@ -4,6 +4,7 @@ import { api } from '../services/api';
 import { localDb } from '../services/localDb';
 import { ClipboardCheck, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useLocation } from 'react-router-dom';
 
 export function CheckIn() {
   const [formData, setFormData] = useState({
@@ -23,6 +24,16 @@ export function CheckIn() {
   const [step, setStep] = useState(1);
   const [showLoginRedirect, setShowLoginRedirect] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Handle pre-filled CPF from query params
+  React.useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const cpfParam = params.get('cpf');
+    if (cpfParam) {
+      setFormData(prev => ({ ...prev, cpf: cpfParam }));
+    }
+  }, [location.search]);
 
   const handleCPFChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value.replace(/\D/g, '');
@@ -76,13 +87,12 @@ export function CheckIn() {
         try {
           const response = await api.get(`/checkins/verify/${rawCpf}`);
           if (response.data && response.data.success) {
-            setError('Este CPF já está registrado. Por favor, acesse pelo Login.');
+            setError(`O CPF ${formData.cpf} já está registrado como ${response.data.firstName}. Por favor, acesse pelo Login.`);
             setShowLoginRedirect(true);
             return;
           }
         } catch (err) {
           // If 404, it means doesn't exist, which is what we want for a new check-in
-          console.log('Async check: User not found (OK for new check-in)');
         }
 
         setStep(2);

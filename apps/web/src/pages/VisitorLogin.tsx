@@ -76,7 +76,7 @@ export function VisitorLogin() {
         setSuccess(true);
         setTimeout(() => navigate('/guide'), 1200);
       } else {
-        setError('CPF não encontrado. Por favor, crie um novo cadastro abaixo.');
+        setError(`O CPF ${cpf} não foi encontrado. Por favor, realize um novo cadastro.`);
       }
     } finally {
       if (!success) setLoading(false);
@@ -134,9 +134,18 @@ export function VisitorLogin() {
             <motion.div 
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-red-500 text-xs font-bold text-center p-3 bg-red-50 rounded-xl"
+              className="text-red-500 text-xs font-bold text-center p-4 bg-red-50 rounded-2xl flex flex-col gap-3"
             >
-              ⚠️ {error}
+              <span>⚠️ {error}</span>
+              {error.includes('não foi encontrado') && (
+                <button
+                  type="button"
+                  onClick={() => navigate(`/checkin?cpf=${cpf}`)}
+                  className="bg-primary text-white py-3 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all shadow-lg shadow-primary/20"
+                >
+                  Criar Novo Cadastro Agora
+                </button>
+              )}
             </motion.div>
           )}
 
