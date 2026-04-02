@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
+import { localDb } from '../services/localDb';
 import { ClipboardCheck, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -10,7 +11,7 @@ export function CheckIn() {
     name: '',
     birthYear: '',
     gender: 'PREFIRO_NAO_DIZER',
-    origin: 'SALVADOR',
+    origin: 'INDICAÇÃO',
     channel: 'OUTRO',
     exhibitionId: 'default-exhibition', // For MVP simplification
     email: ''
@@ -32,14 +33,39 @@ export function CheckIn() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const currentYear = new Date().getFullYear();
+    const bYear = Number(formData.birthYear);
+    if (bYear > currentYear || currentYear - bYear > 120 || bYear < 1000) {
+      alert(`Ano de nascimento inválido. Por favor, insira um ano entre ${currentYear - 120} e ${currentYear}.`);
+      return;
+    }
+
+    if (formData.cpf.length < 14) {
+      alert('CPF incompleto.');
+      return;
+    }
+
     setLoading(true);
     try {
+      // Save locally first
+      localDb.saveVisitor({
+        cpf: formData.cpf,
+        name: formData.name,
+        birthYear: bYear,
+        gender: formData.gender,
+        origin: formData.origin,
+        email: formData.email
+      });
+
+      // Maintain API hit if needed, or simply let local DB handle it.
       await api.post('/checkins', {
         ...formData,
-        birthYear: Number(formData.birthYear)
+        birthYear: bYear
+      }).catch(e => {
+        console.warn('Backend indisponível, mas salvo localmente', e);
       });
-      alert('Check-in realizado com sucesso!');
-      navigate('/');
+      navigate('/guide');
     } catch (error) {
       alert('Erro ao realizar check-in. Tente novamente.');
     } finally {
@@ -58,7 +84,7 @@ export function CheckIn() {
           <div className="w-16 h-16 bg-primary/10 text-primary rounded-2xl flex items-center justify-center mx-auto mb-4">
             <ClipboardCheck className="w-8 h-8" />
           </div>
-          <h1 className="text-3xl font-sora font-black text-slate-900 uppercase">Check-in</h1>
+          <h1 className="text-3xl font-sora font-black text-slate-900 uppercase">PULSO</h1>
           <p className="text-slate-500 text-sm mt-2">Identificação para acesso e guia digital</p>
         </div>
 
@@ -166,15 +192,19 @@ export function CheckIn() {
 
           <div>
              <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Origem</label>
-             <select
+              <select
                 className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 focus:border-primary outline-none transition-all appearance-none"
                 value={formData.origin}
                 onChange={e => setFormData({...formData, origin: e.target.value})}
               >
-                <option value="SALVADOR">Salvador</option>
-                <option value="INTERIOR_BA">Interior da Bahia</option>
-                <option value="OUTRO_ESTADO">Outro Estado</option>
-                <option value="INTERNACIONAL">Internacional</option>
+                <option value="INDICAÇÃO">Indicação de alguém</option>
+                <option value="ESCOLA">Escola ou excursão</option>
+                <option value="REDES_SOCIAIS">Redes sociais / internet</option>
+                <option value="PASSEI_EM_FRENTE">Passei em frente</option>
+                <option value="EVENTO">Evento ou atividade</option>
+                <option value="TURISMO">Turismo / viagem</option>
+                <option value="DIVULGACAO">Divulgação (TV, cartaz, mídia)</option>
+                <option value="OUTRO">Outro</option>
               </select>
           </div>
 
