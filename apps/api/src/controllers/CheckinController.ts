@@ -114,7 +114,7 @@ export class CheckinController {
         entries,
         exits
       });
-    } catch (error) {
+    } catch {
       return res.status(500).json({ error: 'Internal server error' });
     }
   }
@@ -146,7 +146,7 @@ export class CheckinController {
       });
 
       return res.status(201).json(count);
-    } catch (error) {
+    } catch {
       return res.status(500).json({ error: 'Internal server error' });
     }
   }

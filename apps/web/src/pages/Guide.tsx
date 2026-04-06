@@ -3,12 +3,18 @@ import { Headphones, Play, Pause, ChevronRight, Info, BarChart3 } from 'lucide-r
 import { motion } from 'framer-motion';
 import { Howl } from 'howler';
 import { useNavigate } from 'react-router-dom';
-// @ts-ignore
 import { api } from '../services/api';
+
+interface Work {
+  id: string;
+  title: string;
+  artist: string;
+  audioUrl?: string;
+}
 
 export function Guide() {
   const navigate = useNavigate();
-  const [works, setWorks] = useState<any[]>([]);
+  const [works, setWorks] = useState<Work[]>([]);
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [sound, setSound] = useState<Howl | null>(null);
   const [progress, setProgress] = useState(0);
@@ -21,7 +27,7 @@ export function Guide() {
   }, []);
 
   useEffect(() => {
-    let interval: any;
+    let interval: ReturnType<typeof setInterval>;
     if (sound && playingId) {
       interval = setInterval(() => {
         const current = sound.seek() as number;
@@ -29,12 +35,12 @@ export function Guide() {
         setProgress((current / duration) * 100);
       }, 500);
     }
-    return () => clearInterval(interval);
+    return () => clearInterval(interval!);
   }, [sound, playingId]);
 
   // cognitive maintenance: suicide interface upon 12m inactivity
   useEffect(() => {
-    let timeoutId: any;
+    let timeoutId: ReturnType<typeof setTimeout>;
     const resetTimer = () => {
       clearTimeout(timeoutId);
       timeoutId = setTimeout(() => {
@@ -60,7 +66,7 @@ export function Guide() {
     };
   }, [sound]);
 
-  const togglePlay = (work: any) => {
+  const togglePlay = (work: Work) => {
     if (playingId === work.id) {
       sound?.pause();
       setPlayingId(null);

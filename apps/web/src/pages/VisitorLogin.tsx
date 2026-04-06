@@ -8,7 +8,7 @@ import { formatCPF, isValidCPF } from '../utils/cpf';
 
 export function VisitorLogin() {
   const [cpf, setCpf] = useState('');
-  const [error, setError] = useState('');
+  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [origin, setOrigin] = useState('INDICAÇÃO');
@@ -29,7 +29,7 @@ export function VisitorLogin() {
     let visitor = localDb.getVisitorByCPF(cpf);
     
     setLoading(true);
-    setError('');
+    setError(null);
 
     try {
       if (!visitor) {

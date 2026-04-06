@@ -15,15 +15,13 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
     super(props);
     this.state = { hasError: false };
   }
-  static getDerivedStateFromError(_: Error) { return { hasError: true }; }
+  static getDerivedStateFromError(_error: Error) { return { hasError: true }; }
   componentDidCatch(error: Error, errorInfo: ErrorInfo) { console.error('React Error:', error, errorInfo); }
   render() {
     if (this.state.hasError) return <div className="p-20 text-center"><h1>Algo deu errado. Verifique o console.</h1></div>;
     return this.props.children;
   }
 }
-
-
 
 import { useSyncQueue } from './services/useSyncQueue';
 

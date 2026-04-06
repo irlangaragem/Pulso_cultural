@@ -47,6 +47,17 @@ export function CheckIn() {
     setShowLoginRedirect(false); // Reset on change
   };
 
+  const handleBirthYearChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, '').slice(0, 4);
+    setFormData({ ...formData, birthYear: value });
+  };
+
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Only allow letters (including accents) and spaces
+    const value = e.target.value.replace(/[^a-zA-ZáàâãéèêíïóôõöúçñÁÀÂÃÉÈÊÍÏÓÔÕÖÚÇÑ\s]/g, '');
+    setFormData({ ...formData, name: value });
+  };
+
   const validateStep1 = () => {
     if (formData.cpf.length < 14) {
       setError('Por favor, insira um CPF válido com 11 dígitos.');
@@ -186,7 +197,7 @@ export function CheckIn() {
                     placeholder="Seu nome"
                     className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 focus:border-primary outline-none transition-all font-medium"
                     value={formData.name}
-                    onChange={e => setFormData({...formData, name: e.target.value})}
+                    onChange={handleNameChange}
                   />
                 </div>
 
@@ -194,12 +205,14 @@ export function CheckIn() {
                   <div>
                     <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 font-sora">Nascimento</label>
                     <input
-                      type="number"
+                      type="text"
+                      inputMode="numeric"
                       required
                       placeholder="Ex: 1990"
+                      maxLength={4}
                       className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 focus:border-primary outline-none transition-all font-medium"
                       value={formData.birthYear}
-                      onChange={e => setFormData({...formData, birthYear: e.target.value})}
+                      onChange={handleBirthYearChange}
                     />
                   </div>
                   <div>

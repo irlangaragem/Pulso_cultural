@@ -21,12 +21,25 @@ const C = {
 };
 
 // --- TOOLTIP ---
-const CustomTooltip = ({ active, payload, label }: any) => {
+// --- TOOLTIP ---
+interface TooltipPayload {
+  name: string;
+  value: number;
+  color?: string;
+}
+
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: TooltipPayload[];
+  label?: string;
+}
+
+const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
   if (!active || !payload?.length) return null;
   return (
     <div style={{ background: C.bgElevated, border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px 12px" }}>
       <p style={{ fontFamily: "'Space Mono', monospace", fontSize: 10, color: C.text3, margin: 0 }}>{label}</p>
-      {payload.map((p: any, i: number) => (
+      {payload.map((p, i) => (
         <p key={i} style={{ fontFamily: "Sora, sans-serif", fontSize: 13, fontWeight: 600, color: p.color || C.coral, margin: "2px 0 0" }}>
           {p.name}: {p.value.toLocaleString("pt-BR")}
         </p>
@@ -36,7 +49,16 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 // --- COMPONENTS ---
-function MetricCard({ value, label, sub, color = C.coral, large = false }: any) {
+// --- COMPONENTS ---
+interface MetricCardProps {
+  value: string | number;
+  label: string;
+  sub?: string;
+  color?: string;
+  large?: boolean;
+}
+
+function MetricCard({ value, label, sub, color = C.coral, large = false }: MetricCardProps) {
   return (
     <div style={s.metricCard}>
       <p style={{ fontFamily: "Sora, sans-serif", fontSize: large ? 36 : 28, fontWeight: 700, color, margin: 0, lineHeight: 1 }}>{value}</p>
@@ -46,7 +68,12 @@ function MetricCard({ value, label, sub, color = C.coral, large = false }: any) 
   );
 }
 
-function SectionTitle({ children, right }: any) {
+interface SectionTitleProps {
+  children: React.ReactNode;
+  right?: string;
+}
+
+function SectionTitle({ children, right }: SectionTitleProps) {
   return (
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", margin: "32px 0 16px" }}>
       <h3 style={{ fontFamily: "Sora, sans-serif", fontSize: 16, fontWeight: 700, color: C.text1, margin: 0 }}>{children}</h3>
@@ -55,7 +82,14 @@ function SectionTitle({ children, right }: any) {
   );
 }
 
-function ChartCard({ title, tag, children, minH = 220 }: any) {
+interface ChartCardProps {
+  title: string;
+  tag?: string;
+  children: React.ReactNode;
+  minH?: number;
+}
+
+function ChartCard({ title, tag, children, minH = 220 }: ChartCardProps) {
   return (
     <div style={{ ...s.card, minHeight: minH }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
@@ -67,10 +101,21 @@ function ChartCard({ title, tag, children, minH = 220 }: any) {
   );
 }
 
-function PieLegend({ data }: any) {
+interface PieData {
+  name?: string;
+  label?: string;
+  value: number;
+  color: string;
+}
+
+interface PieLegendProps {
+  data: PieData[];
+}
+
+function PieLegend({ data }: PieLegendProps) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-      {data.map((d: any, i: number) => (
+      {data.map((d, i) => (
         <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <div style={{ width: 10, height: 10, borderRadius: 3, background: d.color, flexShrink: 0 }} />
           <span style={{ fontSize: 12, color: C.text2, flex: 1 }}>{d.name || d.label}</span>
@@ -84,10 +129,29 @@ function PieLegend({ data }: any) {
 // ============================================================
 // TAB: TEMPO REAL
 // ============================================================
+interface StreamData {
+  ocupacao_atual?: number;
+  entradas_hoje?: number;
+  saidas_hoje?: number;
+  ocupacao_pico?: number;
+}
+
+interface ResumoHoje {
+  pessoasNoEspaco?: number;
+  entradasHoje?: number;
+  saidas_hoje?: number;
+  ocupacao_pico?: number;
+}
+
+interface TrendData {
+  h: string;
+  v: number;
+}
+
 function TabRealTime() {
-  const [streamData, setStreamData] = useState<any>(null);
-  const [resumoHoje, setResumoHoje] = useState<any>(null);
-  const [trends, setTrends] = useState<any[]>([]);
+  const [streamData, setStreamData] = useState<StreamData | null>(null);
+  const [resumoHoje, setResumoHoje] = useState<ResumoHoje | null>(null);
+  const [trends, setTrends] = useState<TrendData[]>([]);
 
   useEffect(() => {
     fetch(`${API_BASE_URL}/resumo/hoje`)
@@ -97,15 +161,17 @@ function TabRealTime() {
 
     fetch(`${API_BASE_URL}/analytics/trends/default-exhibition`)
       .then(res => res.json())
-      .then(data => setTrends(data.map((d: any) => ({ h: d.hour, v: d.entries })) ))
+      .then(data => setTrends(data.map((d: { hour: string; entries: number }) => ({ h: d.hour, v: d.entries })) ))
       .catch(err => console.error("Erro trends:", err));
 
     const eventSource = new EventSource(`${API_BASE_URL}/stream`);
-    eventSource.onmessage = (event) => {
+    eventSource.onmessage = (event: MessageEvent) => {
       try {
         const data = JSON.parse(event.data);
         setStreamData(data);
-      } catch (err) {}
+      } catch {
+        // Ignore parse errors from stream
+      }
     };
 
     return () => {
@@ -151,8 +217,15 @@ function TabRealTime() {
 // ============================================================
 // TAB: PERFIL DO PÚBLICO
 // ============================================================
+interface DemoData {
+  gender: { name: string; value: number }[];
+  ages: { faixa: string; v: number }[];
+  origin: { name: string; value: number }[];
+  total: number;
+}
+
 function TabProfile() {
-  const [demoData, setDemoData] = useState<any>({ gender: [], ages: [], origin: [], total: 0 });
+  const [demoData, setDemoData] = useState<DemoData>({ gender: [], ages: [], origin: [], total: 0 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -175,12 +248,12 @@ function TabProfile() {
   const GENDER_COLORS = ["#D4267E", "#E8554E", "#F28C38", "#3D3240"];
   const ORIGIN_COLORS = ["#E8554E", "#D4267E", "#F28C38", "#F2B63C", "#48BB78"];
 
-  const genderWithColors = demoData.gender.map((g: any, i: number) => ({
+  const genderWithColors = demoData.gender.map((g, i) => ({
     ...g,
     color: GENDER_COLORS[i % GENDER_COLORS.length]
   }));
 
-  const originWithColors = demoData.origin.map((o: any, i: number) => ({
+  const originWithColors = demoData.origin.map((o, i) => ({
     ...o,
     color: ORIGIN_COLORS[i % ORIGIN_COLORS.length]
   }));
@@ -239,7 +312,7 @@ function TabProfile() {
 
       <ChartCard title="Como soube da exposição" tag="PERGUNTA NA ENTRADA">
         <ResponsiveContainer width="100%" height={180}>
-          <BarChart data={originWithColors.map((o: any) => ({ canal: o.name, v: o.value }))} layout="vertical" barCategoryGap="20%">
+          <BarChart data={originWithColors.map((o: { name: string; value: number }) => ({ canal: o.name, v: o.value }))} layout="vertical" barCategoryGap="20%">
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" horizontal={false} />
             <XAxis type="number" tick={{ fontSize: 10, fill: C.text3 }} axisLine={false} tickLine={false} unit="%" />
             <YAxis dataKey="canal" type="category" tick={{ fontSize: 11, fill: C.text2 }} axisLine={false} tickLine={false} width={110} />
@@ -255,9 +328,22 @@ function TabProfile() {
 // ============================================================
 // TAB: HISTÓRICO & RECORRÊNCIA
 // ============================================================
+interface StatusResumo {
+  camera: number;
+  checkins: number;
+  retorno: number;
+  multiplicador: number;
+}
+
+interface HistoricoDiario {
+  dia: string;
+  entradas: number;
+  saidas: number;
+}
+
 function TabHistory() {
-  const [historicoDiario, setHistoricoDiario] = useState<any[]>([]);
-  const [resumo, setResumo] = useState<any>(null);
+  const [historicoDiario, setHistoricoDiario] = useState<HistoricoDiario[]>([]);
+  const [resumo, setResumo] = useState<StatusResumo | null>(null);
 
   useEffect(() => {
     fetch(`${API_BASE_URL}/historico`)
@@ -269,7 +355,7 @@ function TabHistory() {
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {
-          const formatado = data.map((d: any) => {
+          const formatado = data.map((d: { data: string; entradas: number; saidas: number }) => {
             const dateParts = d.data.split('-');
             const dateStr = dateParts.length === 3 ? `${dateParts[2]}/${dateParts[1]}` : d.data;
             return { dia: dateStr, entradas: d.entradas, saidas: d.saidas };
@@ -301,7 +387,7 @@ function TabHistory() {
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie data={recurrenceData} dataKey="value" cx="50%" cy="50%" innerRadius={30} outerRadius={55} stroke="none" paddingAngle={3}>
-                    {recurrenceData.map((d: any, i: number) => <Cell key={i} fill={d.color} />)}
+                    {recurrenceData.map((d, i) => <Cell key={i} fill={d.color} />)}
                   </Pie>
                 </PieChart>
               </ResponsiveContainer>
@@ -558,13 +644,13 @@ export function Dashboard() {
 // ============================================================
 // STYLES
 // ============================================================
-const s: any = {
+const s: Record<string, React.CSSProperties> = {
   root: { display: "flex", minHeight: "100vh", background: C.bgDeep, color: C.text1 },
   nav: { 
-    width: 200, background: C.bgSurface, borderRight: `1px solid ${C.border}`, 
+    width: "200px", background: C.bgSurface, borderRight: `1px solid ${C.border}`, 
     display: "flex", flexDirection: "column", padding: "20px 0" 
   },
-  navBrand: { padding: "0 20px 24px", borderBottom: `1px solid ${C.border}`, marginBottom: 16 },
+  navBrand: { padding: "0 20px 24px", borderBottom: `1px solid ${C.border}`, marginBottom: "16px" },
   navTabs: { display: "flex", flexDirection: "column", gap: 4, padding: "0 10px" },
   navTab: { 
     display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 10, 
@@ -589,5 +675,5 @@ const s: any = {
   formGrid: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 },
   formGroup: { display: "flex", flexDirection: "column", gap: 4 },
   formLabel: { fontSize: 11, color: C.text3 },
-  formInput: { background: "rgba(255,255,255,0.05)", border: `1px solid rgba(255,255,255,0.1)`, borderRadius: 8, padding: "10px", color: C.text1, width: "100%", marginBottom: 8 }
+  formInput: { background: "rgba(255,255,255,0.05)", border: `1px solid rgba(255,255,255,0.1)`, borderRadius: 8, padding: "10px", color: C.text1, width: "100%", marginBottom: "8px" }
 };

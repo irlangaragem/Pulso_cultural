@@ -16,7 +16,7 @@ export function useSyncQueue() {
           // Attempt to sync each checkin
           await api.post('/checkins', item);
           console.log(`[Sync] Successfully synced checkin for ${item.cpf}`);
-        } catch (error) {
+        } catch {
           console.warn(`[Sync] Failed to sync checkin for ${item.cpf}, will retry later.`);
           remainingItems.push(item);
         }

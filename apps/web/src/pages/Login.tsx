@@ -25,8 +25,9 @@ export function Login() {
       
       setAuth(user, token);
       navigate('/dashboard');
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Erro ao realizar login. Verifique suas credenciais.');
+    } catch (err: unknown) {
+      const message = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
+      setError(message || 'Erro ao realizar login. Verifique suas credenciais.');
     } finally {
       setLoading(false);
     }

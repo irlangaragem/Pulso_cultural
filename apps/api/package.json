@@ -2,6 +2,7 @@
   "name": "@pulso-cultural/api",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "main": "src/server.ts",
   "scripts": {
     "dev": "tsx watch src/server.ts",
@@ -9,7 +10,8 @@
     "postinstall": "prisma generate",
     "start": "npx prisma migrate deploy && npx prisma db seed && node dist/server.js",
     "db:generate": "prisma generate",
-    "db:migrate": "prisma migrate dev"
+    "db:migrate": "prisma migrate dev",
+    "lint": "eslint ."
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"
@@ -26,14 +28,18 @@
     "tsx": "^4.21.0"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.4",
     "@types/bcryptjs": "^2.4.6",
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^20.11.20",
     "@types/socket.io": "^3.0.1",
+    "eslint": "^9.39.4",
+    "globals": "^17.4.0",
     "prisma": "^5.10.0",
     "ts-node-dev": "^2.0.0",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "typescript-eslint": "^8.58.0"
   }
 }

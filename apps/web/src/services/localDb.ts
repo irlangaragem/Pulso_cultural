@@ -47,27 +47,29 @@ export const localDb = {
 
     try {
       localStorage.setItem(DB_KEY, JSON.stringify(visitors));
-    } catch (e) {
-      console.warn('Local storage quota exceeded. Cleaning old data...', e);
+    } catch {
+      console.warn('Local storage quota exceeded. Cleaning old data...');
       // Basic cleanup: remove oldest 5 visitors if full
       if (visitors.length > 10) {
         visitors.splice(0, 5);
         try {
           localStorage.setItem(DB_KEY, JSON.stringify(visitors));
-        } catch (inner) {}
+        } catch {
+          // Silent cleanup
+        }
       }
     }
     return existingIndex >= 0 ? visitors[existingIndex] : visitors[visitors.length - 1];
   },
 
-  getSyncQueue(): any[] {
+  getSyncQueue(): (Omit<VisitorData, 'createdAt'> & { timestamp: string })[] {
     try {
       const data = localStorage.getItem(SYNC_KEY);
       return data ? JSON.parse(data) : [];
-    } catch (e) { return []; }
+    } catch { return []; }
   },
 
-  addToSyncQueue(payload: any) {
+  addToSyncQueue(payload: Omit<VisitorData, 'createdAt'>) {
     const queue = this.getSyncQueue();
     queue.push({
       ...payload,
@@ -75,7 +77,9 @@ export const localDb = {
     });
     try {
       localStorage.setItem(SYNC_KEY, JSON.stringify(queue));
-    } catch (e) {}
+    } catch {
+      // Ignore storage errors on sync queue
+    }
   },
 
   clearSyncQueue() {

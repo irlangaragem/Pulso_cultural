@@ -1,76 +1,45 @@
 import { Request, Response } from 'express';
-import { prisma } from '../lib/prisma';
-import { startOfDay, endOfDay } from 'date-fns';
+
+const EXTERNAL_API_URL = 'https://pulsocultural-production.up.railway.app';
+
+interface ResumoHojeResponse {
+  entradas_hoje?: number;
+  saidas_hoje?: number;
+  ocupacao_atual?: number;
+  ocupacao_pico?: number;
+  atualizado_em?: string;
+}
 
 export const DashboardController = {
   async getResumoHoje(req: Request, res: Response) {
     try {
-      const today = new Date();
-      const start = startOfDay(today);
-      const end = endOfDay(today);
-
-      const [entries, exits, checkins] = await Promise.all([
-        prisma.cameraCount.count({ where: { type: 'ENTRADA', timestamp: { gte: start, lte: end } } }),
-        prisma.cameraCount.count({ where: { type: 'SAIDA', timestamp: { gte: start, lte: end } } }),
-        prisma.checkin.count({ where: { createdAt: { gte: start, lte: end } } })
-      ]);
-
-      const currentOccupancy = entries - exits > 0 ? entries - exits : checkins;
-
-      return res.json({
-        pessoasNoEspaco: currentOccupancy,
-        entradasHoje: entries,
-        checkinsHoje: checkins,
-        tempoMedio: 34 // Keep static or estimate if possible
-      });
+      const response = await fetch(`${EXTERNAL_API_URL}/resumo/hoje`);
+      const data = await response.json();
+      return res.json(data);
     } catch (error) {
-      console.error(error);
+      console.error('API /resumo/hoje fetch error:', error);
       return res.status(500).json({ error: 'Internal server error' });
     }
   },
 
   async getResumoHistorico(req: Request, res: Response) {
     try {
-      const totalVisitors = await prisma.visitor.count();
-      const totalEntries = await prisma.cameraCount.count({ where: { type: 'ENTRADA' } });
-      const adesao = totalEntries > 0 ? Math.round((totalVisitors / totalEntries) * 100) : 0;
-
-      // Mediana de idade
-      const visitors = await prisma.visitor.findMany({ select: { birthYear: true } });
-      const currentYear = new Date().getFullYear();
-      const ages = visitors.map(v => currentYear - v.birthYear).sort((a, b) => a - b);
-      const median = ages.length > 0 ? ages[Math.floor(ages.length / 2)] : 0;
-
-      return res.json({
-        visitantes: totalVisitors,
-        adesao: adesao,
-        idadeMediana: median
-      });
+      const response = await fetch(`${EXTERNAL_API_URL}/resumo/historico`);
+      const data = await response.json();
+      return res.json(data);
     } catch (error) {
-       return res.status(500).json({ error: 'Internal server error' });
+      console.error('API /resumo/historico fetch error:', error);
+      return res.status(500).json({ error: 'Internal server error' });
     }
   },
 
   async getHistorico(req: Request, res: Response) {
     try {
-      const camera = await prisma.cameraCount.count({ where: { type: 'ENTRADA' } });
-      const checkins = await prisma.checkin.count();
-      
-      // Recorrência: Visitantes com mais de um checkin
-      const recurrence_count = await prisma.$queryRaw<any[]>`
-        SELECT COUNT(*) as count FROM (
-          SELECT visitorId FROM Checkin GROUP BY visitorId HAVING COUNT(*) > 1
-        ) as sub
-      `;
-      const total_returning = Number(recurrence_count[0]?.count || 0);
-
-      return res.json({
-        camera,
-        checkins,
-        retorno: checkins > 0 ? Math.round((total_returning / checkins) * 100) : 0,
-        multiplicador: checkins > 0 ? (camera / checkins).toFixed(1) : 0
-      });
+      const response = await fetch(`${EXTERNAL_API_URL}/historico`);
+      const data = await response.json();
+      return res.json(data);
     } catch (error) {
+      console.error('API /historico fetch error:', error);
       return res.status(500).json({ error: 'Internal server error' });
     }
   },
@@ -79,25 +48,25 @@ export const DashboardController = {
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
-
     res.write('retry: 10000\n\n');
 
     const interval = setInterval(async () => {
       try {
-        const today = new Date();
-        const start = startOfDay(today);
-        const [entries, exits] = await Promise.all([
-           prisma.cameraCount.count({ where: { type: 'ENTRADA', timestamp: { gte: start } } }),
-           prisma.cameraCount.count({ where: { type: 'SAIDA', timestamp: { gte: start } } })
-        ]);
-        const data = { 
-          ocupacao_atual: entries - exits,
-          entradas_hoje: entries,
-          saidas_hoje: exits,
-          timestamp: new Date()
+        const response = await fetch(`${EXTERNAL_API_URL}/resumo/hoje`);
+        const result = (await response.json()) as ResumoHojeResponse;
+
+        const data = {
+          entradas_hoje: result.entradas_hoje,
+          saidas_hoje: result.saidas_hoje,
+          ocupacao_atual: result.ocupacao_atual,
+          ocupacao_pico: result.ocupacao_pico,
+          timestamp: result.atualizado_em || new Date().toISOString()
         };
+
         res.write(`data: ${JSON.stringify(data)}\n\n`);
-      } catch (err) {}
+      } catch (err) {
+        console.error('Stream fetch error:', err);
+      }
     }, 10000);
 
     req.on('close', () => {

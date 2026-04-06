@@ -59,8 +59,7 @@ export const AnalyticsController = {
       });
 
       return res.json(trends);
-    } catch (error) {
-      console.error(error);
+    } catch {
       return res.status(500).json({ error: 'Internal server error' });
     }
   },
@@ -75,23 +74,23 @@ export const AnalyticsController = {
       }
 
       // Gender
-      const genderMap = visitors.reduce((acc: any, v) => {
+      const genderMap = visitors.reduce((acc: Record<string, number>, v) => {
         acc[v.gender] = (acc[v.gender] || 0) + 1;
         return acc;
       }, {});
       const gender = Object.entries(genderMap).map(([name, count]) => ({
         name,
-        value: Math.round(((count as number) / total) * 100)
+        value: Math.round((count / total) * 100)
       }));
 
       // Origin
-      const originMap = visitors.reduce((acc: any, v) => {
+      const originMap = visitors.reduce((acc: Record<string, number>, v) => {
         acc[v.origin] = (acc[v.origin] || 0) + 1;
         return acc;
       }, {});
       const origin = Object.entries(originMap).map(([name, count]) => ({
         name,
-        value: Math.round(((count as number) / total) * 100)
+        value: Math.round((count / total) * 100)
       }));
 
       // Ages
