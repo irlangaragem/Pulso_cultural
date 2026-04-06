@@ -1,7 +1,30 @@
 import { useState, useEffect } from "react";
 import { BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { SystemHealth } from "../components/SystemHealth";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "https://pulsocultural-production.up.railway.app";
+
+// --- TELEMETRY ---
+function sendTelemetry(event: string, data?: Record<string, unknown>) {
+  fetch(`${API_BASE_URL}/telemetry`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ type: 'info', event, data, timestamp: new Date().toISOString() }),
+  }).catch(() => { /* silent fail — telemetry is best-effort */ });
+}
+
+function sendTelemetryError(event: string, error: unknown) {
+  fetch(`${API_BASE_URL}/telemetry`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      type: 'error',
+      event,
+      error: error instanceof Error ? error.message : String(error),
+      timestamp: new Date().toISOString(),
+    }),
+  }).catch(() => {});
+}
 // ============================================================
 // PULSO CULTURAL — Dashboard do Gestor
 // MAM Bahia · Protótipo
@@ -156,15 +179,31 @@ function TabRealTime() {
   useEffect(() => {
     fetch(`${API_BASE_URL}/resumo/hoje`)
       .then(res => res.json())
-      .then(data => setResumoHoje(data))
-      .catch(err => console.error("Erro resumo/hoje:", err));
+      .then(data => {
+        setResumoHoje(data);
+        sendTelemetry('fetch_resumo_hoje_success');
+      })
+      .catch(err => {
+        console.error("Erro resumo/hoje:", err);
+        sendTelemetryError('fetch_resumo_hoje_error', err);
+      });
 
     fetch(`${API_BASE_URL}/analytics/trends/default-exhibition`)
       .then(res => res.json())
-      .then(data => setTrends(data.map((d: { hour: string; entries: number }) => ({ h: d.hour, v: d.entries })) ))
-      .catch(err => console.error("Erro trends:", err));
+      .then(data => {
+        setTrends(data.map((d: { hour: string; entries: number }) => ({ h: d.hour, v: d.entries })) );
+        sendTelemetry('fetch_trends_success');
+      })
+      .catch(err => {
+        console.error("Erro trends:", err);
+        sendTelemetryError('fetch_trends_error', err);
+      });
 
     const eventSource = new EventSource(`${API_BASE_URL}/stream`);
+    
+    eventSource.onopen = () => sendTelemetry('sse_stream_connected');
+    eventSource.onerror = (err) => sendTelemetryError('sse_stream_error', err);
+
     eventSource.onmessage = (event: MessageEvent) => {
       try {
         const data = JSON.parse(event.data);
@@ -234,10 +273,12 @@ function TabProfile() {
       .then(data => {
         setDemoData(data);
         setLoading(false);
+        sendTelemetry('fetch_demographics_success');
       })
       .catch(err => {
         console.error("Erro demographics:", err);
         setLoading(false);
+        sendTelemetryError('fetch_demographics_error', err);
       });
   }, []);
 
@@ -348,8 +389,14 @@ function TabHistory() {
   useEffect(() => {
     fetch(`${API_BASE_URL}/historico`)
       .then(res => res.json())
-      .then(data => setResumo(data))
-      .catch(err => console.error(err));
+      .then(data => {
+        setResumo(data);
+        sendTelemetry('fetch_historico_success');
+      })
+      .catch(err => {
+        console.error(err);
+        sendTelemetryError('fetch_historico_error', err);
+      });
 
     fetch(`${API_BASE_URL}/resumo/historico`)
       .then(res => res.json())
@@ -361,9 +408,13 @@ function TabHistory() {
             return { dia: dateStr, entradas: d.entradas, saidas: d.saidas };
           });
           setHistoricoDiario(formatado.reverse());
+          sendTelemetry('fetch_resumo_historico_success');
         }
       })
-      .catch(err => console.error(err));
+      .catch(err => {
+        console.error(err);
+        sendTelemetryError('fetch_resumo_historico_error', err);
+      });
   }, []);
 
   const recurrenceData = [
@@ -626,7 +677,10 @@ export function Dashboard() {
       <main style={s.main}>
         <header style={s.header}>
           <h1 style={s.pageTitle}>{tabs.find(t => t.id === tab)?.label}</h1>
-          <div style={s.liveTag}><span style={s.liveDot} /><span>AO VIVO</span></div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <SystemHealth apiBaseUrl={API_BASE_URL} />
+            <div style={s.liveTag}><span style={s.liveDot} /><span>AO VIVO</span></div>
+          </div>
         </header>
 
         <div style={s.content}>

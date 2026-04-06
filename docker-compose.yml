@@ -14,11 +14,34 @@ services:
       - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
 
-  redis:
-    image: redis:6-alpine
-    container_name: pulsocultural-redis
+  # Optional: API service for local development
+  api:
+    build: 
+      context: .
+      dockerfile: ./apps/api/Dockerfile
+    container_name: pulsocultural-api
     ports:
-      - "6379:6379"
+      - "3333:3333"
+    environment:
+      - DATABASE_URL=postgresql://user:pass@postgres:5432/pulsocultural
+      - JWT_SECRET=development_secret
+      - PORT=3333
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+  # Optional: Web service for local preview
+  web:
+    build:
+      context: .
+      dockerfile: ./apps/web/Dockerfile
+    container_name: pulsocultural-web
+    ports:
+      - "8080:8080"
+    environment:
+      - VITE_API_URL=http://localhost:3333
+    depends_on:
+      - api
     restart: unless-stopped
 
 volumes:

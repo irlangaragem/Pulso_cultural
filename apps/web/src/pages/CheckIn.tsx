@@ -5,6 +5,7 @@ import { localDb } from '../services/localDb';
 import { ClipboardCheck, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLocation } from 'react-router-dom';
+import { isValidCPF } from '../utils/cpf';
 
 export function CheckIn() {
   const [formData, setFormData] = useState({
@@ -59,8 +60,8 @@ export function CheckIn() {
   };
 
   const validateStep1 = () => {
-    if (formData.cpf.length < 14) {
-      setError('Por favor, insira um CPF válido com 11 dígitos.');
+    if (!isValidCPF(formData.cpf)) {
+      setError('Por favor, insira um CPF válido.');
       return false;
     }
     if (!formData.name.trim() || formData.name.trim().split(' ').length < 2) {

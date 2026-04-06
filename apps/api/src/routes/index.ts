@@ -5,10 +5,13 @@ import { checkinRoutes } from './checkin.routes';
 import { authRoutes } from './auth.routes';
 import { analyticsRoutes } from './analytics.routes';
 import { dashboardRoutes } from './dashboard.routes';
+import { healthRoutes } from './health.routes';
+import { telemetryRoutes } from './telemetry.routes';
 
 const routes = Router();
 
-routes.get('/health', (req, res) => res.json({ status: 'ok', timestamp: new Date() }));
+routes.use('/health', healthRoutes);
+routes.use('/telemetry', telemetryRoutes);
 routes.use('/auth', authRoutes);
 routes.use('/analytics', analyticsRoutes);
 
