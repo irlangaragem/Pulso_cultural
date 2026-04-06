@@ -49,7 +49,13 @@ export function VisitorLogin() {
             });
           }
         } catch (err) {
-          console.warn('Busca remota falhou ou não existe', err);
+          console.error('Erro na verificação remota:', err);
+          const isNetworkError = !window.navigator.onLine;
+          if (isNetworkError) {
+             setError('Você parece estar offline. Tente novamente quando estiver conectado.');
+             setLoading(false);
+             return;
+          }
         }
       }
 

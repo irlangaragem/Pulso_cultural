@@ -7,6 +7,7 @@ import { Guide } from './pages/Guide';
 import { Login } from './pages/Login';
 import { VisitorLogin } from './pages/VisitorLogin';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { DashErrorBoundary } from './components/DashErrorBoundary';
 
 console.log('App loading...');
 
@@ -37,7 +38,11 @@ function App() {
         <Route path="/guide" element={<Guide />} />
         <Route path="/feedback" element={<Feedback />} />
         <Route element={<ProtectedRoute />}>
-          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/dashboard" element={
+            <DashErrorBoundary>
+              <Dashboard />
+            </DashErrorBoundary>
+          } />
         </Route>
       </Routes>
     </ErrorBoundary>
