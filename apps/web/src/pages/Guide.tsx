@@ -169,13 +169,18 @@ export function Guide() {
               </div>
 
               {playingId === w.id && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10, paddingTop: 10, borderTop: '1px solid rgba(255,255,255,0.04)' }}>
-                  <div style={{ flex: 1, height: 3, background: 'rgba(255,255,255,0.06)', borderRadius: 2, overflow: 'hidden' }}>
-                    <div style={{ width: `${progress}%`, height: '100%', background: 'linear-gradient(90deg, #E8554E, #D4267E)', borderRadius: 2, transition: 'width 0.5s' }} />
+                <div style={{ marginTop: 12, padding: '12px', background: 'rgba(232, 85, 78, 0.05)', borderRadius: 10, border: '1px solid rgba(232, 85, 78, 0.1)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div className="v-live-dot" style={{ width: 6, height: 6, backgroundColor: '#E8554E' }} />
+                    <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, color: '#E8554E', letterSpacing: 1 }}>OUVINDO ÁUDIO-GUIA</span>
+                    <div style={{ flex: 1 }} />
+                    <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, color: '#6B5A60' }}>
+                      {Math.floor(progress / 100 * 180)}s / 180s
+                    </span>
                   </div>
-                  <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, color: '#6B5A60' }}>
-                    {Math.floor(progress / 100 * 180)}s
-                  </span>
+                  <div style={{ flex: 1, height: 4, background: 'rgba(255,255,255,0.06)', borderRadius: 2, overflow: 'hidden', marginTop: 8 }}>
+                    <div style={{ width: `${progress}%`, height: '100%', background: 'linear-gradient(90deg, #E8554E, #D4267E)', borderRadius: 2, transition: 'width 0.3s linear' }} />
+                  </div>
                 </div>
               )}
 

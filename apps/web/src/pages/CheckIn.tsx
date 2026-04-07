@@ -8,7 +8,7 @@ import { VisitorLayout } from '../components/VisitorLayout';
 import { PulseSymbol } from '../components/PulseSymbol';
 
 const GENEROS = ['Feminino', 'Masculino', 'Não-binário', 'Prefiro não dizer'];
-const ORIGENS = ['Salvador', 'Interior da Bahia', 'Outro estado', 'Turista internacional'];
+const ORIGENS = ['Salvador', 'Bahia (Interior)', 'Outro Estado', 'Internacional'];
 
 const GENDER_MAP: Record<string, string> = {
   'Feminino': 'FEMININO',
@@ -26,6 +26,7 @@ export function CheckIn() {
     nascimento: '',
     genero: '',
     origem: '',
+    origemDetalhe: '',
   });
 
   const [consent, setConsent] = useState(false);
@@ -75,6 +76,7 @@ export function CheckIn() {
     form.nascimento.length === 4 &&
     form.genero &&
     form.origem &&
+    (form.origem === 'Salvador' || form.origem === 'Bahia (Interior)' ? true : form.origemDetalhe.trim().length > 0) &&
     consent;
 
   const handleSubmit = async () => {
@@ -127,7 +129,9 @@ export function CheckIn() {
         name: form.nome.trim(),
         birthYear: bYear,
         gender: GENDER_MAP[form.genero] || 'PREFIRO_NAO_DIZER',
-        origin: form.origem,
+        origin: form.origem === 'Salvador' || form.origem === 'Bahia (Interior)' 
+          ? form.origem 
+          : `${form.origem}: ${form.origemDetalhe}`,
         channel: 'TOTEM_PRESENCIAL',
         exhibitionId: 'default-exhibition',
       };
@@ -252,6 +256,26 @@ export function CheckIn() {
             </button>
           ))}
         </div>
+
+        {/* Origin Detail (City/Country) */}
+        {(form.origem === 'Outro Estado' || form.origem === 'Internacional') && (
+          <motion.div 
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            style={{ marginTop: 12 }}
+          >
+            <label className="v-label">Qual cidade ou país?</label>
+            <div className="v-input-sm-wrap">
+              <input
+                type="text"
+                placeholder={form.origem === 'Internacional' ? "Ex: Buenos Aires, Argentina" : "Ex: São Paulo, SP"}
+                value={form.origemDetalhe}
+                onChange={(e) => setForm({ ...form, origemDetalhe: e.target.value })}
+                className="v-input-sm"
+              />
+            </div>
+          </motion.div>
+        )}
 
         {/* Consent */}
         <div className="v-consent-row" onClick={() => setConsent(!consent)}>

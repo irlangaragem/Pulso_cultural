@@ -4,6 +4,15 @@
 
 ---
 
+## Product Intent & Identity [SOURCE_OF_TRUTH]
+
+The core vision of this project is defined in the **[Product Intent Specification](file:///c:/Users/irlan/Desktop/Pulso%20cultura/INTEGRITY_SPEC.md)**.
+- **Central Concept**: Every visitor = a "pulse" of cultural impact.
+- **Language**: Use terms like "pulso", "pulsar", "vivo", "experiência".
+- **Goal**: Measure social relevance with data truth (camera) and engagement (check-in).
+
+---
+
 ## Implementation Order (Dependency Graph)
 
 ```

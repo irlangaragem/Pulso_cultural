@@ -31,3 +31,8 @@ dist-ssr
 miniconda3/
 push_error.log
 package-lock.json
+# Tool-specific and temporary files
+.gemini/
+plano_texto.txt
+*.docx
+build_errors*.txt

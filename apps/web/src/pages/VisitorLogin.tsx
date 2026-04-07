@@ -34,6 +34,7 @@ export function VisitorLogin() {
     }
 
     let visitor = localDb.getVisitorByCPF(cpf);
+    const rawCpf = cpf.replace(/\D/g, '');
 
     setLoading(true);
     setError(null);
@@ -41,7 +42,6 @@ export function VisitorLogin() {
     try {
       if (!visitor) {
         try {
-          const rawCpf = cpf.replace(/\D/g, '');
           const response = await api.get(`/checkins/verify/${rawCpf}`);
           if (response.data && response.data.success) {
             visitor = localDb.saveVisitor({
@@ -55,11 +55,6 @@ export function VisitorLogin() {
           }
         } catch (err) {
           console.error('Erro na verificação remota:', err);
-          if (!window.navigator.onLine) {
-            setError('Você parece estar offline.');
-            setLoading(false);
-            return;
-          }
         }
       }
 
@@ -93,7 +88,8 @@ export function VisitorLogin() {
         setSuccess(true);
         setTimeout(() => navigate('/guide'), 1500);
       } else {
-        setError(`CPF não encontrado. Crie um novo cadastro.`);
+        // SILENT REDIRECT FOR NEW USERS
+        navigate(`/checkin?cpf=${cpf}`);
       }
     } finally {
       if (!success) setLoading(false);
@@ -183,16 +179,6 @@ export function VisitorLogin() {
               className="v-error"
             >
               ⚠️ {error}
-              {error.includes('não encontrado') && (
-                <button
-                  type="button"
-                  onClick={() => navigate(`/checkin?cpf=${cpf}`)}
-                  className="v-btn-primary"
-                  style={{ marginTop: 10, fontSize: 12, padding: '10px 16px' }}
-                >
-                  Criar Novo Cadastro
-                </button>
-              )}
             </motion.div>
           )}
         </AnimatePresence>
@@ -205,16 +191,6 @@ export function VisitorLogin() {
           disabled={!isComplete || loading}
         >
           {loading ? 'Validando...' : 'Pulsar'}
-        </button>
-
-        {/* Create account link */}
-        <button
-          type="button"
-          className="v-btn-ghost"
-          style={{ marginTop: 12 }}
-          onClick={() => navigate('/checkin')}
-        >
-          Registrar novo pulso
         </button>
 
         {/* Footer */}
