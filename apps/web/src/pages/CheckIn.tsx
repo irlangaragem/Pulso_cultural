@@ -66,7 +66,8 @@ export function CheckIn() {
   };
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/[^a-zA-ZáàâãéèêíïóôõöúçñÁÀÂÃÉÈÊÍÏÓÔÕÖÚÇÑ\s]/g, '');
+    // Allows letters (including accents) and spaces only
+    const value = e.target.value.replace(/[^a-zA-ZÀ-ÿ\s]/g, '');
     setForm({ ...form, nome: value });
   };
 
