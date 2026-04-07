@@ -1,370 +1,312 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { api } from '../services/api';
 import { localDb } from '../services/localDb';
-import { ClipboardCheck, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useLocation } from 'react-router-dom';
 import { isValidCPF } from '../utils/cpf';
+import { VisitorLayout } from '../components/VisitorLayout';
+import { PulseSymbol } from '../components/PulseSymbol';
+
+const GENEROS = ['Feminino', 'Masculino', 'Não-binário', 'Prefiro não dizer'];
+const ORIGENS = ['Salvador', 'Interior da Bahia', 'Outro estado', 'Turista internacional'];
+
+const GENDER_MAP: Record<string, string> = {
+  'Feminino': 'FEMININO',
+  'Masculino': 'MASCULINO',
+  'Não-binário': 'NAO_BINARIO',
+  'Prefiro não dizer': 'PREFIRO_NAO_DIZER',
+};
 
 export function CheckIn() {
-  const [formData, setFormData] = useState({
+  const [animatingSuccess, setAnimatingSuccess] = useState(false);
+
+  const [form, setForm] = useState({
     cpf: '',
-    name: '',
-    birthYear: '',
-    gender: 'PREFIRO_NAO_DIZER',
-    origin: 'INDICAÇÃO',
-    channel: 'OUTRO',
-    exhibitionId: 'default-exhibition', // For MVP simplification
-    email: ''
+    nome: '',
+    nascimento: '',
+    genero: '',
+    origem: '',
   });
-  const [showEmail, setShowEmail] = useState(false);
+
+  const [consent, setConsent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
-  const [step, setStep] = useState(1);
   const [showLoginRedirect, setShowLoginRedirect] = useState(false);
+
   const navigate = useNavigate();
   const location = useLocation();
 
   // Handle pre-filled CPF from query params
-  React.useEffect(() => {
+  useEffect(() => {
     const params = new URLSearchParams(location.search);
     const cpfParam = params.get('cpf');
     if (cpfParam) {
-      setFormData(prev => ({ ...prev, cpf: cpfParam }));
+      setForm(prev => ({ ...prev, cpf: cpfParam }));
     }
   }, [location.search]);
 
-  const handleCPFChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value.replace(/\D/g, '');
-    if (value.length > 11) value = value.slice(0, 11);
-    
-    value = value.replace(/(\d{3})(\d)/, '$1.$2');
-    value = value.replace(/(\d{3})(\d)/, '$1.$2');
-    value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
-    
-    setFormData({ ...formData, cpf: value });
-    setShowLoginRedirect(false); // Reset on change
+  const formatCPF = (val: string) => {
+    const nums = val.replace(/\D/g, '').slice(0, 11);
+    if (nums.length <= 3) return nums;
+    if (nums.length <= 6) return `${nums.slice(0, 3)}.${nums.slice(3)}`;
+    if (nums.length <= 9) return `${nums.slice(0, 3)}.${nums.slice(3, 6)}.${nums.slice(6)}`;
+    return `${nums.slice(0, 3)}.${nums.slice(3, 6)}.${nums.slice(6, 9)}-${nums.slice(9)}`;
   };
 
-  const handleBirthYearChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/\D/g, '').slice(0, 4);
-    setFormData({ ...formData, birthYear: value });
+  const handleCPFChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setForm({ ...form, cpf: formatCPF(e.target.value) });
+    setShowLoginRedirect(false);
+    setError('');
+  };
+
+  const handleNascimento = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value.replace(/\D/g, '').slice(0, 4);
+    setForm({ ...form, nascimento: val });
   };
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Only allow letters (including accents) and spaces
     const value = e.target.value.replace(/[^a-zA-ZáàâãéèêíïóôõöúçñÁÀÂÃÉÈÊÍÏÓÔÕÖÚÇÑ\s]/g, '');
-    setFormData({ ...formData, name: value });
+    setForm({ ...form, nome: value });
   };
 
-  const validateStep1 = () => {
-    if (!isValidCPF(formData.cpf)) {
+  const isFormComplete = 
+    form.cpf.replace(/\D/g, '').length === 11 &&
+    form.nome.trim().length > 0 &&
+    form.nascimento.length === 4 &&
+    form.genero &&
+    form.origem &&
+    consent;
+
+  const handleSubmit = async () => {
+    if (!isFormComplete) return;
+
+    if (!isValidCPF(form.cpf)) {
       setError('Por favor, insira um CPF válido.');
-      return false;
+      return;
     }
-    if (!formData.name.trim() || formData.name.trim().split(' ').length < 2) {
-      setError('Por favor, insira seu nome completo.');
-      return false;
+    if (form.nome.trim().split(' ').length < 2) {
+      setError('Insira seu nome completo.');
+      return;
     }
     const currentYear = new Date().getFullYear();
-    const bYear = Number(formData.birthYear);
+    const bYear = Number(form.nascimento);
     if (isNaN(bYear) || bYear > currentYear || currentYear - bYear > 120 || bYear < 1000) {
-      setError(`Ano de nascimento inválido (entre ${currentYear - 120} e ${currentYear}).`);
-      return false;
-    }
-    setError('');
-    return true;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (step === 1) {
-      if (!validateStep1()) return;
-      
-      setLoading(true);
-      try {
-        const rawCpf = formData.cpf.replace(/\D/g, '');
-        // 1. Check localDb
-        const localVisitor = localDb.getVisitorByCPF(rawCpf);
-        if (localVisitor) {
-          setError('Você já possui uma conta! Por favor, utilize a tela de Acesso para Visitantes.');
-          setShowLoginRedirect(true);
-          return;
-        }
-
-        // 2. Check remote
-        try {
-          const response = await api.get(`/checkins/verify/${rawCpf}`);
-          if (response.data && response.data.success) {
-            setError(`O CPF ${formData.cpf} já está registrado como ${response.data.firstName}. Por favor, acesse pelo Login.`);
-            setShowLoginRedirect(true);
-            return;
-          }
-        } catch (err) {
-          // If 404, it means doesn't exist, which is what we want for a new check-in
-        }
-
-        setStep(2);
-      } finally {
-        setLoading(false);
-      }
+      setError('Ano de nascimento inválido.');
       return;
     }
 
-    const checkinData = {
-      ...formData,
-      name: formData.name.trim(),
-      birthYear: Number(formData.birthYear),
-      gender: formData.gender,
-      origin: formData.origin,
-      channel: 'TOTEM_PRESENCIAL',
-      exhibitionId: 'default-exhibition'
-    };
-
     setLoading(true);
+    setError('');
+
     try {
+      // Check if CPF already exists locally
+      const rawCpf = form.cpf.replace(/\D/g, '');
+      const localVisitor = localDb.getVisitorByCPF(rawCpf);
+      if (localVisitor) {
+        setError('Você já possui uma conta! Use a tela de Check-in.');
+        setShowLoginRedirect(true);
+        setLoading(false);
+        return;
+      }
+
+      // Check if CPF already exists on server
+      try {
+        const response = await api.get(`/checkins/verify/${rawCpf}`);
+        if (response.data && response.data.success) {
+          setError(`CPF já registrado como ${response.data.firstName}. Use o Check-in.`);
+          setShowLoginRedirect(true);
+          setLoading(false);
+          return;
+        }
+      } catch {
+        // 404 = doesn't exist, which is what we want
+      }
+
+      const checkinData = {
+        cpf: rawCpf,
+        name: form.nome.trim(),
+        birthYear: bYear,
+        gender: GENDER_MAP[form.genero] || 'PREFIRO_NAO_DIZER',
+        origin: form.origem,
+        channel: 'TOTEM_PRESENCIAL',
+        exhibitionId: 'default-exhibition',
+      };
+
       try {
         localDb.saveVisitor(checkinData);
       } catch (e) {
         console.warn('LocalDB error', e);
       }
 
-      await api.post('/checkins', checkinData);
-      setSuccess(true);
-      setTimeout(() => navigate('/guide'), 1500);
-    } catch (error) {
-      console.error('Checkin failed, syncing...', error);
-      localDb.addToSyncQueue(checkinData);
-      setSuccess(true);
-      setTimeout(() => navigate('/guide'), 1500);
-    } finally {
-      // setLoading(false);
+      try {
+        await api.post('/checkins', checkinData);
+      } catch {
+        localDb.addToSyncQueue(checkinData);
+      }
+
+      setAnimatingSuccess(true);
+      setTimeout(() => navigate('/guide'), 1800);
+    } catch {
+      setLoading(false);
     }
   };
 
+  // Success animation screen
+  if (animatingSuccess) {
+    return (
+      <VisitorLayout>
+        <div className="visitor-screen" style={{ justifyContent: 'center', alignItems: 'center', minHeight: '100%' }}>
+          <div className="visitor-glow" />
+          <PulseSymbol size={80} />
+          <p className="v-cta-text" style={{ marginTop: 24, fontSize: 18 }}>Pulso registrado!</p>
+          <p className="v-footer-note" style={{ marginTop: 8 }}>Preparando seu guia...</p>
+        </div>
+      </VisitorLayout>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-slate-50 py-12 px-4 flex items-center justify-center relative overflow-hidden">
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="max-w-md w-full bg-white rounded-3xl shadow-xl shadow-slate-200/50 p-8 border border-slate-100 relative overflow-hidden"
-      >
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-primary/10 text-primary rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <ClipboardCheck className="w-8 h-8" />
-          </div>
-          <h1 className="text-3xl font-sora font-black text-slate-900 uppercase">PULSO</h1>
-          
-          <div className="flex items-center justify-center gap-2 mt-4">
-             <div className={`h-1.5 rounded-full transition-all duration-500 ${step === 1 ? 'w-12 bg-primary' : 'w-6 bg-green-500'}`} />
-             <div className={`h-1.5 rounded-full transition-all duration-500 ${step === 2 ? 'w-12 bg-primary' : 'w-6 bg-slate-100'}`} />
-          </div>
-          <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mt-2">
-             Passo {step} de 2
-          </p>
+    <VisitorLayout>
+      <div className="visitor-screen" style={{ paddingTop: 24 }}>
+        <div className="visitor-glow" />
+
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16, position: 'relative', zIndex: 1 }}>
+          <PulseSymbol size={28} />
+          <span style={{ fontFamily: 'Sora, sans-serif', fontWeight: 700, fontSize: 14, color: '#F5ECE4' }}>PULSO</span>
+          <span style={{ fontFamily: 'Sora, sans-serif', fontWeight: 300, fontSize: 9, color: '#A8969A', letterSpacing: 3 }}>CULTURAL</span>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <AnimatePresence mode="wait">
-            {step === 1 ? (
-              <motion.div
-                key="step1"
-                initial={{ x: -20, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                exit={{ x: 20, opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="space-y-5"
-              >
-                <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 font-sora">CPF</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="000.000.000-00"
-                    className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 focus:border-primary outline-none transition-all font-medium"
-                    value={formData.cpf}
-                    onChange={handleCPFChange}
-                  />
-                </div>
+        {/* Title */}
+        <h2 className="v-screen-title">Primeiro pulso!</h2>
+        <p className="v-screen-desc">
+          Conte um pouco sobre você. Esse cadastro é único — nas próximas visitas, basta o CPF.
+        </p>
 
-                <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 font-sora">Nome Completo</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Seu nome"
-                    className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 focus:border-primary outline-none transition-all font-medium"
-                    value={formData.name}
-                    onChange={handleNameChange}
-                  />
-                </div>
+        {/* CPF */}
+        <label className="v-label">CPF</label>
+        <div className="v-input-sm-wrap">
+          <input
+            type="tel"
+            inputMode="numeric"
+            placeholder="000.000.000-00"
+            value={form.cpf}
+            onChange={handleCPFChange}
+            className="v-input-sm"
+            style={{ fontFamily: "'Space Mono', monospace", letterSpacing: 2 }}
+          />
+        </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 font-sora">Nascimento</label>
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      required
-                      placeholder="Ex: 1990"
-                      maxLength={4}
-                      className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 focus:border-primary outline-none transition-all font-medium"
-                      value={formData.birthYear}
-                      onChange={handleBirthYearChange}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 font-sora">Gênero</label>
-                    <select
-                      className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 focus:border-primary outline-none transition-all appearance-none font-medium text-sm"
-                      value={formData.gender}
-                      onChange={e => setFormData({...formData, gender: e.target.value})}
-                    >
-                      <option value="FEMININO">Feminino</option>
-                      <option value="MASCULINO">Masculino</option>
-                      <option value="NAO_BINARIO">Não-binário</option>
-                      <option value="PREFIRO_NAO_DIZER">Não dizer</option>
-                    </select>
-                  </div>
-                </div>
-              </motion.div>
-            ) : (
-              <motion.div
-                key="step2"
-                initial={{ x: 20, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                exit={{ x: -20, opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="space-y-5"
-              >
-                <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 font-sora">Como nos conheceu?</label>
-                  <select
-                    className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 focus:border-primary outline-none transition-all appearance-none font-medium text-sm"
-                    value={formData.origin}
-                    onChange={e => setFormData({...formData, origin: e.target.value})}
-                  >
-                    <option value="INDICAÇÃO">Indicação de alguém</option>
-                    <option value="ESCOLA">Escola ou excursão</option>
-                    <option value="REDES_SOCIAIS">Redes sociais / internet</option>
-                    <option value="PASSEI_EM_FRENTE">Passei em frente</option>
-                    <option value="EVENTO">Evento ou atividade</option>
-                    <option value="TURISMO">Turismo / viagem</option>
-                    <option value="DIVULGACAO">Divulgação (TV, cartaz, mídia)</option>
-                    <option value="OUTRO">Outro</option>
-                  </select>
-                </div>
+        {/* Name */}
+        <label className="v-label">Nome</label>
+        <div className="v-input-sm-wrap">
+          <input
+            type="text"
+            placeholder="Como quer ser chamado?"
+            value={form.nome}
+            onChange={handleNameChange}
+            className="v-input-sm"
+          />
+        </div>
 
-                <div className="pt-2">
-                  <label className="flex items-center gap-3 cursor-pointer group w-fit">
-                    <div className="relative flex items-center justify-center w-5 h-5">
-                      <input
-                        type="checkbox"
-                        className="peer appearance-none w-5 h-5 border-2 border-slate-200 rounded bg-white checked:bg-primary checked:border-primary transition-all"
-                        checked={showEmail}
-                        onChange={(e) => setShowEmail(e.target.checked)}
-                      />
-                      <svg className="absolute w-3.5 h-3.5 text-white opacity-0 peer-checked:opacity-100 pointer-events-none transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
-                    </div>
-                    <span className="text-sm font-semibold text-slate-500">Desejo informar meu e-mail</span>
-                  </label>
+        {/* Birth year */}
+        <label className="v-label">Ano de nascimento</label>
+        <div className="v-input-sm-wrap" style={{ maxWidth: 140 }}>
+          <input
+            type="tel"
+            inputMode="numeric"
+            placeholder="Ex: 1992"
+            value={form.nascimento}
+            onChange={handleNascimento}
+            className="v-input-sm"
+            style={{ fontFamily: "'Space Mono', monospace", letterSpacing: 2 }}
+          />
+        </div>
 
-                  <AnimatePresence>
-                    {showEmail && (
-                      <motion.div 
-                        initial={{ opacity: 0, height: 0, marginTop: 0 }}
-                        animate={{ opacity: 1, height: 'auto', marginTop: 12 }}
-                        exit={{ opacity: 0, height: 0, marginTop: 0 }}
-                        className="overflow-hidden"
-                      >
-                        <input
-                          type="email"
-                          required={showEmail}
-                          placeholder="seu@email.com"
-                          className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 focus:border-primary outline-none transition-all font-medium"
-                          value={formData.email}
-                          onChange={e => setFormData({...formData, email: e.target.value})}
-                        />
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {error && (
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="p-4 bg-red-50 border border-red-100 rounded-2xl text-red-600 text-[10px] font-black uppercase tracking-widest text-center flex flex-col gap-3"
+        {/* Gender */}
+        <label className="v-label">Identidade de gênero</label>
+        <div className="v-chip-row">
+          {GENEROS.map(g => (
+            <button
+              key={g}
+              type="button"
+              className={`v-chip ${form.genero === g ? 'active' : ''}`}
+              onClick={() => setForm({ ...form, genero: g })}
             >
-              <span>⚠️ {error}</span>
+              {g}
+            </button>
+          ))}
+        </div>
+
+        {/* Origin */}
+        <label className="v-label">De onde você vem?</label>
+        <div className="v-chip-row">
+          {ORIGENS.map(o => (
+            <button
+              key={o}
+              type="button"
+              className={`v-chip ${form.origem === o ? 'active' : ''}`}
+              onClick={() => setForm({ ...form, origem: o })}
+            >
+              {o}
+            </button>
+          ))}
+        </div>
+
+        {/* Consent */}
+        <div className="v-consent-row" onClick={() => setConsent(!consent)}>
+          <div className={`v-checkbox ${consent ? 'checked' : ''}`}>
+            {consent && (
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            )}
+          </div>
+          <span className="v-consent-text">
+            Concordo com o uso dos meus dados para melhoria da experiência cultural e relatórios de impacto do espaço.
+          </span>
+        </div>
+
+        {/* Error */}
+        <AnimatePresence>
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="v-error"
+              style={{ marginTop: 12 }}
+            >
+              ⚠️ {error}
               {showLoginRedirect && (
                 <button
                   type="button"
                   onClick={() => navigate('/')}
-                  className="bg-red-600 text-white py-3 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-700 transition-colors shadow-lg shadow-red-200"
+                  className="v-btn-primary"
+                  style={{ marginTop: 10, fontSize: 12, padding: '10px 16px' }}
                 >
-                  Ir para Acesso de Visitantes
+                  Ir para Check-in
                 </button>
               )}
             </motion.div>
           )}
-
-          <div className="flex gap-3 pt-4">
-            {step === 2 && (
-              <motion.button 
-                type="button"
-                onClick={() => setStep(1)}
-                whileTap={{ scale: 0.95 }}
-                className="flex-1 bg-slate-50 text-slate-400 p-5 rounded-3xl font-black uppercase text-sm tracking-widest border-2 border-slate-100"
-              >
-                Voltar
-              </motion.button>
-            )}
-            <motion.button 
-              type="submit"
-              disabled={loading || success}
-              whileHover={{ scale: 1.01 }}
-              whileTap={{ scale: 0.98 }}
-              className={`flex-[2] bg-slate-900 text-white p-5 rounded-3xl font-black uppercase text-sm tracking-widest flex items-center justify-center gap-2 shadow-2xl transition-all ${loading || success ? 'opacity-70 cursor-not-allowed' : ''}`}
-            >
-              {loading ? 'Validando...' : success ? 'Bem-vindo!' : step === 1 ? 'Continuar' : 'Liberar Guia Digital'}
-              <ChevronRight size={18} />
-            </motion.button>
-          </div>
-        </form>
-
-        <AnimatePresence>
-          {success && (
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-white/95 backdrop-blur-sm flex flex-col items-center justify-center z-50 p-8 text-center rounded-3xl"
-            >
-              <motion.div 
-                initial={{ scale: 0, rotate: -20 }}
-                animate={{ scale: 1, rotate: 0 }}
-                transition={{ type: "spring", stiffness: 200, damping: 15 }}
-                className="w-20 h-20 bg-primary text-white rounded-full flex items-center justify-center mb-6 shadow-xl shadow-primary/30"
-              >
-                <div className="bg-white/20 p-3 rounded-2xl">
-                  <ClipboardCheck size={32} />
-                </div>
-              </motion.div>
-              <h2 className="text-2xl font-sora font-black text-slate-900 uppercase">Check-in Realizado</h2>
-              <p className="text-slate-500 mt-2 font-medium">Acesso liberado. Redirecionando...</p>
-            </motion.div>
-          )}
         </AnimatePresence>
-      </motion.div>
-    </div>
+
+        {/* Submit */}
+        <button
+          className="v-btn-primary"
+          style={{
+            marginTop: 18,
+            opacity: isFormComplete && !loading ? 1 : 0.35,
+          }}
+          onClick={handleSubmit}
+          disabled={!isFormComplete || loading}
+        >
+          {loading ? 'Validando...' : 'Registrar e acessar guia'}
+        </button>
+
+        <div style={{ height: 40 }} />
+      </div>
+    </VisitorLayout>
   );
 }

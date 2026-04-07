@@ -1,21 +1,44 @@
-# Pulso Cultural: Socio-Technical Architecture
+# Pulso Cultural — Antigravity Handoff Package
 
-## Visão do Projeto
-O Pulso Cultural é uma plataforma de inteligência de público para museus, focada na transição de dados para insights comportamentais em tempo real.
+**Garagem (garagem.dev)** · MVP 1.0 · Março 2026
 
-## Arquitetura de Fluxo (SESA)
-O sistema opera em um modelo monorepo filtrado:
-- **apps/api**: Atua como uma camada de agregação e proxy inteligente (*BFF - Backend for Frontend*). 
-    - Atualmente, as métricas de dashboard são orquestradas da API de produção via `DashboardController`.
-    - **Caching**: Implementamos proteção de infraestrutura com TTL de 30s para evitar doS em APIs externas.
-- **apps/web**: Interface de UX reativa com foco em maturidade cognitiva e feedback imediato.
+---
 
-## Gestão de Conhecimento (ACE)
-- **Cultura de Evolução**: O projeto evolui em fases incrementais (Fases de UX 1-7).
-- **Contratos de Dados**: Respostas de APIs externas são validadas em runtime via **Zod** para garantir integridade.
-- **Resiliência**: O frontend possui Error Boundaries granulares para isolar falhas de integração.
+## Implementation Order (Dependency Graph)
 
-## Como Contribuir
-1. Valide contratos no `apps/api/src/schemas`.
-2. Verifique o impacto de performance no polling do Dashboard.
-3. Garanta que o `Bus Factor` seja mitigado através de documentação atualizada em cada PR.
+```
+EPIC 2 (Backend API)
+  ├─ EPIC 1 (Camera Layer)    — depends on API ingest endpoints
+  ├─ EPIC 3 (Check-in App)    — depends on API visitor/guide endpoints
+  ├─ EPIC 4 (Dashboard)       — depends on API dashboard endpoints
+  └─ EPIC 5 (Infrastructure)  — runs in parallel
+
+EPIC 6 (Pilot Prep)
+  └─ depends on EPIC 1 + 2 + 3 + 4 + 5 all complete
+```
+
+---
+
+## Hard Constraints (Zero Tolerance)
+
+These requirements are non-negotiable. Code review required before pilot:
+
+- **No facial recognition** (camera layer)
+- **No image storage** after CV processing
+- **CPF hashed with Argon2id** — plaintext never stored, never logged
+- **LGPD consent checkbox unchecked by default** — required before any data collection
+- **Dashboard shows aggregates only** — no PII rows ever returned
+- **System must operate 30 days without on-site intervention**
+- **No civil works or complex cabling** for installation
+
+---
+
+## Success = Pilot Passes These
+
+1. Camera shows **2–3× more visitors** than sign-in book
+2. System runs **30 days without intervention**
+3. Check-in adhesion: **> 30%** of camera visitors
+4. First access: **< 45 seconds**
+5. Return visit: **< 15 seconds**
+6. Camera accuracy: **< 10% error**
+7. Uptime: **> 95%**

@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Star, MessageSquare, Send, CheckCircle2, ChevronLeft } from 'lucide-react';
+import { Star, Send } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { VisitorLayout } from '../components/VisitorLayout';
+import { PulseSymbol } from '../components/PulseSymbol';
 
 export function Feedback() {
   const navigate = useNavigate();
@@ -17,7 +19,6 @@ export function Feedback() {
 
     setIsSubmitting(true);
     try {
-      // Simulate API call for premium feel
       await new Promise(resolve => setTimeout(resolve, 1500));
       setIsSubmitted(true);
     } catch (error) {
@@ -29,110 +30,169 @@ export function Feedback() {
 
   if (isSubmitted) {
     return (
-      <div className="min-h-screen bg-white flex flex-col items-center justify-center p-8 text-center">
-        <motion.div 
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          className="w-24 h-24 bg-green-100 text-green-500 rounded-full flex items-center justify-center mb-8"
-        >
-          <CheckCircle2 size={48} />
-        </motion.div>
-        <h1 className="text-3xl font-sora font-black uppercase tracking-tighter text-slate-900 mb-4">Obrigado!</h1>
-        <p className="text-slate-500 font-medium mb-12 max-w-xs mx-auto">
-          Sua avaliação ajuda o MAM Salvador a criar experiências cada vez melhores.
-        </p>
-        <motion.button 
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={() => navigate('/')}
-          className="bg-slate-900 text-white px-12 py-5 rounded-2xl font-black uppercase text-sm tracking-widest shadow-xl transition-all"
-        >
-          Voltar ao Início
-        </motion.button>
-      </div>
+      <VisitorLayout>
+        <div className="visitor-screen" style={{ justifyContent: 'center', alignItems: 'center', minHeight: '100%' }}>
+          <div className="visitor-glow" />
+          <PulseSymbol size={80} animated />
+          <h1 className="v-screen-title" style={{ textAlign: 'center', marginTop: 24 }}>Obrigado!</h1>
+          <p style={{ color: '#A8969A', fontSize: 13, textAlign: 'center', maxWidth: 260, lineHeight: 1.5, marginBottom: 32 }}>
+            Sua avaliação ajuda o MAM Salvador a criar experiências cada vez melhores.
+          </p>
+
+          {/* Share card preview */}
+          <div style={{
+            width: '100%',
+            maxWidth: 280,
+            borderRadius: 20,
+            overflow: 'hidden',
+            background: '#1C1620',
+            border: '1px solid rgba(232,85,78,0.1)',
+            marginBottom: 24,
+          }}>
+            <div style={{ padding: '20px 24px', textAlign: 'center' }}>
+              <PulseSymbol size={24} />
+              <h2 style={{ fontFamily: 'Sora, sans-serif', fontSize: 18, fontWeight: 700, color: '#F5ECE4', lineHeight: 1.3, margin: '12px 0 0' }}>
+                Eu fiz a cultura<br />pulsar hoje.
+              </h2>
+              <p style={{ fontFamily: "'Space Mono', monospace", fontSize: 10, color: '#6B5A60', letterSpacing: 1, marginTop: 8 }}>
+                {new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase()}
+              </p>
+              <div style={{
+                marginTop: 14,
+                padding: '6px 14px',
+                borderRadius: 100,
+                background: 'rgba(232,85,78,0.08)',
+                border: '1px solid rgba(232,85,78,0.15)',
+                display: 'inline-block',
+              }}>
+                <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 10, fontWeight: 500, color: '#E8554E' }}>
+                  Uma História da Arte Brasileira
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: 12, width: '100%', maxWidth: 280 }}>
+            <button className="v-btn-primary" style={{ flex: 1 }} onClick={() => alert('Compartilhar via sistema nativo')}>
+              Compartilhar
+            </button>
+          </div>
+
+          <button className="v-btn-ghost" style={{ marginTop: 16 }} onClick={() => navigate('/')}>
+            ← Voltar ao início
+          </button>
+        </div>
+      </VisitorLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans p-6">
-      <header className="max-w-2xl mx-auto mb-12 flex items-center gap-4">
-         <button onClick={() => navigate('/guide')} className="p-3 bg-white rounded-xl shadow-sm border border-slate-100 hover:bg-slate-50 transition-colors">
-           <ChevronLeft size={20} className="text-slate-900" />
-         </button>
-         <div>
-           <h1 className="text-xl font-sora font-black uppercase tracking-tighter text-slate-900 leading-none">Avaliação</h1>
-           <p className="text-[10px] font-bold text-primary uppercase tracking-widest mt-1">Sua opinião é fundamental</p>
-         </div>
-      </header>
+    <VisitorLayout>
+      <div className="visitor-screen" style={{ paddingTop: 24 }}>
+        <div className="visitor-glow" />
 
-      <main className="max-w-2xl mx-auto">
-        <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-xl shadow-slate-200/50">
-          <form onSubmit={handleSubmit} className="space-y-12">
-            <section className="text-center">
-              <h2 className="text-lg font-bold text-slate-800 mb-6 uppercase tracking-tight">Como foi sua experiência?</h2>
-              <div className="flex justify-center gap-3">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <motion.button
-                    key={star}
-                    type="button"
-                    whileHover={{ scale: 1.2, rotate: 10 }}
-                    whileTap={{ scale: 0.8 }}
-                    onMouseEnter={() => setHoverRating(star)}
-                    onMouseLeave={() => setHoverRating(0)}
-                    onClick={() => setRating(star)}
-                    className="p-1 transition-transform"
-                  >
-                    <Star 
-                      size={40} 
-                      className={`transition-colors ${
-                        star <= (hoverRating || rating) ? 'text-yellow-400 fill-yellow-400' : 'text-slate-200'
-                      }`} 
-                    />
-                  </motion.button>
-                ))}
-              </div>
-            </section>
-
-            <section className="space-y-4">
-              <div className="flex items-center gap-2 mb-2">
-                 <MessageSquare size={16} className="text-primary" />
-                 <label className="text-xs font-black uppercase tracking-widest text-slate-500">Deixe um comentário (opcional)</label>
-              </div>
-              <textarea
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                placeholder="O que você mais gostou na exposição?"
-                className="w-full h-32 bg-slate-50 border border-slate-100 rounded-2xl p-6 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all resize-none"
-              />
-            </section>
-
-            <motion.button
-              type="submit"
-              disabled={rating === 0 || isSubmitting}
-              whileHover={rating > 0 ? { scale: 1.01 } : {}}
-              whileTap={rating > 0 ? { scale: 0.98 } : {}}
-              className={`w-full p-6 rounded-2xl font-black uppercase text-sm tracking-widest flex items-center justify-center gap-3 transition-all ${
-                rating === 0 
-                  ? 'bg-slate-100 text-slate-300 cursor-not-allowed' 
-                  : 'bg-primary text-white shadow-xl shadow-primary/30'
-              }`}
-            >
-              {isSubmitting ? (
-                <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-              ) : (
-                <>
-                  Concluir e Enviar Feedback
-                  <Send size={18} />
-                </>
-              )}
-            </motion.button>
-          </form>
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6, position: 'relative', zIndex: 1 }}>
+          <PulseSymbol size={28} />
+          <span style={{ fontFamily: 'Sora, sans-serif', fontWeight: 700, fontSize: 14, color: '#F5ECE4' }}>PULSO</span>
+          <span style={{ fontFamily: 'Sora, sans-serif', fontWeight: 300, fontSize: 9, color: '#A8969A', letterSpacing: 3 }}>CULTURAL</span>
         </div>
 
-        <p className="text-center mt-12 text-[10px] font-black uppercase tracking-[0.3em] text-slate-300">
-          MAM Salvador x Pulso Cultural
-        </p>
-      </main>
-    </div>
+        <h2 className="v-screen-title">Avaliação</h2>
+        <p className="v-screen-desc">Sua opinião é fundamental para melhorar a experiência cultural.</p>
+
+        <form onSubmit={handleSubmit}>
+          {/* Stars */}
+          <label className="v-label">Como foi sua experiência?</label>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 8, padding: '16px 0', position: 'relative', zIndex: 1 }}>
+            {[1, 2, 3, 4, 5].map((star) => (
+              <motion.button
+                key={star}
+                type="button"
+                whileHover={{ scale: 1.2 }}
+                whileTap={{ scale: 0.8 }}
+                onMouseEnter={() => setHoverRating(star)}
+                onMouseLeave={() => setHoverRating(0)}
+                onClick={() => setRating(star)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}
+              >
+                <Star
+                  size={36}
+                  style={{
+                    transition: 'all 0.15s',
+                    color: star <= (hoverRating || rating) ? '#F28C38' : '#3A2E34',
+                    fill: star <= (hoverRating || rating) ? '#F28C38' : 'none',
+                  }}
+                />
+              </motion.button>
+            ))}
+          </div>
+
+          {rating > 0 && (
+            <p style={{
+              textAlign: 'center',
+              fontFamily: "'Space Mono', monospace",
+              fontSize: 10,
+              color: '#E8554E',
+              letterSpacing: 2,
+              marginBottom: 16,
+            }}>
+              {rating <= 2 ? 'PRECISA MELHORAR' : rating <= 3 ? 'REGULAR' : rating <= 4 ? 'BOA EXPERIÊNCIA' : 'EXCELENTE!'}
+            </p>
+          )}
+
+          {/* Comment */}
+          <label className="v-label">Deixe um comentário (opcional)</label>
+          <div className="v-input-sm-wrap" style={{ marginBottom: 20 }}>
+            <textarea
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              placeholder="O que você mais gostou na exposição?"
+              rows={4}
+              style={{
+                background: 'none',
+                border: 'none',
+                outline: 'none',
+                fontFamily: "'DM Sans', sans-serif",
+                fontSize: 14,
+                color: '#F5ECE4',
+                width: '100%',
+                resize: 'none',
+              }}
+            />
+          </div>
+
+          {/* Submit */}
+          <button
+            type="submit"
+            className="v-btn-primary"
+            disabled={rating === 0 || isSubmitting}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+          >
+            {isSubmitting ? (
+              <div style={{
+                width: 18, height: 18,
+                border: '2px solid rgba(255,255,255,0.2)',
+                borderTop: '2px solid white',
+                borderRadius: '50%',
+                animation: 'spin 1s linear infinite',
+              }} />
+            ) : (
+              <>
+                Concluir e Enviar
+                <Send size={16} />
+              </>
+            )}
+          </button>
+        </form>
+
+        {/* Back */}
+        <button className="v-btn-ghost" style={{ marginTop: 12 }} onClick={() => navigate('/guide')}>
+          ← Voltar ao guia
+        </button>
+
+        <div style={{ height: 40 }} />
+      </div>
+    </VisitorLayout>
   );
 }

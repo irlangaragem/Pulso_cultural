@@ -1,43 +1,48 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Layout, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { localDb } from '../services/localDb';
 import { api } from '../services/api';
 import { formatCPF, isValidCPF } from '../utils/cpf';
+import { VisitorLayout } from '../components/VisitorLayout';
+import { PulseSymbol } from '../components/PulseSymbol';
+
+const CANAIS = ['Redes sociais', 'Indicação', 'Passei na frente', 'Jornal / TV', 'Escola / faculdade', 'Outro'];
 
 export function VisitorLogin() {
   const [cpf, setCpf] = useState('');
+  const [como, setComo] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
-  const [origin, setOrigin] = useState('INDICAÇÃO');
+  const [focused, setFocused] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
 
   const handleCPFChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setCpf(formatCPF(e.target.value));
+    setError(null);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const isComplete = cpf.replace(/\D/g, '').length === 11 && como;
+
+  const handleSubmit = async () => {
+    if (!isComplete) return;
     if (!isValidCPF(cpf)) {
-      setError('O CPF informado não parece válido. Verifique os números.');
+      setError('O CPF informado não parece válido.');
       return;
     }
 
-    // Local check
     let visitor = localDb.getVisitorByCPF(cpf);
-    
+
     setLoading(true);
     setError(null);
 
     try {
       if (!visitor) {
-        // Fallback to backend checks
         try {
           const rawCpf = cpf.replace(/\D/g, '');
           const response = await api.get(`/checkins/verify/${rawCpf}`);
-          // Backend found the user! Let's persist them locally so they are here next time
           if (response.data && response.data.success) {
             visitor = localDb.saveVisitor({
               cpf: rawCpf,
@@ -50,39 +55,45 @@ export function VisitorLogin() {
           }
         } catch (err) {
           console.error('Erro na verificação remota:', err);
-          const isNetworkError = !window.navigator.onLine;
-          if (isNetworkError) {
-             setError('Você parece estar offline. Tente novamente quando estiver conectado.');
-             setLoading(false);
-             return;
+          if (!window.navigator.onLine) {
+            setError('Você parece estar offline.');
+            setLoading(false);
+            return;
           }
         }
       }
 
       if (visitor) {
+        const originMap: Record<string, string> = {
+          'Redes sociais': 'REDES_SOCIAIS',
+          'Indicação': 'INDICAÇÃO',
+          'Passei na frente': 'PASSEI_EM_FRENTE',
+          'Jornal / TV': 'DIVULGACAO',
+          'Escola / faculdade': 'ESCOLA',
+          'Outro': 'OUTRO',
+        };
+
         const checkinData = {
           cpf: visitor.cpf,
           name: visitor.name,
           birthYear: visitor.birthYear,
           gender: visitor.gender,
-          origin: origin, // User selected origin for this specific visit
+          origin: originMap[como] || 'OUTRO',
           channel: 'OUTRO_RETORNO',
           exhibitionId: 'default-exhibition',
-          email: visitor.email
         };
 
-        // Track their return checkin at the backend for dashboard analytics
         try {
           await api.post('/checkins', checkinData);
         } catch (e) {
           console.warn('API sync failed, adding to queue', e);
           localDb.addToSyncQueue(checkinData);
         }
-        
+
         setSuccess(true);
-        setTimeout(() => navigate('/guide'), 1200);
+        setTimeout(() => navigate('/guide'), 1500);
       } else {
-        setError(`O CPF ${cpf} não foi encontrado. Por favor, realize um novo cadastro.`);
+        setError(`CPF não encontrado. Crie um novo cadastro.`);
       }
     } finally {
       if (!success) setLoading(false);
@@ -90,117 +101,135 @@ export function VisitorLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 py-12 px-4 flex items-center justify-center overflow-hidden relative">
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="max-w-md w-full bg-white rounded-3xl shadow-xl shadow-slate-200/50 p-8 border border-slate-100 relative overflow-hidden"
-      >
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-primary/10 text-primary rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <Layout className="w-8 h-8" />
-          </div>
-          <h1 className="text-3xl font-sora font-black text-slate-900 uppercase tracking-tighter">PULSO</h1>
-          <p className="text-slate-500 text-sm mt-2">Acesso para visitantes</p>
+    <VisitorLayout>
+      <div className="visitor-screen">
+        {/* Glow */}
+        <div className="visitor-glow" />
+
+        {/* Symbol */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '6vh', position: 'relative', zIndex: 1 }}>
+          <PulseSymbol size={64} />
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Seu CPF</label>
-            <input
-              type="text"
-              required
-              placeholder="000.000.000-00"
-              className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 focus:border-primary outline-none transition-all text-sm"
-              value={cpf}
-              onChange={handleCPFChange}
-            />
-          </div>
+        {/* Wordmark */}
+        <h1 className="v-wordmark">PULSO</h1>
+        <p className="v-wordmark-sub">CULTURAL</p>
 
-          <div>
-             <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Origem da Visita</label>
-              <select
-                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 focus:border-primary outline-none transition-all appearance-none text-sm font-medium"
-                value={origin}
-                onChange={e => setOrigin(e.target.value)}
-              >
-                <option value="INDICAÇÃO">Indicação de alguém</option>
-                <option value="ESCOLA">Escola ou excursão</option>
-                <option value="REDES_SOCIAIS">Redes sociais / internet</option>
-                <option value="PASSEI_EM_FRENTE">Passei em frente</option>
-                <option value="EVENTO">Evento ou atividade</option>
-                <option value="TURISMO">Turismo / viagem</option>
-                <option value="DIVULGACAO">Divulgação (TV, cartaz, mídia)</option>
-                <option value="OUTRO">Outro</option>
-              </select>
-          </div>
+        {/* Venue tag */}
+        <div className="v-venue-tag">
+          <span className="v-venue-dot" />
+          MAM Salvador · Aberto agora
+        </div>
 
+        {/* Exhibition name */}
+        <div className="v-expo-tag">
+          <p style={{ fontFamily: "'Space Mono', monospace", fontSize: 8, color: '#E8554E', letterSpacing: 3, marginBottom: 4 }}>
+            EXPOSIÇÃO EM CARTAZ
+          </p>
+          <p style={{ fontFamily: 'Sora, sans-serif', fontSize: 14, fontWeight: 600, color: '#F5ECE4', lineHeight: 1.3 }}>
+            Uma História da Arte Brasileira
+          </p>
+        </div>
 
-          {error && (
-            <motion.div 
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="text-red-500 text-xs font-bold text-center p-4 bg-red-50 rounded-2xl flex flex-col gap-3"
+        {/* CTA */}
+        <p className="v-cta-text">
+          Dê seu pulso e acesse<br />o guia da exposição
+        </p>
+
+        {/* CPF field */}
+        <div className={`v-input-wrap ${focused ? 'focused' : ''}`}>
+          <span style={{ flexShrink: 0, display: 'flex' }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6B5A60" strokeWidth="2" strokeLinecap="round">
+              <rect x="3" y="4" width="18" height="16" rx="2" />
+              <line x1="3" y1="10" x2="21" y2="10" />
+            </svg>
+          </span>
+          <input
+            ref={inputRef}
+            type="tel"
+            inputMode="numeric"
+            placeholder="000.000.000-00"
+            value={cpf}
+            onChange={handleCPFChange}
+            onFocus={() => setFocused(true)}
+            onBlur={() => setFocused(false)}
+            className="v-input"
+            autoComplete="off"
+          />
+        </div>
+
+        {/* Como soube */}
+        <label className="v-label" style={{ marginTop: 8 }}>Como soube desta exposição?</label>
+        <div className="v-chip-row" style={{ marginBottom: 16 }}>
+          {CANAIS.map(c => (
+            <button
+              key={c}
+              type="button"
+              className={`v-chip ${como === c ? 'active' : ''}`}
+              onClick={() => setComo(c)}
             >
-              <span>⚠️ {error}</span>
-              {error.includes('não foi encontrado') && (
+              {c}
+            </button>
+          ))}
+        </div>
+
+        {/* Error */}
+        <AnimatePresence>
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="v-error"
+            >
+              ⚠️ {error}
+              {error.includes('não encontrado') && (
                 <button
                   type="button"
                   onClick={() => navigate(`/checkin?cpf=${cpf}`)}
-                  className="bg-primary text-white py-3 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all shadow-lg shadow-primary/20"
+                  className="v-btn-primary"
+                  style={{ marginTop: 10, fontSize: 12, padding: '10px 16px' }}
                 >
-                  Criar Novo Cadastro Agora
+                  Criar Novo Cadastro
                 </button>
               )}
             </motion.div>
           )}
-
-          <motion.button 
-            type="submit"
-            disabled={loading || success}
-            whileHover={{ scale: 1.01 }}
-            whileTap={{ scale: 0.98 }}
-            className={`w-full bg-slate-900 text-white p-5 rounded-3xl font-black uppercase text-sm tracking-widest flex items-center justify-center gap-2 shadow-2xl transition-all ${loading || success ? 'opacity-70 cursor-not-allowed' : 'active:scale-[0.98]'}`}
-          >
-            {loading ? 'Validando...' : success ? 'Bem-vindo!' : 'Acessar Guia Digital'}
-            <ChevronRight size={18} />
-          </motion.button>
-
-          <div className="text-center">
-            <button 
-              type="button"
-              onClick={() => navigate('/checkin')}
-              className="text-primary font-bold text-sm hover:underline underline-offset-4"
-            >
-              Criar novo cadastro
-            </button>
-          </div>
-        </form>
-
-        <AnimatePresence>
-          {success && (
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-white/95 backdrop-blur-sm flex flex-col items-center justify-center z-50 p-8 text-center"
-            >
-              <motion.div 
-                initial={{ scale: 0, rotate: -20 }}
-                animate={{ scale: 1, rotate: 0 }}
-                transition={{ type: "spring", stiffness: 200, damping: 15 }}
-                className="w-20 h-20 bg-primary text-white rounded-full flex items-center justify-center mb-6 shadow-xl shadow-primary/30"
-              >
-                <div className="bg-white/20 p-3 rounded-2xl">
-                  <Layout size={32} />
-                </div>
-              </motion.div>
-              <h2 className="text-2xl font-sora font-black text-slate-900 uppercase">Acesso Liberado</h2>
-              <p className="text-slate-500 mt-2">Identificamos seu perfil. Redirecionando...</p>
-            </motion.div>
-          )}
         </AnimatePresence>
-      </motion.div>
-    </div>
+
+        {/* Button */}
+        <button
+          className="v-btn-primary"
+          style={{ opacity: isComplete && !loading ? 1 : 0.4 }}
+          onClick={handleSubmit}
+          disabled={!isComplete || loading}
+        >
+          {loading ? 'Validando...' : 'Pulsar'}
+        </button>
+
+        {/* Footer */}
+        <p className="v-footer-note" style={{ marginTop: 24 }}>
+          Seus dados são protegidos pela LGPD.<br />Usamos apenas para melhorar sua experiência.
+        </p>
+
+        <div style={{ height: 24 }} />
+      </div>
+
+      {/* Success overlay */}
+      <AnimatePresence>
+        {success && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="v-success-overlay"
+          >
+            <PulseSymbol size={80} />
+            <p className="v-cta-text" style={{ marginTop: 24, fontSize: 18 }}>Acesso liberado!</p>
+            <p className="v-footer-note" style={{ marginTop: 8 }}>Redirecionando para o guia...</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </VisitorLayout>
   );
 }

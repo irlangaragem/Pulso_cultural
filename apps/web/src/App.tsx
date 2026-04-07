@@ -2,10 +2,10 @@ import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { Route, Routes } from 'react-router-dom';
 import { CheckIn } from './pages/CheckIn';
 import { Dashboard } from './pages/Dashboard';
-import { Feedback } from './pages/Feedback';
 import { Guide } from './pages/Guide';
 import { Login } from './pages/Login';
 import { VisitorLogin } from './pages/VisitorLogin';
+import { CardShare } from './pages/CardShare';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { DashErrorBoundary } from './components/DashErrorBoundary';
 
@@ -36,7 +36,7 @@ function App() {
         <Route path="/checkin" element={<CheckIn />} />
         <Route path="/login" element={<Login />} />
         <Route path="/guide" element={<Guide />} />
-        <Route path="/feedback" element={<Feedback />} />
+        <Route path="/card" element={<CardShare />} />
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={
             <DashErrorBoundary>

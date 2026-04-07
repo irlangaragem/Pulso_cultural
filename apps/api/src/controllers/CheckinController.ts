@@ -16,7 +16,7 @@ export class CheckinController {
     } = req.body;
 
     try {
-      const cpfHash = HashService.hashCPF(cpf);
+      const cpfHash = await HashService.hashCPF(cpf);
 
       // Find or create visitor
       let visitor = await prisma.visitor.findUnique({
@@ -64,7 +64,7 @@ export class CheckinController {
     const { cpf } = req.params;
 
     try {
-      const cpfHash = HashService.hashCPF(cpf);
+      const cpfHash = await HashService.hashCPF(cpf);
       const visitor = await prisma.visitor.findUnique({
         where: { cpfHash }
       });
