@@ -207,6 +207,16 @@ export function VisitorLogin() {
           {loading ? 'Validando...' : 'Pulsar'}
         </button>
 
+        {/* Create account link */}
+        <button
+          type="button"
+          className="v-btn-ghost"
+          style={{ marginTop: 12 }}
+          onClick={() => navigate('/checkin')}
+        >
+          Registrar novo pulso
+        </button>
+
         {/* Footer */}
         <p className="v-footer-note" style={{ marginTop: 24 }}>
           Seus dados são protegidos pela LGPD.<br />Usamos apenas para melhorar sua experiência.

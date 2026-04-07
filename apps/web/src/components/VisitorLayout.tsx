@@ -1,23 +1,13 @@
 import React from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
 import '../visitor.css';
 
 interface VisitorLayoutProps {
   children: React.ReactNode;
 }
 
-const NAV_ITEMS = [
-  { label: 'Check-in', path: '/' },
-  { label: 'Cadastro', path: '/checkin' },
-  { label: 'Guia', path: '/guide' },
-  { label: 'Card', path: '/card' },
-];
-
 export function VisitorLayout({ children }: VisitorLayoutProps) {
   const now = new Date();
   const timeStr = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-  const location = useLocation();
-  const navigate = useNavigate();
 
   return (
     <div className="visitor-viewport">
@@ -43,27 +33,6 @@ export function VisitorLayout({ children }: VisitorLayoutProps) {
         {/* Page Content */}
         <div className="visitor-content">
           {children}
-        </div>
-
-        {/* Bottom Navigation */}
-        <div className="visitor-bottom-nav">
-          {NAV_ITEMS.map((item) => {
-            const isActive = location.pathname === item.path;
-            return (
-              <button
-                key={item.path}
-                className={`visitor-nav-item ${isActive ? 'active' : ''}`}
-                onClick={() => navigate(item.path)}
-              >
-                {item.label}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Prototype label */}
-        <div className="visitor-proto-label">
-          PROTÓTIPO · NAVEGAÇÃO LIVRE
         </div>
 
         {/* Home Indicator */}
