@@ -700,3 +700,29 @@
   background-clip: text;
   -webkit-text-fill-color: transparent;
 }
+
+.v-admin-link {
+  background: none;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: #6B5A60;
+  font-family: 'Space Mono', monospace;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin: 0 auto 32px;
+  cursor: pointer;
+  opacity: 0.4;
+  transition: all 0.3s ease;
+  padding: 8px 16px;
+  border-radius: 100px;
+}
+
+.v-admin-link:hover {
+  opacity: 1;
+  color: #E8554E;
+  background: rgba(232, 85, 78, 0.05);
+}
