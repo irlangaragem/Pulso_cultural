@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useAuthStore } from '../store/useAuthStore';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'https://helpful-education-production.up.railway.app',
+  baseURL: import.meta.env.VITE_API_URL || 'https://helpful-education-production-7dba.up.railway.app',
 });
 
 
