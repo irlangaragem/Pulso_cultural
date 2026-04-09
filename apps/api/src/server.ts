@@ -8,6 +8,9 @@ import helmet from 'helmet';
 import { rateLimit } from 'express-rate-limit';
 
 const app = express();
+// Trust proxy is required for express-rate-limit on cloud platforms like Railway
+app.set('trust proxy', 1);
+
 const server = createServer(app);
 
 const limiter = rateLimit({
