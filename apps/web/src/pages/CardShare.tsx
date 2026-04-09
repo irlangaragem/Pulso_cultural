@@ -128,7 +128,7 @@ export function CardShare() {
 
           <div className="v-share-card-body">
             <h1 className="v-share-card-headline v-text-gradient" style={{ marginBottom: '8px' }}>
-              {firstName} fez a cultura pulsar hoje.
+              Eu fiz a cultura pulsar hoje.
             </h1>
             <p className="v-share-card-date" style={{ marginBottom: '12px' }}>
               {dateStr}
