@@ -22,9 +22,9 @@ async function main() {
   });
 
   // 1.1 Create Default Admin User with hashed password
-  const rawPassword = process.env.ADMIN_PASSWORD;
-  if (!rawPassword) {
-    throw new Error('ADMIN_PASSWORD env variable is not set. Cannot seed admin user.');
+  const rawPassword = process.env.ADMIN_PASSWORD || 'admin123';
+  if (rawPassword === 'admin123') {
+    console.warn('⚠️ ADMIN_PASSWORD env variable is not set. Using default password "admin123". Please change this in production.');
   }
   const passwordHash = await bcrypt.hash(rawPassword, 12);
 
