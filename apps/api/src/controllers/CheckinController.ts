@@ -61,7 +61,8 @@ export class CheckinController {
   }
 
   async verify(req: Request, res: Response) {
-    const { cpf } = req.params;
+    const { cpf } = req.body;
+
 
     try {
       const cpfHash = await HashService.hashCPF(cpf);

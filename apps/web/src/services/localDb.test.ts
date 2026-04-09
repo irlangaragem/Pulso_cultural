@@ -26,7 +26,8 @@ describe('localDb', () => {
 
     const visitors = localDb.getVisitors();
     expect(visitors).toHaveLength(1);
-    expect(visitors[0].cpf).toBe('12345678901');
+    expect(visitors[0].cpfHash).toBeDefined();
+    expect(visitors[0].name).toBe('João Silva');
   });
 
   it('should find a visitor by CPF (ignoring non-digits)', () => {

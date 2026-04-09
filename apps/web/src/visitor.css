@@ -1,6 +1,19 @@
 /* === Pulso Cultural — Dark Theme (Visitor View) === */
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Sora:wght@300;400;600;700;800&family=Space+Mono:wght@400;700&display=swap');
 
+/* ---- Design Tokens ---- */
+:root {
+  --color-bg-primary: #110D10;
+  --color-bg-card: rgba(255, 255, 255, 0.08);
+  --color-bg-cta: linear-gradient(145deg, rgba(28, 16, 24, 0.8), rgba(42, 20, 40, 0.8));
+  --color-primary-gradient: linear-gradient(135deg, #E8554E, #D4267E);
+  --color-secondary: #E8554E;
+  --color-text-primary: #F5ECE4;
+  --color-text-muted: #A8969A;
+  --color-border: rgba(255, 255, 255, 0.12);
+  --transition-fast: 0.2s ease;
+}
+
 /* ── Phone Frame Wrapper ── */
 .visitor-viewport {
   min-height: 100vh;
@@ -298,38 +311,40 @@
 
 /* ── Buttons ── */
 .v-btn-primary {
-  background: linear-gradient(135deg, #E8554E, #D4267E);
+  background: var(--color-primary-gradient);
   border: none;
   border-radius: 14px;
   padding: 15px 24px;
   font-family: 'Sora', sans-serif;
   font-size: 15px;
   font-weight: 600;
-  color: white;
+  color: var(--color-text-primary);
   cursor: pointer;
   width: 100%;
-  transition: opacity 0.2s, transform 0.15s;
+  transition: var(--transition-fast), transform var(--transition-fast);
   position: relative;
   z-index: 1;
 }
 
-.v-btn-primary:hover { opacity: 0.9; }
-.v-btn-primary:active { transform: scale(0.98); }
+.v-btn-primary:hover { opacity: 0.9; transform: translateY(-2px); }
+.v-btn-primary:active { transform: scale(0.96); }
 .v-btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
 
 .v-btn-secondary {
   background: transparent;
-  border: 1.5px solid #E8554E;
+  border: 1.5px solid var(--color-secondary);
   border-radius: 14px;
   padding: 15px 24px;
   font-family: 'Sora', sans-serif;
   font-size: 15px;
   font-weight: 600;
-  color: #E8554E;
+  color: var(--color-secondary);
   cursor: pointer;
   width: 100%;
-  transition: all 0.15s;
+  transition: var(--transition-fast);
 }
+
+.v-btn-secondary:hover { background: rgba(232,85,78,0.1); }
 
 .v-btn-ghost {
   background: none;
@@ -496,13 +511,14 @@
 .v-share-cta {
   margin-top: 32px;
   padding: 24px;
-  background: linear-gradient(145deg, rgba(28, 16, 24, 0.8), rgba(42, 20, 40, 0.8));
+  background: var(--color-bg-cta);
   border-radius: 16px;
   border: 1px solid rgba(232, 85, 78, 0.1);
   text-align: center;
   display: flex;
   flex-direction: column;
   align-items: center;
+  backdrop-filter: blur(8px);
 }
 
 /* ── Footer Note ── */
@@ -596,20 +612,27 @@
 .v-card-label {
   font-family: 'Space Mono', monospace;
   font-size: 9px;
-  color: #6B5A60;
+  color: var(--color-text-muted);
   letter-spacing: 3px;
   margin-bottom: 20px;
   text-align: center;
+  opacity: 0;
+  animation: fadeInLabel 0.8s forwards ease-out;
+}
+
+@keyframes fadeInLabel {
+  to { opacity: 1; }
 }
 
 .v-share-card {
   width: 100%;
   max-width: 310px;
-  background: linear-gradient(145deg, #1C1018, #180D14);
+  background: var(--color-bg-card);
+  backdrop-filter: blur(12px);
   border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--color-border);
   overflow: hidden;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
 }
 
 .v-share-card-image {

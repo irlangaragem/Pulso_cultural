@@ -12,6 +12,8 @@ const CANAIS = ['Redes sociais', 'Indicação', 'Passei na frente', 'Jornal / TV
 export function VisitorLogin() {
   const [cpf, setCpf] = useState('');
   const [como, setComo] = useState('');
+  const [comoOutroText, setComoOutroText] = useState('');
+
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -24,7 +26,8 @@ export function VisitorLogin() {
     setError(null);
   };
 
-  const isComplete = cpf.replace(/\D/g, '').length === 11 && como;
+  const isComplete = cpf.replace(/\D/g, '').length === 11 && (como === 'Outro' ? comoOutroText.trim().length > 0 : como);
+
 
   const handleSubmit = async () => {
     if (!isComplete) return;
@@ -42,7 +45,7 @@ export function VisitorLogin() {
     try {
       if (!visitor) {
         try {
-          const response = await api.get(`/checkins/verify/${rawCpf}`);
+          const response = await api.post('/checkins/verify', { cpf: rawCpf });
           if (response.data && response.data.success) {
             visitor = localDb.saveVisitor({
               cpf: rawCpf,
@@ -59,12 +62,12 @@ export function VisitorLogin() {
       }
 
       if (visitor) {
-        const originMap: Record<string, string> = {
+        const channelMap: Record<string, string> = {
           'Redes sociais': 'REDES_SOCIAIS',
-          'Indicação': 'INDICAÇÃO',
-          'Passei na frente': 'PASSEI_EM_FRENTE',
-          'Jornal / TV': 'DIVULGACAO',
-          'Escola / faculdade': 'ESCOLA',
+          'Indicação': 'INDICACAO',
+          'Passei na frente': 'PASSOU_NA_FRENTE',
+          'Jornal / TV': 'JORNAL_TV',
+          'Escola / faculdade': 'ESCOLA_FACULDADE',
           'Outro': 'OUTRO',
         };
 
@@ -73,10 +76,13 @@ export function VisitorLogin() {
           name: visitor.name,
           birthYear: visitor.birthYear,
           gender: visitor.gender,
-          origin: originMap[como] || 'OUTRO',
-          channel: 'OUTRO_RETORNO',
+          origin: visitor.origin, // Keep original origin
+          channel: channelMap[como] || 'OUTRO',
+          channelOther: como === 'Outro' ? comoOutroText : undefined,
           exhibitionId: 'default-exhibition',
         };
+
+
 
         try {
           await api.post('/checkins', checkinData);
@@ -156,18 +162,40 @@ export function VisitorLogin() {
 
         {/* Como soube */}
         <label className="v-label" style={{ marginTop: 8 }}>Como soube desta exposição?</label>
-        <div className="v-chip-row" style={{ marginBottom: 16 }}>
+        <div className="v-chip-row" style={{ marginBottom: como === 'Outro' ? 8 : 16 }}>
           {CANAIS.map(c => (
             <button
               key={c}
               type="button"
               className={`v-chip ${como === c ? 'active' : ''}`}
-              onClick={() => setComo(c)}
+              onClick={() => {
+                setComo(c);
+                if (c !== 'Outro') setComoOutroText('');
+              }}
             >
               {c}
             </button>
           ))}
         </div>
+
+        {como === 'Outro' && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            style={{ marginBottom: 16 }}
+          >
+            <input
+              type="text"
+              placeholder="Especifique como soube"
+              value={comoOutroText}
+              onChange={(e) => setComoOutroText(e.target.value)}
+              className="v-input"
+              style={{ padding: '12px 16px', fontSize: 13, border: '1px solid rgba(255,255,255,0.1)' }}
+            />
+          </motion.div>
+        )}
+
 
         {/* Error */}
         <AnimatePresence>
@@ -208,6 +236,16 @@ export function VisitorLogin() {
           </svg>
           Gestão
         </button>
+
+
+        {/* LGPD Footer */}
+        <div style={{ marginTop: 'auto', padding: '24px 0', textAlign: 'center' }}>
+          <p style={{ fontSize: 10, color: '#6B5A60', lineHeight: 1.5, margin: 0 }}>
+            Seus dados são protegidos pela LGPD.<br />
+            Usamos apenas para melhorar sua experiência.
+          </p>
+        </div>
+
       </div>
 
       {/* Success overlay */}

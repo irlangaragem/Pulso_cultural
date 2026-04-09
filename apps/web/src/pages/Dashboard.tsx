@@ -492,24 +492,75 @@ function TabHistory() {
 // TAB: CADASTRO DE EXPOSIÇÃO
 // ============================================================
 function TabExposition() {
-  const [expo, setExpo] = useState({
-    nome: "Uma História da Arte Brasileira",
-    subtitulo: "Coleções MAM Rio",
-    inicio: "2026-03-11",
-    fim: "2026-06-28",
-    descricao: "80 obras do acervo do MAM Rio chegam a Salvador numa celebração da arte brasileira do século XX. De Portinari a Anita Malfatti, de Di Cavalcanti a Lygia Clark — um percurso que atravessa movimentos, gerações e visões de Brasil.",
-    patrocinador: "Banco do Brasil",
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [expo, setExpo] = useState<any>({
+    id: "default-exhibition",
+    nome: "",
+    subtitulo: "",
+    inicio: "",
+    fim: "",
+    descricao: "",
     status: "ativa",
   });
 
-  const [obras, setObras] = useState([
-    { id: 1, artista: "Cândido Portinari", titulo: "Retirantes", ano: "1944", sala: "Sala 1", desc: "Óleo sobre tela que retrata a migração nordestina.", audio: true },
-    { id: 2, artista: "Anita Malfatti", titulo: "A Boba", ano: "1915–16", sala: "Sala 2", desc: "Obra-chave do modernismo brasileiro.", audio: true },
-    { id: 3, artista: "Di Cavalcanti", titulo: "Cinco Moças", ano: "1930", sala: "Sala 2", desc: "Mulatas em cores tropicais.", audio: false },
-    { id: 4, artista: "Lygia Clark", titulo: "Bicho", ano: "1960", sala: "Sala 3", desc: "Escultura articulada em metal.", audio: true },
-    { id: 5, artista: "Alfredo Volpi", titulo: "Bandeirinhas", ano: "c. 1960", sala: "Sala 3", desc: "Têmpera sobre tela.", audio: false },
-    { id: 6, artista: "Iberê Camargo", titulo: "Núcleo", ano: "1963", sala: "Sala 4", desc: "Expressionismo abstrato.", audio: true },
-  ]);
+  const [obras, setObras] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/exhibitions/default-exhibition`)
+      .then(res => res.json())
+      .then(data => {
+        setExpo({
+          id: data.id,
+          nome: data.name,
+          subtitulo: data.subtitle,
+          inicio: data.startDate.split('T')[0],
+          fim: data.endDate.split('T')[0],
+          descricao: data.description,
+          status: data.status,
+          museumId: data.museumId
+        });
+        setObras(data.works || []);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error("Erro ao carregar exposição:", err);
+        setLoading(false);
+      });
+  }, []);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/exhibitions/${expo.id}`, {
+        method: 'PUT',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('pulso-cultural-auth') ? JSON.parse(localStorage.getItem('pulso-cultural-auth')!).state.token : ''}`
+        },
+        body: JSON.stringify({
+          ...expo,
+          name: expo.nome,
+          subtitle: expo.subtitulo,
+          startDate: expo.inicio,
+          endDate: expo.fim,
+          works: obras
+        })
+      });
+
+      if (response.ok) {
+        alert("Exposição salva com sucesso!");
+      } else {
+        alert("Erro ao salvar exposição.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Erro de conexão.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
 
   // const [outras, setOutras] = useState([
   //   { id: 1, nome: "Walter Smetak", sala: "Galeria 2" },
@@ -583,6 +634,10 @@ function TabExposition() {
     );
   }
 
+  if (loading) {
+    return <div style={{ color: C.text3, padding: "40px 0", textAlign: 'center' }}>Carregando dados da exposição...</div>;
+  }
+
   return (
     <>
       <SectionTitle right="DADOS GERAIS">Exposição principal</SectionTitle>
@@ -600,6 +655,11 @@ function TabExposition() {
         <div style={{ marginTop: 16 }}>
           <label style={s.formLabel}>Descrição</label>
           <textarea style={{ ...s.formInput, minHeight: 60 }} value={expo.descricao} onChange={e => setExpo({...expo, descricao: e.target.value})} />
+        </div>
+        <div style={{ marginTop: 16, display: 'flex', justifyContent: 'flex-end' }}>
+          <button style={s.btnPrimary} onClick={handleSave} disabled={saving}>
+            {saving ? "Salvando..." : "Salvar Alterações"}
+          </button>
         </div>
       </div>
 

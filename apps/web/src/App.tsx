@@ -6,10 +6,12 @@ import { Guide } from './pages/Guide';
 import { Login } from './pages/Login';
 import { VisitorLogin } from './pages/VisitorLogin';
 import { CardShare } from './pages/CardShare';
+import { Feedback } from './pages/Feedback';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { DashErrorBoundary } from './components/DashErrorBoundary';
 
-console.log('App loading...');
+
+
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
   constructor(props: { children: ReactNode }) {
@@ -27,8 +29,8 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
 import { useSyncQueue } from './services/useSyncQueue';
 
 function App() {
-  console.log('Rendering App component');
   useSyncQueue();
+
   return (
     <ErrorBoundary>
       <Routes>
@@ -37,6 +39,8 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/guide" element={<Guide />} />
         <Route path="/card" element={<CardShare />} />
+        <Route path="/feedback" element={<Feedback />} />
+
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={
             <DashErrorBoundary>

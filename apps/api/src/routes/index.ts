@@ -8,16 +8,23 @@ import { dashboardRoutes } from './dashboard.routes';
 import { healthRoutes } from './health.routes';
 import { telemetryRoutes } from './telemetry.routes';
 
+import { authMiddleware } from '../middlewares/auth.middleware';
+
 const routes = Router();
+
 
 routes.use('/health', healthRoutes);
 routes.use('/telemetry', telemetryRoutes);
 routes.use('/auth', authRoutes);
-routes.use('/analytics', analyticsRoutes);
 
-routes.use('/museums', museumRoutes);
-routes.use('/exhibitions', exhibitionRoutes);
+// Protected routes
+routes.use('/analytics', authMiddleware, analyticsRoutes);
+routes.use('/museums', authMiddleware, museumRoutes);
+routes.use('/exhibitions', authMiddleware, exhibitionRoutes);
+routes.use('/', authMiddleware, dashboardRoutes);
+
+// Public / Visitor routes
 routes.use('/checkins', checkinRoutes);
-routes.use('/', dashboardRoutes);
+
 
 export { routes };

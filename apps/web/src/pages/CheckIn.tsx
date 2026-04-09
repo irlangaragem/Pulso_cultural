@@ -17,6 +17,14 @@ const GENDER_MAP: Record<string, string> = {
   'Prefiro não dizer': 'PREFIRO_NAO_DIZER',
 };
 
+const ORIGIN_MAP: Record<string, string> = {
+  'Salvador': 'SALVADOR',
+  'Bahia (Interior)': 'INTERIOR_BA',
+  'Outro Estado': 'OUTRO_ESTADO',
+  'Internacional': 'INTERNACIONAL',
+};
+
+
 export function CheckIn() {
   const [animatingSuccess, setAnimatingSuccess] = useState(false);
 
@@ -114,7 +122,7 @@ export function CheckIn() {
 
       // Check if CPF already exists on server
       try {
-        const response = await api.get(`/checkins/verify/${rawCpf}`);
+        const response = await api.post('/checkins/verify', { cpf: rawCpf });
         if (response.data && response.data.success) {
           setError(`CPF já registrado como ${response.data.firstName}. Use o Check-in.`);
           setShowLoginRedirect(true);
@@ -125,17 +133,17 @@ export function CheckIn() {
         // 404 = doesn't exist, which is what we want
       }
 
+
       const checkinData = {
         cpf: rawCpf,
         name: form.nome.trim(),
         birthYear: bYear,
         gender: GENDER_MAP[form.genero] || 'PREFIRO_NAO_DIZER',
-        origin: form.origem === 'Salvador' || form.origem === 'Bahia (Interior)' 
-          ? form.origem 
-          : `${form.origem}: ${form.origemDetalhe}`,
-        channel: 'TOTEM_PRESENCIAL',
+        origin: ORIGIN_MAP[form.origem] || 'SALVADOR',
+        channel: 'OUTRO', // Default for first checkin in this screen
         exhibitionId: 'default-exhibition',
       };
+
 
       try {
         localDb.saveVisitor(checkinData);

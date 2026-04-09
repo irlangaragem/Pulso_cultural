@@ -35,14 +35,21 @@ const OTHER_EXPOS = [
 
 export function Guide() {
   const navigate = useNavigate();
+  const [exhibition, setExhibition] = useState<any>(null);
   const [works, setWorks] = useState<Work[]>(FALLBACK_WORKS.slice(0, 6));
   const [activeWork, setActiveWork] = useState<string | null>(null);
   const [playingId, setPlayingId] = useState<string | null>(null);
   const soundRef = useRef<Howl | null>(null);
   const [progress, setProgress] = useState(0);
 
+  const [showTimeoutWarning, setShowTimeoutWarning] = useState(false);
+  const warningTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const logoutTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+
   useEffect(() => {
     api.get('/exhibitions/default-exhibition').then(res => {
+      setExhibition(res.data);
       if (res.data.works && res.data.works.length > 0) {
         setWorks(res.data.works.slice(0, 6));
       }
@@ -50,6 +57,7 @@ export function Guide() {
       // Use fallback data
     });
   }, []);
+
 
   useEffect(() => {
     let interval: ReturnType<typeof setInterval>;
@@ -67,22 +75,32 @@ export function Guide() {
 
   // Inactivity timeout
   useEffect(() => {
-    let timeoutId: ReturnType<typeof setTimeout>;
     const resetTimer = () => {
-      clearTimeout(timeoutId);
-      timeoutId = setTimeout(() => {
+      if (warningTimeoutRef.current) clearTimeout(warningTimeoutRef.current);
+      if (logoutTimeoutRef.current) clearTimeout(logoutTimeoutRef.current);
+      setShowTimeoutWarning(false);
+
+      warningTimeoutRef.current = setTimeout(() => {
+        setShowTimeoutWarning(true);
+      }, 11 * 60 * 1000); // 11 minutes
+
+      logoutTimeoutRef.current = setTimeout(() => {
         if (soundRef.current) soundRef.current.stop();
         navigate('/');
-      }, 12 * 60 * 1000);
+      }, 12 * 60 * 1000); // 12 minutes
     };
+
     const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'touchmove'];
     events.forEach(e => window.addEventListener(e, resetTimer));
     resetTimer();
+
     return () => {
-      clearTimeout(timeoutId);
+      if (warningTimeoutRef.current) clearTimeout(warningTimeoutRef.current);
+      if (logoutTimeoutRef.current) clearTimeout(logoutTimeoutRef.current);
       events.forEach(e => window.removeEventListener(e, resetTimer));
     };
   }, [navigate]);
+
 
   useEffect(() => {
     return () => { if (soundRef.current) soundRef.current.stop(); };
@@ -124,10 +142,11 @@ export function Guide() {
           <p style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, color: '#E8554E', letterSpacing: 3, marginBottom: 6, position: 'relative', zIndex: 1 }}>
             EXPOSIÇÃO PRINCIPAL
           </p>
-          <h1 className="v-guide-title">Uma História da Arte Brasileira</h1>
-          <p className="v-guide-subtitle">80 obras do MAM Rio · Entrada gratuita</p>
+          <h1 className="v-guide-title">{exhibition?.name || 'Uma História da Arte Brasileira'}</h1>
+          <p className="v-guide-subtitle">{exhibition?.subtitle || '80 obras do MAM Rio · Entrada gratuita'}</p>
           <p className="v-guide-meta">Ter a Dom · 13h às 18h</p>
         </div>
+
 
         {/* Description */}
         <div style={{ padding: '0 20px' }}>
@@ -221,9 +240,31 @@ export function Guide() {
             </button>
           </div>
 
-          <div style={{ height: 40 }} />
         </div>
+
+        {/* Timeout Warning Modal */}
+        {showTimeoutWarning && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 30 }}>
+            <div style={{ background: '#1C1620', border: '1px solid rgba(232,85,78,0.2)', borderRadius: 20, padding: 30, textAlign: 'center', maxWidth: 300 }}>
+              <PulseSymbol size={48} />
+              <h3 style={{ fontFamily: 'Sora', color: '#F5ECE4', marginTop: 20, marginBottom: 10 }}>Ainda aí?</h3>
+              <p style={{ fontSize: 13, color: '#A8969A', marginBottom: 24, lineHeight: 1.5 }}>
+                O guia será reiniciado em 1 minuto por inatividade para economizar bateria e proteger seus dados.
+              </p>
+              <button 
+                className="v-btn-primary" 
+                onClick={() => {
+                  // Any interaction resets the timer via the window event listeners
+                  setShowTimeoutWarning(false);
+                }}
+              >
+                Continuar lendo
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </VisitorLayout>
   );
 }
+

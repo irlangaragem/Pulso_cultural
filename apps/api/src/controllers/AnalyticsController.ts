@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { subHours, startOfHour } from 'date-fns';
+import { CSVService } from '../services/CSVService';
+
 
 export const AnalyticsController = {
   async getTrends(req: Request, res: Response) {
@@ -117,5 +119,35 @@ export const AnalyticsController = {
       console.error(error);
       return res.status(500).json({ error: 'Internal server error' });
     }
+  },
+
+  async exportCheckins(req: Request, res: Response) {
+    const { exhibitionId } = req.params;
+
+    try {
+      const checkins = await prisma.checkin.findMany({
+        where: { exhibitionId },
+        include: { visitor: true }
+      });
+
+      const data = checkins.map(c => ({
+        data: c.createdAt.toISOString(),
+        visitante_nome: c.visitor.name,
+        genero: c.visitor.gender,
+        nascimento: c.visitor.birthYear,
+        origem: c.visitor.origin,
+        canal_adesao: c.channel
+      }));
+
+      const csv = CSVService.jsonToCSV(data);
+
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename=checkout-report-${exhibitionId}.csv`);
+      return res.send(csv);
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ error: 'Erro ao gerar exportação' });
+    }
   }
 };
+

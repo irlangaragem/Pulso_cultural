@@ -4,18 +4,34 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import { routes } from './routes';
 
+import helmet from 'helmet';
+import { rateLimit } from 'express-rate-limit';
+
 const app = express();
 const server = createServer(app);
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per `window` (here, per 15 minutes)
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 const io = new Server(server, {
   cors: {
-    origin: '*',
+    origin: process.env.WEB_URL || 'http://localhost:5173',
     methods: ['GET', 'POST']
   }
 });
 
-app.use(cors());
+app.use(helmet());
+app.use(limiter);
+app.use(cors({
+  origin: process.env.WEB_URL || 'http://localhost:5173'
+}));
 app.use(express.json());
 app.use(routes);
+
 
 const PORT = process.env.PORT || 3333;
 

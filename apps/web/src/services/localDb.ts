@@ -1,6 +1,7 @@
 export interface VisitorData {
-  cpf: string;
+  cpfHash: string;
   name: string;
+
   birthYear: number;
   gender: string;
   origin: string;
@@ -10,6 +11,17 @@ export interface VisitorData {
 
 const DB_KEY = '@pulso-cultural:visitors';
 const SYNC_KEY = '@pulso-cultural:sync-queue';
+
+function hashCpf(cpf: string) {
+  const normalized = cpf.replace(/\D/g, '');
+  let hash = 0;
+  for (let i = 0; i < normalized.length; i++) {
+    hash = ((hash << 5) - hash) + normalized.charCodeAt(i);
+    hash |= 0;
+  }
+  return 'p_' + Math.abs(hash).toString(36);
+}
+
 
 export const localDb = {
   getVisitors(): VisitorData[] {
@@ -22,28 +34,32 @@ export const localDb = {
     }
   },
 
-  getVisitorByCPF(cpf: string): VisitorData | undefined {
+  getVisitorByCPF(cpf: string): any | undefined {
     const visitors = this.getVisitors();
-    const normalizedCpf = cpf.replace(/\D/g, '');
-    return visitors.find(v => v.cpf.replace(/\D/g, '') === normalizedCpf);
+    const targetHash = hashCpf(cpf);
+    return visitors.find(v => v.cpfHash === targetHash);
   },
 
-  saveVisitor(visitor: Omit<VisitorData, 'createdAt'>): VisitorData {
+  saveVisitor(visitor: any): any {
     const visitors = this.getVisitors();
-    const existingIndex = visitors.findIndex(
-      v => v.cpf.replace(/\D/g, '') === visitor.cpf.replace(/\D/g, '')
-    );
+    const targetHash = hashCpf(visitor.cpf);
+    const existingIndex = visitors.findIndex(v => v.cpfHash === targetHash);
+
+    const visitorToSave = {
+      ...visitor,
+      cpfHash: targetHash,
+    };
+    delete visitorToSave.cpf; // Remove raw PII before saving
 
     if (existingIndex >= 0) {
-      // Update existing
-      visitors[existingIndex] = { ...visitors[existingIndex], ...visitor };
+      visitors[existingIndex] = { ...visitors[existingIndex], ...visitorToSave };
     } else {
-      // Add new
       visitors.push({
-        ...visitor,
+        ...visitorToSave,
         createdAt: new Date().toISOString()
       });
     }
+
 
     try {
       localStorage.setItem(DB_KEY, JSON.stringify(visitors));
@@ -62,14 +78,14 @@ export const localDb = {
     return existingIndex >= 0 ? visitors[existingIndex] : visitors[visitors.length - 1];
   },
 
-  getSyncQueue(): (Omit<VisitorData, 'createdAt'> & { timestamp: string })[] {
+  getSyncQueue(): any[] {
     try {
       const data = localStorage.getItem(SYNC_KEY);
       return data ? JSON.parse(data) : [];
     } catch { return []; }
   },
 
-  addToSyncQueue(payload: Omit<VisitorData, 'createdAt'>) {
+  addToSyncQueue(payload: any) {
     const queue = this.getSyncQueue();
     queue.push({
       ...payload,
@@ -82,7 +98,14 @@ export const localDb = {
     }
   },
 
+
   clearSyncQueue() {
+    localStorage.removeItem(SYNC_KEY);
+  },
+
+  clearLocalData() {
+    localStorage.removeItem(DB_KEY);
     localStorage.removeItem(SYNC_KEY);
   }
 };
+

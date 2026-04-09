@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
@@ -20,13 +21,19 @@ async function main() {
     }
   });
 
-  // 1.1 Create Default User
+  // 1.1 Create Default Admin User with hashed password
+  const rawPassword = process.env.ADMIN_PASSWORD;
+  if (!rawPassword) {
+    throw new Error('ADMIN_PASSWORD env variable is not set. Cannot seed admin user.');
+  }
+  const passwordHash = await bcrypt.hash(rawPassword, 12);
+
   await prisma.user.upsert({
     where: { email: 'admin@mam.ba.gov.br' },
-    update: {},
+    update: { passwordHash },  // re-hash on each seed in case ADMIN_PASSWORD changed
     create: {
       email: 'admin@mam.ba.gov.br',
-      passwordHash: 'admin123',
+      passwordHash,
       name: 'Administrador MAM',
       role: 'GESTOR',
       museumId: museum.id
@@ -35,7 +42,7 @@ async function main() {
 
   // 2. Create Exhibition
   const exhibition = await prisma.exhibition.upsert({
-    where: { id: 'default-exhibition' }, // Using the ID used in frontend for now
+    where: { id: 'default-exhibition' },
     update: {},
     create: {
       id: 'default-exhibition',
@@ -44,7 +51,7 @@ async function main() {
       subtitle: 'A arte contemporânea da Bahia',
       description: 'Uma jornada visual pelas cores e formas da Salvador moderna.',
       startDate: new Date(),
-      endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+      endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       status: 'ACTIVE'
     }
   });
@@ -57,12 +64,13 @@ async function main() {
   ];
 
   for (const w of works) {
-    await prisma.work.create({
-      data: {
-        ...w,
-        exhibitionId: exhibition.id,
-      }
+    // Check if work already exists to avoid duplicates on re-seed
+    const existing = await prisma.work.findFirst({
+      where: { title: w.title, exhibitionId: exhibition.id }
     });
+    if (!existing) {
+      await prisma.work.create({ data: { ...w, exhibitionId: exhibition.id } });
+    }
   }
 
   console.log('Seed completed successfully!');

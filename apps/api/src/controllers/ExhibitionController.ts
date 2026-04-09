@@ -103,7 +103,19 @@ export const ExhibitionController = {
           sponsor,
           coverImage,
           status,
+          works: req.body.works ? {
+            deleteMany: {},
+            create: req.body.works.map((w: any) => ({
+              artist: w.artist || w.artista,
+              title: w.title || w.titulo,
+              year: w.year || w.ano,
+              room: w.room || w.sala,
+              description: w.description || w.desc,
+              order: w.order || 0,
+            }))
+          } : undefined,
         },
+
       });
 
       return res.json(exhibition);

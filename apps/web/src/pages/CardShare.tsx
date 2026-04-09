@@ -92,7 +92,7 @@ export function CardShare() {
       <div className="v-card-screen">
         <div className="visitor-glow" />
 
-        <p className="v-card-label">PRONTO PARA COMPARTILHAR</p>
+        <p className="v-card-label">I made culture pulse today.</p>
 
         {/* The Card to be shared / exported */}
         <div className="v-share-card" ref={shareRef}>
@@ -127,10 +127,10 @@ export function CardShare() {
           </div>
 
           <div className="v-share-card-body">
-            <h1 className="v-share-card-headline">
+            <h1 className="v-share-card-headline v-text-gradient" style={{ marginBottom: '8px' }}>
               {firstName} fez a cultura pulsar hoje.
             </h1>
-            <p className="v-share-card-date">
+            <p className="v-share-card-date" style={{ marginBottom: '12px' }}>
               {dateStr}
             </p>
             <div className="v-share-card-expo">

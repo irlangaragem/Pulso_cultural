@@ -15,10 +15,13 @@ export function useSyncQueue() {
         try {
           // Attempt to sync each checkin
           await api.post('/checkins', item);
-          console.log(`[Sync] Successfully synced checkin for ${item.cpf}`);
+          const maskedCpf = `***.***.***-${item.cpf.slice(-2)}`; // item.cpf is raw digits here
+          console.log(`[Sync] Successfully synced checkin for ${maskedCpf}`);
         } catch {
-          console.warn(`[Sync] Failed to sync checkin for ${item.cpf}, will retry later.`);
+          const maskedCpf = `***.***.***-${item.cpf.slice(-2)}`;
+          console.warn(`[Sync] Failed to sync checkin for ${maskedCpf}, will retry later.`);
           remainingItems.push(item);
+
         }
       }
 
