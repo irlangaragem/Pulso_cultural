@@ -3,8 +3,10 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { prisma } from '../lib/prisma';
 
-const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET) throw new Error('JWT_SECRET env variable is not set');
+const JWT_SECRET = process.env.JWT_SECRET || 'pulso-cultural-default-secret-key-2026';
+if (JWT_SECRET === 'pulso-cultural-default-secret-key-2026') {
+  console.warn('⚠️ JWT_SECRET env variable is not set in AuthController. Using default secret.');
+}
 
 export const AuthController = {
   async signIn(req: Request, res: Response) {

@@ -1,10 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 
-const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET) {
-  // We throw in the middleware too just to be safe if it's called
-  throw new Error('JWT_SECRET env variable is not set');
+const JWT_SECRET = process.env.JWT_SECRET || 'pulso-cultural-default-secret-key-2026';
+if (JWT_SECRET === 'pulso-cultural-default-secret-key-2026') {
+  console.warn('⚠️ JWT_SECRET env variable is not set. Using default secret. Please change this in production.');
 }
 
 export const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
