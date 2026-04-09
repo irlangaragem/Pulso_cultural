@@ -7,5 +7,21 @@ RUN npm run build
 
 FROM nginx:alpine AS runner
 COPY --from=base /app/dist /usr/share/nginx/html
-EXPOSE 80
+
+# Create an Nginx template to handle dynamic ports and React Router (try_files)
+RUN mkdir -p /etc/nginx/templates && \
+    echo 'server { \
+      listen ${PORT}; \
+      server_name _; \
+      root /usr/share/nginx/html; \
+      index index.html; \
+      location / { \
+        try_files $uri $uri/ /index.html; \
+      } \
+    }' > /etc/nginx/templates/default.conf.template
+
+# Ensure Railway's required PORT is set if missing
+ENV PORT=80
+
+EXPOSE ${PORT}
 CMD ["nginx", "-g", "daemon off;"]
