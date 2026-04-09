@@ -30,7 +30,7 @@ const io = new Server(server, {
 app.use(helmet());
 app.use(limiter);
 app.use(cors({
-  origin: process.env.WEB_URL || 'http://localhost:5173'
+  origin: '*' // Allow all origins for the MVP deployment to prevent CORS failures
 }));
 app.use(express.json());
 app.use(routes);
