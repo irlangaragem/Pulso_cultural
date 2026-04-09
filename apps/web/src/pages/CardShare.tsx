@@ -1,33 +1,14 @@
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toPng } from 'html-to-image';
 import { Share2, Download } from 'lucide-react';
 import { VisitorLayout } from '../components/VisitorLayout';
-import { useAuthStore } from '../store/useAuthStore';
-import { localDb } from '../services/localDb';
 
 export function CardShare() {
   const navigate = useNavigate();
   const shareRef = useRef<HTMLDivElement>(null);
   const [isSharing, setIsSharing] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
-  const [visitorName, setVisitorName] = useState('Visitante');
-
-  const user = useAuthStore(state => state.user);
-
-  useEffect(() => {
-    // Try to get name from AuthStore, then from LocalDB (last registered)
-    if (user?.name) {
-      setVisitorName(user.name);
-    } else {
-      const visitors = localDb.getVisitors();
-      if (visitors.length > 0) {
-        setVisitorName(visitors[visitors.length - 1].name);
-      }
-    }
-  }, [user]);
-
-  const firstName = visitorName.split(' ')[0];
   const dateStr = new Date().toLocaleDateString('pt-BR', { 
     day: '2-digit', month: 'short', year: 'numeric' 
   }).toUpperCase().replace(/ DE /g, ' DE ');
