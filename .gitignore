@@ -30,7 +30,8 @@ dist-ssr
 
 miniconda3/
 push_error.log
-package-lock.json
+# package-lock.json (tracked for production)
+
 # Tool-specific and temporary files
 .gemini/
 plano_texto.txt
