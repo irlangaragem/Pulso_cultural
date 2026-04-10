@@ -149,7 +149,7 @@ export class CheckinController {
     try {
       // Find a camera to associate
       const camera = await prisma.camera.findFirst({
-        where: { isActive: true }
+        where: { active: true }
       }) || await prisma.camera.findFirst();
 
       if (!camera) {
