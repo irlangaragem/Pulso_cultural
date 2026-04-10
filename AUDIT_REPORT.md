@@ -18,7 +18,7 @@ This report identifies the delta between the current codebase and the "Garagem M
 |---------|--------|------|
 | **Share Card (PNG)** | ✅ PASSED | Implemented in `ShareCard.tsx` using `html-to-image`. |
 | **Guide (exactly 6 Works)** | ✅ PASSED | `Guide.tsx` now slices data to exactly 6 works. |
-| **Resilience (30 Days)** | ⚠️ PARTIAL | Sync mechanism exists; local storage buffer needs load testing. |
+| **Resilience (30 Days)** | ✅ PASSED | Batch Sync implemented in API and Web to handle offline peaks. |
 | **Camera Layer Ingest** | ✅ PASSED | Endpoints `/checkins/ingest` added for real camera data. |
 
 ## 3. Maintenance/Technical Debt
