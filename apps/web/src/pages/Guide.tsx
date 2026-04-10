@@ -46,6 +46,35 @@ export function Guide() {
   const warningTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const logoutTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Feedback states
+  const [rating, setRating] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [feedbackComment, setFeedbackComment] = useState('');
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
+  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
+
+  const feedbackLabels: Record<number, string> = {
+    1: "Pode melhorar",
+    2: "Pode melhorar",
+    3: "Interessante",
+    4: "Muito bom",
+    5: "Incrível 🔥"
+  };
+
+  const handleSubmitFeedback = async () => {
+    if (rating === 0) return;
+    setIsSubmittingFeedback(true);
+    try {
+      // Small delay for UX
+      await new Promise(resolve => setTimeout(resolve, 800));
+      setFeedbackSubmitted(true);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsSubmittingFeedback(false);
+    }
+  };
+
 
   useEffect(() => {
     api.get('/exhibitions/default-exhibition').then(res => {
@@ -246,13 +275,60 @@ export function Guide() {
           <div className="v-share-cta">
             <PulseSymbol size={28} />
             <p style={{ color: '#F5ECE4', fontSize: 14, fontFamily: 'Sora, sans-serif', fontWeight: 600, margin: '12px 0 4px' }}>Curtiu a visita?</p>
-            <p style={{ color: '#A8969A', fontSize: 12, marginBottom: 16 }}>Compartilhe que você fez a cultura pulsar hoje.</p>
-            <button
-              className="v-btn-primary"
-              onClick={() => navigate('/card')}
-            >
-              Compartilhar meu pulso
-            </button>
+            {!feedbackSubmitted ? (
+              <>
+                <p style={{ color: '#A8969A', fontSize: 12 }}>Compartilhe que você fez a cultura pulsar hoje.</p>
+
+                {/* Stars Rating */}
+                <div className="v-feedback-stars">
+                  {[1, 2, 3, 4, 5].map((val) => (
+                    <span
+                      key={val}
+                      className={`v-feedback-star ${val <= (hoverRating || rating) ? 'active' : ''}`}
+                      onMouseEnter={() => setHoverRating(val)}
+                      onMouseLeave={() => setHoverRating(0)}
+                      onClick={() => setRating(val)}
+                    >
+                      ★
+                    </span>
+                  ))}
+                </div>
+
+                <div className="v-feedback-label">
+                  {(hoverRating || rating) > 0 ? feedbackLabels[hoverRating || rating] : ''}
+                </div>
+
+                {rating > 0 && (
+                  <>
+                    <textarea
+                      className="v-feedback-textarea"
+                      placeholder="O que mais te marcou nessa experiência?"
+                      value={feedbackComment}
+                      onChange={(e) => setFeedbackComment(e.target.value)}
+                      rows={3}
+                    />
+                    <button
+                      className="v-feedback-submit"
+                      disabled={isSubmittingFeedback}
+                      onClick={handleSubmitFeedback}
+                    >
+                      {isSubmittingFeedback ? 'Enviando...' : 'Enviar avaliação'}
+                    </button>
+                  </>
+                )}
+
+                <button
+                  className="v-btn-primary"
+                  onClick={() => navigate('/card')}
+                >
+                  Compartilhar meu pulso
+                </button>
+              </>
+            ) : (
+              <div className="v-feedback-success">
+                ✨ Obrigado por fazer a cultura pulsar!
+              </div>
+            )}
           </div>
 
         </div>

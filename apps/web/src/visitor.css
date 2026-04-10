@@ -534,6 +534,111 @@
   backdrop-filter: blur(8px);
 }
 
+/* ── Post-CTA Feedback ── */
+.v-feedback-stars {
+  display: flex;
+  gap: 8px;
+  margin: 16px 0 8px;
+  position: relative;
+  z-index: 1;
+}
+
+.v-feedback-star {
+  font-size: 26px;
+  cursor: pointer;
+  opacity: 0.25;
+  transition: all 0.2s ease;
+  user-select: none;
+  color: #A8969A;
+}
+
+.v-feedback-star:hover {
+  transform: scale(1.1);
+  opacity: 1;
+}
+
+.v-feedback-star.active {
+  color: #E8554E;
+  opacity: 1;
+  transform: scale(1.2);
+  text-shadow: 0 0 10px rgba(232, 85, 78, 0.3);
+}
+
+.v-feedback-label {
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  color: #E8554E;
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+  height: 14px;
+  animation: v-fade-in 0.3s ease;
+}
+
+.v-feedback-textarea {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 12px;
+  color: #F5ECE4;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  resize: none;
+  margin-bottom: 12px;
+  outline: none;
+  transition: border-color 0.2s;
+  animation: v-slide-up 0.3s ease forwards;
+}
+
+.v-feedback-textarea:focus {
+  border-color: rgba(232, 85, 78, 0.3);
+}
+
+.v-feedback-submit {
+  background: transparent;
+  border: 1px solid rgba(232, 85, 78, 0.4);
+  color: #E8554E;
+  border-radius: 12px;
+  padding: 10px 20px;
+  font-family: 'Sora', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 16px;
+  transition: all 0.2s;
+  animation: v-fade-in 0.4s ease forwards;
+}
+
+.v-feedback-submit:hover {
+  background: rgba(232, 85, 78, 0.05);
+}
+
+.v-feedback-success {
+  color: #F5ECE4;
+  font-family: 'Sora', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  margin-top: 12px;
+  animation: v-bounce-in 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes v-slide-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes v-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes v-bounce-in {
+  0% { transform: scale(0.3); opacity: 0; }
+  50% { transform: scale(1.05); opacity: 1; }
+  70% { transform: scale(0.9); }
+  100% { transform: scale(1); }
+}
+
 /* ── Footer Note ── */
 .v-footer-note {
   font-family: 'DM Sans', sans-serif;
