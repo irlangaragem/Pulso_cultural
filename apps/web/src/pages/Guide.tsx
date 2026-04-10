@@ -36,7 +36,7 @@ const OTHER_EXPOS = [
 export function Guide() {
   const navigate = useNavigate();
   const [exhibition, setExhibition] = useState<any>(null);
-  const [works, setWorks] = useState<Work[]>(FALLBACK_WORKS.slice(0, 6));
+  const [works] = useState<Work[]>(FALLBACK_WORKS.slice(0, 6));
   const [activeWork, setActiveWork] = useState<string | null>('6'); // default: Núcleo open
   const [playingId, setPlayingId] = useState<string | null>(null);
   const soundRef = useRef<Howl | null>(null);

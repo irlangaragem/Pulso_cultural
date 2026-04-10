@@ -2,13 +2,12 @@ import React from 'react';
 import { PulseSymbol } from './PulseSymbol';
 
 interface ShareCardProps {
-  visitorName: string;
   exhibitionTitle: string;
   date: string;
   idRef: React.RefObject<HTMLDivElement | null>;
 }
 
-export function ShareCard({ visitorName, exhibitionTitle, date, idRef }: ShareCardProps) {
+export function ShareCard({ exhibitionTitle, date, idRef }: ShareCardProps) {
   return (
     <div 
       ref={idRef}
