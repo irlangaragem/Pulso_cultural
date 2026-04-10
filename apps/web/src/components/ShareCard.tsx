@@ -71,7 +71,7 @@ export function ShareCard({ visitorName, exhibitionTitle, date, idRef }: ShareCa
           WebkitBackgroundClip: 'text',
           WebkitTextFillColor: 'transparent'
         }}>
-          {visitorName.split(' ')[0]} fez a cultura pulsar.
+          Eu fiz a cultura pulsar hoje.
         </h1>
         
         <p style={{ fontSize: 14, color: '#A8969A', lineHeight: 1.5 }}>

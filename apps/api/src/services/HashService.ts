@@ -4,6 +4,9 @@ export class HashService {
   private static SALT = process.env.CPF_SALT || 'pulso-cultural-default-salt-16bytes';
 
   static async hashCPF(cpf: string): Promise<string> {
+    if (typeof cpf !== 'string') {
+      throw new Error('Invalid CPF parameter: must be a string');
+    }
     // Remove non-digits
     const cleanCPF = cpf.replace(/\D/g, '');
     

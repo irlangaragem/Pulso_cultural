@@ -43,7 +43,7 @@ export function CardShare() {
       if (navigator.share) {
         await navigator.share({
           title: 'Meu Pulso Cultural',
-          text: 'Fiz a cultura pulsar no MAM Bahia hoje!',
+          text: 'Eu fiz a cultura pulsar hoje.',
           files: [file],
         });
       } else {
@@ -73,7 +73,7 @@ export function CardShare() {
       <div className="v-card-screen">
         <div className="visitor-glow" />
 
-        <p className="v-card-label">I made culture pulse today.</p>
+        <p className="v-card-label">Eu fiz a cultura pulsar hoje.</p>
 
         {/* The Card to be shared / exported */}
         <div className="v-share-card" ref={shareRef}>

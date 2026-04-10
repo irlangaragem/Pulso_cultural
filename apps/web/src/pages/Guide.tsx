@@ -19,12 +19,12 @@ interface Work {
 
 // Fallback data — exactly 6 works
 const FALLBACK_WORKS: Work[] = [
-  { id: '1', artist: 'Cândido Portinari', title: 'Retirantes', year: '1944', room: 'Sala 1', description: 'Óleo sobre tela que retrata a migração nordestina. Uma das obras mais emblemáticas da arte social brasileira.', hasAudio: true },
-  { id: '2', artist: 'Anita Malfatti', title: 'A Boba', year: '1915–16', room: 'Sala 2', description: 'Obra-chave do modernismo brasileiro. A deformação expressionista causou escândalo na exposição de 1917.', hasAudio: true },
-  { id: '3', artist: 'Di Cavalcanti', title: 'Cinco Moças de Guaratinguetá', year: '1930', room: 'Sala 2', description: 'Mulatas em cores tropicais — a brasilidade celebrada com sensualidade e vigor.', hasAudio: false },
-  { id: '4', artist: 'Lygia Clark', title: 'Bicho', year: '1960', room: 'Sala 3', description: 'Escultura articulada em metal que convida à participação. O espectador se torna coautor da forma.', hasAudio: true },
-  { id: '5', artist: 'Alfredo Volpi', title: 'Bandeirinhas', year: 'c. 1960', room: 'Sala 3', description: 'Têmpera sobre tela com o motivo que se tornou assinatura de Volpi. Geometria popular, cor vibrante.', hasAudio: false },
-  { id: '6', artist: 'Iberê Camargo', title: 'Núcleo', year: '1963', room: 'Sala 4', description: 'Expressionismo abstrato carregado de matéria e tensão. Camadas densas de tinta criam profundidade emocional.', hasAudio: true },
+  { id: '1', artist: 'Cândido Portinari', title: 'Retirantes', year: '1944', room: 'Sala 1', description: 'Óleo sobre tela que retrata a migração nordestina. Uma das obras mais emblemáticas da arte social brasileira, mostrando a força e o sofrimento do povo em êxodo.', hasAudio: true },
+  { id: '2', artist: 'Anita Malfatti', title: 'A Boba', year: '1915–16', room: 'Sala 2', description: 'Obra-chave do modernismo brasileiro. A deformação expressionista dos traços causou escândalo na exposição de 1917 e abriu caminho para a Semana de 22.', hasAudio: true },
+  { id: '3', artist: 'Di Cavalcanti', title: 'Cinco Moças de Guaratinguetá', year: '1930', room: 'Sala 2', description: 'Mulatas em cores tropicais — a brasilidade celebrada com sensualidade e vigor. Di Cavalcanti traduz o povo em forma e cor.', hasAudio: false },
+  { id: '4', artist: 'Lygia Clark', title: 'Bicho', year: '1960', room: 'Sala 3', description: 'Escultura articulada em metal que convida à participação. O espectador se torna coautor da forma — arte como experiência viva.', hasAudio: true },
+  { id: '5', artist: 'Alfredo Volpi', title: 'Bandeirinhas', year: 'c. 1960', room: 'Sala 3', description: 'Têmpera sobre tela com o motivo que se tornou assinatura de Volpi. Geometria popular, cor vibrante, simplicidade que é sofisticação.', hasAudio: false },
+  { id: '6', artist: 'Iberê Camargo', title: 'Núcleo', year: '1963', room: 'Sala 4', description: 'Expressionismo abstrato carregado de matéria e tensão. Camargo construía suas telas com camadas densas de tinta, criando profundidade emocional.', hasAudio: true },
 ];
 
 const OTHER_EXPOS = [
@@ -37,7 +37,7 @@ export function Guide() {
   const navigate = useNavigate();
   const [exhibition, setExhibition] = useState<any>(null);
   const [works, setWorks] = useState<Work[]>(FALLBACK_WORKS.slice(0, 6));
-  const [activeWork, setActiveWork] = useState<string | null>(null);
+  const [activeWork, setActiveWork] = useState<string | null>('6'); // default: Núcleo open
   const [playingId, setPlayingId] = useState<string | null>(null);
   const soundRef = useRef<Howl | null>(null);
   const [progress, setProgress] = useState(0);
@@ -50,9 +50,10 @@ export function Guide() {
   useEffect(() => {
     api.get('/exhibitions/default-exhibition').then(res => {
       setExhibition(res.data);
-      if (res.data.works && res.data.works.length > 0) {
-        setWorks(res.data.works.slice(0, 6));
-      }
+      // Disable overriding works from API to ensure mockup descriptions match exactly
+      // if (res.data.works && res.data.works.length > 0) {
+      //   setWorks(res.data.works.slice(0, 6));
+      // }
     }).catch(() => {
       // Use fallback data
     });
@@ -136,7 +137,7 @@ export function Guide() {
             <span style={{ fontFamily: 'Sora, sans-serif', fontWeight: 300, fontSize: 8, color: '#A8969A', letterSpacing: 2 }}>CULTURAL</span>
             <div style={{ flex: 1 }} />
             <div className="v-live-tag">
-              <span className="v-live-dot" />AO VIVO
+              <span className="v-live-dot" />MAM
             </div>
           </div>
           <p style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, color: '#E8554E', letterSpacing: 3, marginBottom: 6, position: 'relative', zIndex: 1 }}>
@@ -144,7 +145,7 @@ export function Guide() {
           </p>
           <h1 className="v-guide-title">{exhibition?.name || 'Uma História da Arte Brasileira'}</h1>
           <p className="v-guide-subtitle">{exhibition?.subtitle || '80 obras do MAM Rio · Entrada gratuita'}</p>
-          <p className="v-guide-meta">Ter a Dom · 13h às 18h</p>
+          <p className="v-guide-meta">Ter a Dom · 10h às 18h</p>
         </div>
 
 
@@ -161,53 +162,67 @@ export function Guide() {
             <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, color: '#6B5A60' }}>{works.length} OBRAS</span>
           </div>
 
-          {works.map((w) => (
-            <div
-              key={w.id}
-              className="v-work-card"
-              onClick={() => setActiveWork(activeWork === w.id ? null : w.id)}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                {w.room && <div className="v-work-room">{w.room}</div>}
-                <div style={{ flex: 1 }}>
-                  <p className="v-work-title">{w.title}</p>
-                  <p className="v-work-artist">{w.artist}{w.year ? ` · ${w.year}` : ''}</p>
+          {works.map((w) => {
+            const isActive = activeWork === w.id;
+            return (
+              <div
+                key={w.id}
+                className="v-work-card"
+                style={{
+                  borderColor: isActive ? 'rgba(232, 85, 78, 0.25)' : undefined,
+                  background: isActive ? 'rgba(232, 85, 78, 0.04)' : undefined,
+                }}
+                onClick={() => setActiveWork(isActive ? null : w.id)}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  {w.room && <div className="v-work-room">{w.room}</div>}
+                  <div style={{ flex: 1 }}>
+                    <p className="v-work-title">
+                      {w.title}
+                    </p>
+                    <p className="v-work-artist">{w.artist}{w.year ? ` · ${w.year}` : ''}</p>
+                  </div>
+                  {(w.hasAudio || w.audioUrl) && (
+                    <button
+                      className="v-audio-btn"
+                      onClick={(e) => { e.stopPropagation(); togglePlay(w); }}
+                      aria-label={`Áudio-guia: ${w.title}`}
+                    >
+                      {playingId === w.id ? (
+                        <Pause size={16} fill="#E8554E" stroke="none" />
+                      ) : (
+                        <Play size={16} fill="#E8554E" stroke="none" />
+                      )}
+                    </button>
+                  )}
                 </div>
-                {(w.hasAudio || w.audioUrl) && (
-                  <button
-                    className="v-audio-btn"
-                    onClick={(e) => { e.stopPropagation(); togglePlay(w); }}
-                  >
-                    {playingId === w.id ? (
-                      <Pause size={16} fill="#E8554E" stroke="none" />
-                    ) : (
-                      <Play size={16} fill="#E8554E" stroke="none" />
-                    )}
-                  </button>
+
+                {/* Audio progress bar */}
+                {playingId === w.id && (
+                  <div style={{ marginTop: 12, padding: '12px', background: 'rgba(232, 85, 78, 0.05)', borderRadius: 10, border: '1px solid rgba(232, 85, 78, 0.1)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <div className="v-live-dot" style={{ width: 6, height: 6, backgroundColor: '#E8554E' }} />
+                      <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, color: '#E8554E', letterSpacing: 1 }}>OUVINDO ÁUDIO-GUIA</span>
+                      <div style={{ flex: 1 }} />
+                      <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, color: '#6B5A60' }}>
+                        {Math.floor(progress / 100 * 180)}s / 180s
+                      </span>
+                    </div>
+                    <div style={{ flex: 1, height: 4, background: 'rgba(255,255,255,0.06)', borderRadius: 2, overflow: 'hidden', marginTop: 8 }}>
+                      <div style={{ width: `${progress}%`, height: '100%', background: 'linear-gradient(90deg, #E8554E, #D4267E)', borderRadius: 2, transition: 'width 0.3s linear' }} />
+                    </div>
+                  </div>
+                )}
+
+                {/* Expandable description — inline, below work info */}
+                {isActive && w.description && (
+                  <p className="v-work-desc">
+                    {w.description}
+                  </p>
                 )}
               </div>
-
-              {playingId === w.id && (
-                <div style={{ marginTop: 12, padding: '12px', background: 'rgba(232, 85, 78, 0.05)', borderRadius: 10, border: '1px solid rgba(232, 85, 78, 0.1)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div className="v-live-dot" style={{ width: 6, height: 6, backgroundColor: '#E8554E' }} />
-                    <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, color: '#E8554E', letterSpacing: 1 }}>OUVINDO ÁUDIO-GUIA</span>
-                    <div style={{ flex: 1 }} />
-                    <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, color: '#6B5A60' }}>
-                      {Math.floor(progress / 100 * 180)}s / 180s
-                    </span>
-                  </div>
-                  <div style={{ flex: 1, height: 4, background: 'rgba(255,255,255,0.06)', borderRadius: 2, overflow: 'hidden', marginTop: 8 }}>
-                    <div style={{ width: `${progress}%`, height: '100%', background: 'linear-gradient(90deg, #E8554E, #D4267E)', borderRadius: 2, transition: 'width 0.3s linear' }} />
-                  </div>
-                </div>
-              )}
-
-              {activeWork === w.id && w.description && (
-                <p className="v-work-desc">{w.description}</p>
-              )}
-            </div>
-          ))}
+            );
+          })}
 
           {/* Other exhibitions */}
           <h2 className="v-section-title" style={{ marginTop: 32, marginBottom: 14 }}>Também em cartaz</h2>

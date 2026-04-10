@@ -405,11 +405,11 @@
 
 .v-guide-title {
   font-family: 'Sora', sans-serif;
-  font-size: 22px;
+  font-size: 28px;
   font-weight: 700;
   color: #F5ECE4;
-  line-height: 1.25;
-  margin: 0 0 8px;
+  line-height: 1.15;
+  margin: 4px 0 12px;
   position: relative;
   z-index: 1;
 }
@@ -489,8 +489,20 @@
   border-top: 1px solid rgba(255, 255, 255, 0.04);
 }
 
+/* Description expand animation */
+@keyframes v-desc-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .v-audio-btn {
-  background: rgba(232, 85, 78, 0.1);
+  background: rgba(255, 255, 255, 0.05);
   border: none;
   border-radius: 50%;
   width: 32px;
@@ -500,11 +512,12 @@
   justify-content: center;
   cursor: pointer;
   flex-shrink: 0;
-  transition: background 0.15s;
+  transition: all 0.15s;
 }
 
 .v-audio-btn:hover {
-  background: rgba(232, 85, 78, 0.2);
+  background: rgba(232, 85, 78, 0.15);
+  transform: scale(1.05);
 }
 
 /* ── Share CTA ── */

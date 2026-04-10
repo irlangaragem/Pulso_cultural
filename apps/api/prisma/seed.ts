@@ -47,9 +47,9 @@ async function main() {
     create: {
       id: 'default-exhibition',
       museumId: museum.id,
-      name: 'Horizonte Local',
-      subtitle: 'A arte contemporânea da Bahia',
-      description: 'Uma jornada visual pelas cores e formas da Salvador moderna.',
+      name: 'Uma História da Arte Brasileira',
+      subtitle: '80 obras do MAM Rio · Entrada gratuita',
+      description: '80 obras do acervo do MAM Rio chegam a Salvador numa celebração da arte brasileira do século XX. De Portinari a Anita Malfatti, de Di Cavalcanti a Lygia Clark — um percurso que atravessa movimentos, gerações e visões de Brasil.',
       startDate: new Date(),
       endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       status: 'ACTIVE'
@@ -58,9 +58,12 @@ async function main() {
 
   // 3. Create Works
   const works = [
-    { title: 'O Grito da Bahia', artist: 'Artista Local', year: '2023', room: 'Galeria A', order: 1, description: 'Representação da força soteropolitana.' },
-    { title: 'Horizonte Infinito', artist: 'Maria Clara', year: '2024', room: 'Galeria A', order: 2, description: 'Estudo sobre as águas do Solar do Unhão.' },
-    { title: 'Ritmo Ancestral', artist: 'José Santos', year: '2022', room: 'Sala B', order: 3, description: 'Escultura sonora que ressoa a herança africana.' },
+    { title: 'Retirantes', artist: 'Cândido Portinari', year: '1944', room: 'Sala 1', order: 1, description: 'Óleo sobre tela que retrata a migração nordestina. Uma das obras mais emblemáticas da arte social brasileira, mostrando a força e o sofrimento do povo em êxodo.' },
+    { title: 'A Boba', artist: 'Anita Malfatti', year: '1915–16', room: 'Sala 2', order: 2, description: 'Obra-chave do modernismo brasileiro. A deformação expressionista dos traços causou escândalo na exposição de 1917 e abriu caminho para a Semana de 22.' },
+    { title: 'Cinco Moças de Guaratinguetá', artist: 'Di Cavalcanti', year: '1930', room: 'Sala 2', order: 3, description: 'Mulatas em cores tropicais — a brasilidade celebrada com sensualidade e vigor. Di Cavalcanti traduz o povo em forma e cor.' },
+    { title: 'Bicho', artist: 'Lygia Clark', year: '1960', room: 'Sala 3', order: 4, description: 'Escultura articulada em metal que convida à participação. O espectador se torna coautor da forma — arte como experiência viva.' },
+    { title: 'Bandeirinhas', artist: 'Alfredo Volpi', year: 'c. 1960', room: 'Sala 3', order: 5, description: 'Têmpera sobre tela com o motivo que se tornou assinatura de Volpi. Geometria popular, cor vibrante, simplicidade que é sofisticação.' },
+    { title: 'Núcleo', artist: 'Iberê Camargo', year: '1963', room: 'Sala 4', order: 6, description: 'Expressionismo abstrato carregado de matéria e tensão. Camargo construía suas telas com camadas densas de tinta, criando profundidade emocional.' },
   ];
 
   for (const w of works) {

@@ -16,12 +16,23 @@ export class CheckinController {
     } = req.body;
 
     try {
+      if (!cpf) {
+        return res.status(400).json({ error: 'CPF is required' });
+      }
       const cpfHash = await HashService.hashCPF(cpf);
 
       // Find or create visitor
       let visitor = await prisma.visitor.findUnique({
         where: { cpfHash }
       });
+
+      // Ensure channel is valid Enum
+      const validChannels = ['REDES_SOCIAIS', 'INDICACAO', 'PASSOU_NA_FRENTE', 'JORNAL_TV', 'ESCOLA_FACULDADE', 'OUTRO'];
+      const safeChannel = validChannels.includes(channel) ? channel : 'OUTRO';
+
+      // Ensure origin is valid Enum
+      const validOrigins = ['SALVADOR', 'INTERIOR_BA', 'OUTRO_ESTADO', 'INTERNACIONAL'];
+      const safeOrigin = validOrigins.includes(origin) ? origin : 'SALVADOR';
 
       if (!visitor) {
         visitor = await prisma.visitor.create({
@@ -30,7 +41,7 @@ export class CheckinController {
             name,
             birthYear,
             gender,
-            origin
+            origin: safeOrigin
           }
         });
       }
@@ -40,7 +51,7 @@ export class CheckinController {
         data: {
           visitorId: visitor.id,
           exhibitionId,
-          channel
+          channel: safeChannel
         }
       });
 
@@ -67,18 +78,26 @@ export class CheckinController {
 
     try {
       const results = [];
+      const validChannels = ['REDES_SOCIAIS', 'INDICACAO', 'PASSOU_NA_FRENTE', 'JORNAL_TV', 'ESCOLA_FACULDADE', 'OUTRO'];
+      const validOrigins = ['SALVADOR', 'INTERIOR_BA', 'OUTRO_ESTADO', 'INTERNACIONAL'];
+
       for (const item of checkins) {
+        if (!item.cpf) continue; // Skip invalid entries
+        
         const cpfHash = await HashService.hashCPF(item.cpf);
         
+        const safeOrigin = validOrigins.includes(item.origin) ? item.origin : 'SALVADOR';
+        const safeChannel = validChannels.includes(item.channel) ? item.channel : 'OUTRO';
+
         let visitor = await prisma.visitor.findUnique({ where: { cpfHash } });
         if (!visitor) {
           visitor = await prisma.visitor.create({
             data: {
               cpfHash,
-              name: item.name,
-              birthYear: item.birthYear,
-              gender: item.gender,
-              origin: item.origin
+              name: item.name || 'Visitante',
+              birthYear: item.birthYear || new Date().getFullYear(),
+              gender: item.gender || 'PREFIRO_NAO_DIZER',
+              origin: safeOrigin
             }
           });
         }
@@ -86,8 +105,8 @@ export class CheckinController {
         const checkin = await prisma.checkin.create({
           data: {
             visitorId: visitor.id,
-            exhibitionId: item.exhibitionId,
-            channel: item.channel,
+            exhibitionId: item.exhibitionId || 'default-exhibition',
+            channel: safeChannel,
             createdAt: item.timestamp ? new Date(item.timestamp) : new Date()
           }
         });
