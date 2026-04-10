@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
 import { BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { SystemHealth } from "../components/SystemHealth";
+import { api } from "../services/api";
+import { DashErrorBoundary } from "../components/DashErrorBoundary";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3333";
 
@@ -178,10 +179,9 @@ function TabRealTime() {
   const [trends, setTrends] = useState<TrendData[]>([]);
 
   useEffect(() => {
-    fetch(`${API_BASE_URL}/resumo/hoje`)
-      .then(res => res.json())
-      .then(data => {
-        setResumoHoje(data);
+    api.get('/resumo/hoje')
+      .then(response => {
+        setResumoHoje(response.data);
         sendTelemetry('fetch_resumo_hoje_success');
       })
       .catch(err => {
@@ -189,14 +189,16 @@ function TabRealTime() {
         sendTelemetryError('fetch_resumo_hoje_error', err);
       });
 
-    fetch(`${API_BASE_URL}/analytics/trends/default-exhibition`)
-      .then(res => res.json())
-      .then(data => {
-        setTrends(data.map((d: { hour: string; entries: number }) => ({ 
-          h: d.hour, 
-          v: d.entries,
-          sensor: Math.round(d.entries * (1.8 + Math.random() * 1.5)) // Simulated camera flux
-        })));
+    api.get('/analytics/trends/default-exhibition')
+      .then(response => {
+        const data = response.data;
+        if (Array.isArray(data)) {
+          setTrends(data.map((d: { hour: string; entries: number }) => ({ 
+            h: d.hour, 
+            v: d.entries,
+            sensor: Math.round(d.entries * (1.8 + Math.random() * 1.5)) 
+          })));
+        }
         sendTelemetry('fetch_trends_success');
       })
       .catch(err => {
@@ -277,10 +279,9 @@ function TabProfile() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`${API_BASE_URL}/analytics/demographics/default-exhibition`)
-      .then(res => res.json())
-      .then(data => {
-        setDemoData(data);
+    api.get('/analytics/demographics/default-exhibition')
+      .then(response => {
+        setDemoData(response.data);
         setLoading(false);
         sendTelemetry('fetch_demographics_success');
       })
@@ -298,12 +299,12 @@ function TabProfile() {
   const GENDER_COLORS = ["#D4267E", "#E8554E", "#F28C38", "#3D3240"];
   const ORIGIN_COLORS = ["#E8554E", "#D4267E", "#F28C38", "#F2B63C", "#48BB78"];
 
-  const genderWithColors = demoData.gender.map((g, i) => ({
+  const genderWithColors = (demoData.gender || []).map((g, i) => ({
     ...g,
     color: GENDER_COLORS[i % GENDER_COLORS.length]
   }));
 
-  const originWithColors = demoData.origin.map((o, i) => ({
+  const originWithColors = (demoData.origin || []).map((o, i) => ({
     ...o,
     color: ORIGIN_COLORS[i % ORIGIN_COLORS.length]
   }));
@@ -350,7 +351,7 @@ function TabProfile() {
 
       <ChartCard title="Distribuição por idade" tag="ANO DE NASCIMENTO AGRUPADO">
         <ResponsiveContainer width="100%" height={180}>
-          <BarChart data={demoData.ages} barCategoryGap="30%">
+          <BarChart data={demoData.ages || []} barCategoryGap="30%">
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
             <XAxis dataKey="faixa" tick={{ fontSize: 10, fill: C.text3, fontFamily: "'Space Mono', monospace" }} axisLine={false} tickLine={false} />
             <YAxis tick={{ fontSize: 10, fill: C.text3 }} axisLine={false} tickLine={false} width={30} unit="%" />
@@ -396,10 +397,9 @@ function TabHistory() {
   const [resumo, setResumo] = useState<StatusResumo | null>(null);
 
   useEffect(() => {
-    fetch(`${API_BASE_URL}/historico`)
-      .then(res => res.json())
-      .then(data => {
-        setResumo(data);
+    api.get('/historico')
+      .then(response => {
+        setResumo(response.data);
         sendTelemetry('fetch_historico_success');
       })
       .catch(err => {
@@ -407,9 +407,9 @@ function TabHistory() {
         sendTelemetryError('fetch_historico_error', err);
       });
 
-    fetch(`${API_BASE_URL}/resumo/historico`)
-      .then(res => res.json())
-      .then(data => {
+    api.get('/resumo/historico')
+      .then(response => {
+        const data = response.data;
         if (Array.isArray(data)) {
           const formatado = data.map((d: { data: string; entradas: number; saidas: number }) => {
             const dateParts = d.data.split('-');
@@ -507,9 +507,9 @@ function TabExposition() {
   const [obras, setObras] = useState<any[]>([]);
 
   useEffect(() => {
-    fetch(`${API_BASE_URL}/exhibitions/default-exhibition`)
-      .then(res => res.json())
-      .then(data => {
+    api.get('/exhibitions/default-exhibition')
+      .then(response => {
+        const data = response.data;
         setExpo({
           id: data.id,
           nome: data.name,
@@ -532,23 +532,16 @@ function TabExposition() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/exhibitions/${expo.id}`, {
-        method: 'PUT',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('pulso-cultural-auth') ? JSON.parse(localStorage.getItem('pulso-cultural-auth')!).state.token : ''}`
-        },
-        body: JSON.stringify({
-          ...expo,
-          name: expo.nome,
-          subtitle: expo.subtitulo,
-          startDate: expo.inicio,
-          endDate: expo.fim,
-          works: obras
-        })
+      const response = await api.put(`/exhibitions/${expo.id}`, {
+        ...expo,
+        name: expo.nome,
+        subtitle: expo.subtitulo,
+        startDate: expo.inicio,
+        endDate: expo.fim,
+        works: obras
       });
 
-      if (response.ok) {
+      if (response.status === 200) {
         alert("Exposição salva com sucesso!");
       } else {
         alert("Erro ao salvar exposição.");
