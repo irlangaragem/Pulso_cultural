@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { SystemHealth } from "../components/SystemHealth";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "https://helpful-education-production-7dba.up.railway.app";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3333";
 
 // --- TELEMETRY ---
 function sendTelemetry(event: string, data?: Record<string, unknown>) {

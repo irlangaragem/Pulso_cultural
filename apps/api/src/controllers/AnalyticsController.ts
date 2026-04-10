@@ -130,14 +130,21 @@ export const AnalyticsController = {
         include: { visitor: true }
       });
 
-      const data = checkins.map(c => ({
-        data: c.createdAt.toISOString(),
-        visitante_nome: c.visitor.name,
-        genero: c.visitor.gender,
-        nascimento: c.visitor.birthYear,
-        origem: c.visitor.origin,
-        canal_adesao: c.channel
-      }));
+      const data = checkins.map(c => {
+        const nameParts = c.visitor.name.split(' ');
+        const maskedName = nameParts.length > 1 
+          ? `${nameParts[0]} ${nameParts[1][0]}.` 
+          : nameParts[0];
+
+        return {
+          data: c.createdAt.toISOString(),
+          visitante_pseudonimo: maskedName,
+          genero: c.visitor.gender,
+          nascimento: c.visitor.birthYear,
+          origem: c.visitor.origin,
+          canal_adesao: c.channel
+        };
+      });
 
       const csv = CSVService.jsonToCSV(data);
 

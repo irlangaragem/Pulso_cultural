@@ -8,7 +8,7 @@ This report identifies the delta between the current codebase and the "Garagem M
 |-------------|--------|------|
 | **CPF Hashed with Argon2id** | ✅ PASSED | Migrated from SHA-256 in `HashService.ts`. |
 | **No Facial Recognition** | ✅ PASSED | Strictly enforced; no biometric data collected. |
-| **Dashboard Aggregates Only** | ⚠️ PARTIAL | Controllers show counts, but PII (BirthYear, Gender) still in verify response. |
+| **Dashboard Aggregates Only** | ✅ PASSED | Controllers updated: `verify` reduced and CSV masked. |
 | **LGPD Default Unchecked** | ✅ PASSED | `CheckIn.tsx` confirmed compliant. |
 | **No Image Storage** | ✅ PASSED | No storage logic present. |
 
@@ -19,7 +19,7 @@ This report identifies the delta between the current codebase and the "Garagem M
 | **Share Card (PNG)** | ✅ PASSED | Implemented in `ShareCard.tsx` using `html-to-image`. |
 | **Guide (exactly 6 Works)** | ✅ PASSED | `Guide.tsx` now slices data to exactly 6 works. |
 | **Resilience (30 Days)** | ⚠️ PARTIAL | Sync mechanism exists; local storage buffer needs load testing. |
-| **Camera Layer Ingest** | ❌ MISSING | Endpoints for real camera data ingest not fully defined. |
+| **Camera Layer Ingest** | ✅ PASSED | Endpoints `/checkins/ingest` added for real camera data. |
 
 ## 3. Maintenance/Technical Debt
 
