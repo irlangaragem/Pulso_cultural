@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { SystemHealth } from "../components/SystemHealth";
 import { api } from "../services/api";
@@ -257,7 +258,7 @@ function TabRealTime() {
           </AreaChart>
         </ResponsiveContainer>
         <p style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, color: C.text3, textAlign: 'center', marginTop: 12 }}>
-          ▲ TAXA DE ADESÃO MÉDIA: {trends.length > 0 ? Math.round((trends.reduce((a,b)=>a+b.v,0)/trends.reduce((a,b)=>a+b.sensor,0))*100) : 0}%
+          ▲ TAXA DE ADESÃO MÉDIA: {trends.length > 0 ? Math.round((trends.reduce((a: number, b: TrendData) => a + b.v, 0) / trends.reduce((a: number, b: TrendData) => a + b.sensor, 0)) * 100) : 0}%
         </p>
       </ChartCard>
     </>
@@ -299,12 +300,12 @@ function TabProfile() {
   const GENDER_COLORS = ["#D4267E", "#E8554E", "#F28C38", "#3D3240"];
   const ORIGIN_COLORS = ["#E8554E", "#D4267E", "#F28C38", "#F2B63C", "#48BB78"];
 
-  const genderWithColors = (demoData.gender || []).map((g, i) => ({
+  const genderWithColors = (demoData.gender || []).map((g: any, i: number) => ({
     ...g,
     color: GENDER_COLORS[i % GENDER_COLORS.length]
   }));
 
-  const originWithColors = (demoData.origin || []).map((o, i) => ({
+  const originWithColors = (demoData.origin || []).map((o: any, i: number) => ({
     ...o,
     color: ORIGIN_COLORS[i % ORIGIN_COLORS.length]
   }));
@@ -589,7 +590,7 @@ function TabExposition() {
             </div>
             <div style={{ padding: "16px 20px 24px" }}>
               <p style={{ fontSize: 12, color: C.text2, lineHeight: 1.7, marginBottom: 16 }}>{expo.descricao}</p>
-              {obras.slice(0, 3).map(w => (
+              {obras.slice(0, 3).map((w: any) => (
                 <div key={w.id} style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${C.border}`, borderRadius: 10, padding: 12, marginBottom: 6 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <div>
@@ -657,7 +658,7 @@ function TabExposition() {
       </div>
 
       <SectionTitle right={`${obras.length} OBRAS`}>Obras</SectionTitle>
-      {obras.map((w, idx) => (
+      {obras.map((w: any, idx: number) => (
         <div key={w.id} style={{ ...s.card, marginBottom: 8, padding: editingObra === w.id ? 20 : 12 }}>
           {editingObra === w.id ? (
             <div>
@@ -674,7 +675,7 @@ function TabExposition() {
               <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
                 <button style={{ ...s.btnPrimary, padding: "6px 16px", fontSize: 12 }} onClick={() => setEditingObra(null)}>Salvar</button>
                 <button style={{ ...s.btnSecondary, padding: "6px 16px", fontSize: 12, borderColor: 'rgba(232,85,78,0.2)' }} onClick={() => {
-                  if (confirm("Excluir obra?")) setObras(obras.filter(o => o.id !== w.id));
+                  if (confirm("Excluir obra?")) setObras(obras.filter((o: any) => o.id !== w.id));
                 }}>Excluir</button>
               </div>
             </div>
@@ -693,7 +694,7 @@ function TabExposition() {
       <button 
         style={{ ...s.btnSecondary, width: '100%', marginTop: 8, borderStyle: 'dashed', borderColor: C.text3, color: C.text3 }}
         onClick={() => {
-          const newId = Math.max(0, ...obras.map(o => Number(o.id))) + 1;
+          const newId = Math.max(0, ...obras.map((o: any) => Number(o.id))) + 1;
           setObras([...obras, { id: newId, artista: "Novo Artista", titulo: "Nova Obra", ano: "2024", sala: "Sala 1", desc: "", audio: false }]);
           setEditingObra(newId);
         }}
@@ -774,7 +775,7 @@ export function Dashboard() {
           <span style={{ fontFamily: "Sora, sans-serif", fontWeight: 300, fontSize: 8, color: C.text3, letterSpacing: 2, marginLeft: 4 }}>CULTURAL</span>
         </div>
         <div style={s.navTabs}>
-          {tabs.map(t => (
+          {tabs.map((t: any) => (
             <button key={t.id} onClick={() => setTab(t.id)} style={tab === t.id ? s.navTabActive : s.navTab}>
               <span style={{ fontSize: 14 }}>{t.icon}</span>
               <span>{t.label}</span>
@@ -785,7 +786,7 @@ export function Dashboard() {
 
       <main style={s.main}>
         <header style={s.header}>
-          <h1 style={s.pageTitle}>{tabs.find(t => t.id === tab)?.label}</h1>
+          <h1 style={s.pageTitle}>{tabs.find((t: any) => t.id === tab)?.label}</h1>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <SystemHealth apiBaseUrl={API_BASE_URL} />
             <div style={s.liveTag}><span style={s.liveDot} /><span>AO VIVO</span></div>
@@ -793,11 +794,13 @@ export function Dashboard() {
         </header>
 
         <div style={s.content}>
-          {tab === "realtime" && <TabRealTime />}
-          {tab === "profile" && <TabProfile />}
-          {tab === "history" && <TabHistory />}
-          {tab === "expo" && <TabExposition />}
-          {tab === "report" && <TabReport />}
+          <DashErrorBoundary>
+            {tab === "realtime" && <TabRealTime />}
+            {tab === "profile" && <TabProfile />}
+            {tab === "history" && <TabHistory />}
+            {tab === "expo" && <TabExposition />}
+            {tab === "report" && <TabReport />}
+          </DashErrorBoundary>
         </div>
       </main>
     </div>
