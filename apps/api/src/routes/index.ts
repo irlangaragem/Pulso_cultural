@@ -10,6 +10,7 @@ import { telemetryRoutes } from './telemetry.routes';
 import { visitorRoutes } from './visitor.routes';
 import { evaluationRoutes } from './evaluation.routes';
 import { eventRoutes } from './events.routes';
+import { recommendationRoutes } from './recommendation.routes';
 
 import { authMiddleware } from '../middlewares/auth.middleware';
 
@@ -22,9 +23,10 @@ routes.use('/auth', authRoutes);
 // Dedicated visitor registration (v1)
 routes.use('/api/v1/users', visitorRoutes);
 
-// Public: Evaluation Service + Analytics Event Tracking
+// Public: Evaluation Service + Analytics Event Tracking + Recommendations
 routes.use('/evaluations', evaluationRoutes);
 routes.use('/events', eventRoutes);
+routes.use('/recommendations', recommendationRoutes);
 
 // Protected routes
 routes.use('/analytics', authMiddleware, analyticsRoutes);

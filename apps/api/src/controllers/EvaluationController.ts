@@ -3,6 +3,7 @@ import { prisma } from '../lib/prisma';
 import { HashService } from '../services/HashService';
 import { io } from '../server';
 import { AnalyticsService } from '../services/AnalyticsService';
+import { SentimentAnalyzer } from '../services/SentimentAnalyzer';
 
 export class EvaluationController {
   /**
@@ -29,6 +30,10 @@ export class EvaluationController {
         return res.status(404).json({ error: 'Visitante não encontrado' });
       }
 
+      // Intelligence Layer: Sentiment Analysis + Experience Score
+      const sentiment = comment ? SentimentAnalyzer.analyze(comment) : 0;
+      const experienceScore = SentimentAnalyzer.computeExperienceScore(rating, sentiment);
+
       // Upsert: allow re-evaluation (update if already exists)
       const evaluation = await prisma.evaluation.upsert({
         where: {
@@ -43,14 +48,15 @@ export class EvaluationController {
           rating,
           comment: comment || null,
           shareChannel: shareChannel || null,
-          // Experience score (ML baseline: no sentiment yet)
-          experienceScore: rating * 0.7
+          sentiment,
+          experienceScore
         },
         update: {
           rating,
           comment: comment || null,
           shareChannel: shareChannel || null,
-          experienceScore: rating * 0.7
+          sentiment,
+          experienceScore
         }
       });
 
