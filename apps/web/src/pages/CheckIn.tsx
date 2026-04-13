@@ -428,41 +428,43 @@ export function CheckIn() {
             FEATURE FLAG — Necessidades de acessibilidade
             (appears after gender chips)
         ════════════════════════════════════════════ */}
-        <AnimatePresence>
-          {ENABLE_ACCESSIBILITY_FIELD && genero !== '' && (
-            <motion.div
-              key="accessibility-section"
-              initial={{ opacity: 0, height: 0, marginBottom: 0 }}
-              animate={{ opacity: 1, height: 'auto', marginBottom: 14 }}
-              exit={{ opacity: 0, height: 0, marginBottom: 0 }}
-              transition={{ duration: 0.3, ease: 'easeOut' }}
-            >
-              <label className="v-label" id="label-acessibilidade">
-                Necessidades de acessibilidade{' '}
-                <span style={{ color: '#4A3A40', fontWeight: 400 }}>(opcional)</span>
-              </label>
-              <div
-                className="v-chip-row"
-                role="group"
-                aria-labelledby="label-acessibilidade"
+        {/* ── Accessibility field — always rendered, CSS-driven expand ── */}
+        <div
+          style={{
+            overflow: 'hidden',
+            maxHeight: ENABLE_ACCESSIBILITY_FIELD && genero !== '' ? 300 : 0,
+            opacity: ENABLE_ACCESSIBILITY_FIELD && genero !== '' ? 1 : 0,
+            marginBottom: ENABLE_ACCESSIBILITY_FIELD && genero !== '' ? 14 : 0,
+            transition: 'max-height 0.35s ease, opacity 0.25s ease, margin-bottom 0.25s ease',
+            position: 'relative',
+            zIndex: 1,
+          }}
+          aria-hidden={!(ENABLE_ACCESSIBILITY_FIELD && genero !== '')}
+        >
+          <label className="v-label" id="label-acessibilidade">
+            Necessidades de acessibilidade{' '}
+            <span style={{ color: '#4A3A40', fontWeight: 400 }}>(opcional)</span>
+          </label>
+          <div
+            className="v-chip-row"
+            role="group"
+            aria-labelledby="label-acessibilidade"
+          >
+            {ACESSIBILIDADES.map(a => (
+              <button
+                key={a.value}
+                type="button"
+                id={`chip-acc-${a.value}`}
+                className={`v-chip ${acessibilidades.includes(a.value) ? 'active' : ''}`}
+                onClick={() => toggleAcessibilidade(a.value)}
+                aria-pressed={acessibilidades.includes(a.value)}
+                aria-label={`Necessidade: ${a.label}`}
               >
-                {ACESSIBILIDADES.map(a => (
-                  <button
-                    key={a.value}
-                    type="button"
-                    id={`chip-acc-${a.value}`}
-                    className={`v-chip ${acessibilidades.includes(a.value) ? 'active' : ''}`}
-                    onClick={() => toggleAcessibilidade(a.value)}
-                    aria-pressed={acessibilidades.includes(a.value)}
-                    aria-label={`Necessidade: ${a.label}`}
-                  >
-                    {a.label}
-                  </button>
-                ))}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+                {a.label}
+              </button>
+            ))}
+          </div>
+        </div>
 
         {/* ════════════════════════════════════════════
             FIELD 5 — Origem
