@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { localDb } from '../services/localDb';
@@ -18,8 +18,21 @@ export function VisitorLogin() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [focused, setFocused] = useState(false);
+  const [returningUser, setReturningUser] = useState<string | null>(null);
+
   const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const stored = localStorage.getItem('pulso:return_cpf');
+    if (stored) {
+      setCpf(formatCPF(stored));
+      const visitor = localDb.getVisitorByCPF(stored);
+      if (visitor) {
+        setReturningUser(visitor.name.split(' ')[0]);
+      }
+    }
+  }, []);
 
   const handleCPFChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setCpf(formatCPF(e.target.value));
@@ -45,19 +58,20 @@ export function VisitorLogin() {
     try {
       if (!visitor) {
         try {
-          const response = await api.post('/checkins/verify', { cpf: rawCpf });
+          const response = await api.post('/api/v1/users/identify', { cpf: rawCpf });
           if (response.data && response.data.success) {
+            const vData = response.data.visitor;
             visitor = localDb.saveVisitor({
               cpf: rawCpf,
-              name: response.data.name,
-              birthYear: response.data.birthYear,
-              gender: response.data.gender,
-              origin: response.data.origin,
-              email: response.data.email
+              name: vData.name,
+              birthYear: vData.birthYear,
+              gender: vData.gender,
+              origin: vData.origin,
+              accessibilityNeeds: vData.accessibilityNeeds,
             });
           }
         } catch (err) {
-          console.error('Erro na verificação remota:', err);
+          console.error('Erro na identificação remota:', err);
         }
       }
 
@@ -72,23 +86,16 @@ export function VisitorLogin() {
         };
 
         const checkinData = {
-          cpf: visitor.cpf,
-          name: visitor.name,
-          birthYear: visitor.birthYear,
-          gender: visitor.gender,
-          origin: visitor.origin, // Keep original origin
-          channel: channelMap[como] || 'OUTRO',
-          channelOther: como === 'Outro' ? comoOutroText : undefined,
+          cpf: rawCpf,
           exhibitionId: 'default-exhibition',
+          channel: channelMap[como] || 'OUTRO',
         };
-
-
 
         try {
           await api.post('/checkins', checkinData);
         } catch (e) {
           console.warn('API sync failed, adding to queue', e);
-          localDb.addToSyncQueue(checkinData);
+          localDb.addToSyncQueue({ ...checkinData, name: visitor.name }); // add name for legacy local record
         }
 
         setSuccess(true);
@@ -135,7 +142,17 @@ export function VisitorLogin() {
 
         {/* CTA */}
         <p className="v-cta-text">
-          Dê seu pulso e acesse<br />o guia da exposição
+          {returningUser ? (
+            <motion.span
+              initial={{ opacity: 0, y: 5 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              Bem-vindo de volta, <span style={{ color: '#E8554E' }}>{returningUser}</span>! 👋<br />
+              Siga para o guia da exposição
+            </motion.span>
+          ) : (
+            <>Dê seu pulso e acesse<br />o guia da exposição</>
+          )}
         </p>
 
         {/* CPF field */}

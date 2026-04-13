@@ -79,15 +79,17 @@ model Work {
 }
 
 model Visitor {
-  id            String      @id @default(cuid())
-  cpfHash       String      @unique // CPF criptografado
-  name          String
-  birthYear     Int
-  gender        Gender
-  origin        Origin
-  checkins      Checkin[]
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  id                 String      @id @default(cuid())
+  cpfHash            String      @unique // CPF criptografado
+  name               String
+  birthYear          Int
+  gender             Gender
+  origin             Origin
+  originDetail       String?     // Novo: cidade ou país
+  accessibilityNeeds Json?       // Novo: string[] (AccessibilityNeed[])
+  checkins           Checkin[]
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
   
   @@index([cpfHash])
 }

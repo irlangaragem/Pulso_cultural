@@ -42,5 +42,38 @@ export const AuthController = {
       console.error('[AuthController] signIn error:', error);
       return res.status(500).json({ error: 'Erro interno do servidor' });
     }
+  },
+
+  async changePassword(req: Request, res: Response) {
+    const { currentPassword, newPassword } = req.body;
+    const userId = (req as any).user.id;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ error: 'Senha atual e nova senha são obrigatórias' });
+    }
+
+    try {
+      const user = await prisma.user.findUnique({ where: { id: userId } });
+
+      if (!user) {
+        return res.status(404).json({ error: 'Usuário não encontrado' });
+      }
+
+      const passwordMatches = await bcrypt.compare(currentPassword, user.passwordHash);
+      if (!passwordMatches) {
+        return res.status(401).json({ error: 'Senha atual incorreta' });
+      }
+
+      const newPasswordHash = await bcrypt.hash(newPassword, 12);
+      await prisma.user.update({
+        where: { id: userId },
+        data: { passwordHash: newPasswordHash }
+      });
+
+      return res.json({ message: 'Senha alterada com sucesso' });
+    } catch (error) {
+      console.error('[AuthController] changePassword error:', error);
+      return res.status(500).json({ error: 'Erro interno do servidor' });
+    }
   }
 };

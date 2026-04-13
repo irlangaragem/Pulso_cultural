@@ -208,9 +208,9 @@ export function CheckIn() {
       // Persist CPF as return token
       localStorage.setItem(CPF_STORAGE_KEY, rawCpf);
 
-      // POST to API (v1 OR legacy checkins endpoint for backwards compat)
+      // POST to API (v1 dedicated endpoint)
       try {
-        await api.post('/checkins', payload);
+        await api.post('/api/v1/users/register', payload);
       } catch {
         localDb.addToSyncQueue(payload);
       }
