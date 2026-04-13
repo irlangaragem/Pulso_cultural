@@ -3,21 +3,21 @@
 
 /* ---- Design Tokens ---- */
 :root {
-  --color-bg-primary: #110D10;
-  --color-bg-card: rgba(255, 255, 255, 0.08);
-  --color-bg-cta: linear-gradient(145deg, rgba(28, 16, 24, 0.8), rgba(42, 20, 40, 0.8));
-  --color-primary-gradient: linear-gradient(135deg, #E8554E, #D4267E);
+  --color-bg-primary: #150B0E;
+  --color-bg-card: rgba(255, 255, 255, 0.05);
+  --color-bg-cta: linear-gradient(135deg, #E8554E, #8A1A2E);
+  --color-primary-gradient: linear-gradient(135deg, #FF6B6B, #E8554E);
   --color-secondary: #E8554E;
-  --color-text-primary: #F5ECE4;
-  --color-text-muted: #A8969A;
-  --color-border: rgba(255, 255, 255, 0.12);
+  --color-text-primary: #FFFFFF;
+  --color-text-muted: #8C7A80;
+  --color-border: rgba(255, 255, 255, 0.1);
   --transition-fast: 0.2s ease;
 }
 
 /* ── Phone Frame Wrapper ── */
 .visitor-viewport {
   min-height: 100vh;
-  background: #0E0B0D;
+  background: #0D0709;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -29,7 +29,7 @@
 .visitor-phone {
   width: 390px;
   min-height: 720px;
-  background: #110D10;
+  background: #150B0E;
   border-radius: 40px;
   border: 2px solid rgba(255, 255, 255, 0.06);
   overflow: hidden;
@@ -259,8 +259,10 @@
   transition: border-color 0.2s;
 }
 
-.v-input-sm-wrap:focus-within {
-  border-color: rgba(232, 85, 78, 0.4);
+.v-input-sm-wrap:focus-within,
+.v-input-sm-wrap.focused {
+  border-color: rgba(232, 85, 78, 0.5);
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .v-input-sm {
@@ -273,7 +275,8 @@
   width: 100%;
 }
 
-.v-input-sm::placeholder { color: #4A3A40; }
+.v-input-sm::placeholder { color: #3D2E33; }
+.v-input-sm { color: #FFFFFF; }
 
 /* ── Chips ── */
 .v-chip-row {
@@ -303,10 +306,11 @@
 }
 
 .v-chip.active {
-  background: rgba(232, 85, 78, 0.12);
-  border-color: rgba(232, 85, 78, 0.3);
-  color: #E8554E;
-  font-weight: 500;
+  background: #E8554E;
+  border-color: #E8554E;
+  color: #FFFFFF;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(232, 85, 78, 0.3);
 }
 
 /* ── Buttons ── */
