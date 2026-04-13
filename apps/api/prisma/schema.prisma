@@ -38,24 +38,25 @@ model Museum {
 }
 
 model Exhibition {
-  id              String       @id @default(cuid())
+  id              String           @id @default(cuid())
   museumId        String
-  museum          Museum       @relation(fields: [museumId], references: [id])
+  museum          Museum           @relation(fields: [museumId], references: [id])
   name            String
   subtitle        String?
-  description     String       @db.Text
+  description     String           @db.Text
   startDate       DateTime
   endDate         DateTime
   sponsor         String?
   coverImage      String?
   status          ExhibitionStatus @default(DRAFT)
-  qrCode          String?      @unique
+  qrCode          String?          @unique
   works           Work[]
   checkins        Checkin[]
+  evaluations     Evaluation[]
   cameraCounts    CameraCount[]
-  otherExhibitions Json?       // [{ name: "", room: "" }]
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+  otherExhibitions Json?           // [{ name: "", room: "" }]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
   
   @@index([museumId, status])
 }
@@ -79,17 +80,18 @@ model Work {
 }
 
 model Visitor {
-  id                 String      @id @default(cuid())
-  cpfHash            String      @unique // CPF criptografado
+  id                 String        @id @default(cuid())
+  cpfHash            String        @unique // CPF criptografado
   name               String
   birthYear          Int
   gender             Gender
   origin             Origin
-  originDetail       String?     // Novo: cidade ou país
-  accessibilityNeeds Json?       // Novo: string[] (AccessibilityNeed[])
+  originDetail       String?       // cidade ou país
+  accessibilityNeeds Json?         // string[] (AccessibilityNeed[])
   checkins           Checkin[]
-  createdAt          DateTime    @default(now())
-  updatedAt          DateTime    @updatedAt
+  evaluations        Evaluation[]
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
   
   @@index([cpfHash])
 }
@@ -106,6 +108,44 @@ model Checkin {
   
   @@index([visitorId, exhibitionId])
   @@index([exhibitionId, createdAt])
+}
+
+// ───────────────────────────────────────────────
+// EVALUATION SERVICE (Evaluation + Experience Score)
+// ───────────────────────────────────────────────
+model Evaluation {
+  id            String      @id @default(cuid())
+  visitorId     String
+  visitor       Visitor     @relation(fields: [visitorId], references: [id])
+  exhibitionId  String
+  exhibition    Exhibition  @relation(fields: [exhibitionId], references: [id])
+  rating        Int         // 1–5 stars
+  comment       String?     @db.Text
+  sentiment     Float?      // -1.0 to 1.0 (populated by ML pipeline)
+  experienceScore Float?    // (rating * 0.7) + (sentiment * 0.3)
+  shareChannel  String?     // whatsapp, instagram, etc
+  createdAt     DateTime    @default(now())
+
+  @@unique([visitorId, exhibitionId])
+  @@index([exhibitionId, rating])
+  @@index([exhibitionId, createdAt])
+}
+
+// ───────────────────────────────────────────────
+// ANALYTICS SERVICE (Behavioral Event Tracking)
+// ───────────────────────────────────────────────
+model AnalyticsEvent {
+  id            String      @id @default(cuid())
+  sessionId     String      // anonymous session token
+  event         String      // rating_submitted, share_clicked, share_completed, etc
+  properties    Json?       // { channel: "whatsapp", rating: 5, ... }
+  exhibitionId  String?
+  museumSlug    String?     // for multi-tenant routing
+  createdAt     DateTime    @default(now())
+
+  @@index([event, createdAt])
+  @@index([exhibitionId, event])
+  @@index([museumSlug, createdAt])
 }
 
 model Camera {
@@ -173,3 +213,4 @@ enum CountType {
   ENTRADA
   SAIDA
 }
+

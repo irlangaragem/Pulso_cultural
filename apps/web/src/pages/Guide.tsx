@@ -3,6 +3,7 @@ import { Play, Pause } from 'lucide-react';
 import { Howl } from 'howler';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
+import { analytics } from '../services/analytics';
 import { VisitorLayout } from '../components/VisitorLayout';
 import { PulseSymbol } from '../components/PulseSymbol';
 
@@ -32,6 +33,8 @@ const OTHER_EXPOS = [
   { name: 'Xiló: Gravura Popular Nordestina', room: 'Espaço Educativo' },
   { name: 'Acervo de Arte Popular', room: 'Ala Sul' },
 ];
+
+const EXHIBITION_ID = 'default-exhibition';
 
 export function Guide() {
   const navigate = useNavigate();
@@ -65,24 +68,41 @@ export function Guide() {
     if (rating === 0) return;
     setIsSubmittingFeedback(true);
     try {
-      // Small delay for UX
-      await new Promise(resolve => setTimeout(resolve, 800));
+      const cpf = localStorage.getItem('pulso:return_cpf');
+      
+      if (cpf) {
+        await api.post('/evaluations', {
+          cpf,
+          exhibitionId: EXHIBITION_ID,
+          rating,
+          comment: feedbackComment || undefined,
+        });
+      }
+
+      // Track the event even if cpf is missing
+      analytics.track('rating_submitted', {
+        exhibitionId: EXHIBITION_ID,
+        properties: { rating, hasComment: !!feedbackComment }
+      });
+
       setFeedbackSubmitted(true);
     } catch (err) {
       console.error(err);
+      // Still mark as submitted for UX
+      setFeedbackSubmitted(true);
     } finally {
       setIsSubmittingFeedback(false);
     }
   };
 
+  // Track guide view on mount
+  useEffect(() => {
+    analytics.track('guide_viewed', { exhibitionId: EXHIBITION_ID });
+  }, []);
 
   useEffect(() => {
     api.get('/exhibitions/default-exhibition').then(res => {
       setExhibition(res.data);
-      // Disable overriding works from API to ensure mockup descriptions match exactly
-      // if (res.data.works && res.data.works.length > 0) {
-      //   setWorks(res.data.works.slice(0, 6));
-      // }
     }).catch(() => {
       // Use fallback data
     });

@@ -3,6 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { toPng } from 'html-to-image';
 import { Share2, Download } from 'lucide-react';
 import { VisitorLayout } from '../components/VisitorLayout';
+import { analytics } from '../services/analytics';
+import { api } from '../services/api';
+
+const EXHIBITION_ID = 'default-exhibition';
+const MUSEUM_SLUG = 'mam-salvador';
 
 export function CardShare() {
   const navigate = useNavigate();
@@ -29,7 +34,27 @@ export function CardShare() {
     }
   };
 
+  const recordShareChannel = (channel: string) => {
+    const cpf = localStorage.getItem('pulso:return_cpf');
+    analytics.track('share_completed', {
+      exhibitionId: EXHIBITION_ID,
+      museumSlug: MUSEUM_SLUG,
+      properties: { channel }
+    });
+
+    // Update evaluation record with share channel (non-blocking)
+    if (cpf) {
+      api.post('/evaluations', {
+        cpf,
+        exhibitionId: EXHIBITION_ID,
+        rating: 5, // If they share, we assume satisfaction
+        shareChannel: channel
+      }).catch(() => {});
+    }
+  };
+
   const handleShare = async () => {
+    analytics.track('share_clicked', { exhibitionId: EXHIBITION_ID, museumSlug: MUSEUM_SLUG });
     setIsSharing(true);
     const dataUrl = await generateImage();
     setIsSharing(false);
@@ -43,12 +68,14 @@ export function CardShare() {
       if (navigator.share) {
         await navigator.share({
           title: 'Meu Pulso Cultural',
-          text: 'Eu fiz a cultura pulsar hoje.',
+          text: 'Eu fiz a cultura pulsar hoje. 🔴\n\nUma História da Arte Brasileira · MAM Salvador',
           files: [file],
+          url: `https://pulsocultural.art/?utm_source=share&utm_medium=app&utm_campaign=visitor_share&utm_content=${MUSEUM_SLUG}`
         });
+        recordShareChannel('native_share');
       } else {
-        // Fallback if Web Share API not supported
         handleDownload(dataUrl);
+        recordShareChannel('download');
       }
     } catch (err) {
       console.error('Share failed:', err);
@@ -65,6 +92,7 @@ export function CardShare() {
       link.download = 'meu-pulso-cultural.png';
       link.href = dataUrl;
       link.click();
+      if (!preGeneratedDataUrl) recordShareChannel('download');
     }
   };
 

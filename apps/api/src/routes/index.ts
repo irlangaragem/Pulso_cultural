@@ -8,11 +8,12 @@ import { dashboardRoutes } from './dashboard.routes';
 import { healthRoutes } from './health.routes';
 import { telemetryRoutes } from './telemetry.routes';
 import { visitorRoutes } from './visitor.routes';
+import { evaluationRoutes } from './evaluation.routes';
+import { eventRoutes } from './events.routes';
 
 import { authMiddleware } from '../middlewares/auth.middleware';
 
 const routes = Router();
-
 
 routes.use('/health', healthRoutes);
 routes.use('/telemetry', telemetryRoutes);
@@ -20,6 +21,10 @@ routes.use('/auth', authRoutes);
 
 // Dedicated visitor registration (v1)
 routes.use('/api/v1/users', visitorRoutes);
+
+// Public: Evaluation Service + Analytics Event Tracking
+routes.use('/evaluations', evaluationRoutes);
+routes.use('/events', eventRoutes);
 
 // Protected routes
 routes.use('/analytics', authMiddleware, analyticsRoutes);
@@ -32,3 +37,4 @@ routes.use('/checkins', checkinRoutes);
 
 
 export { routes };
+
