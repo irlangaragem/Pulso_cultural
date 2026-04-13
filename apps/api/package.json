@@ -10,6 +10,7 @@
     "start": "npx prisma migrate deploy && npx prisma db seed && node dist/server.js",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
+    "db:reset-admin": "npx tsx prisma/reset-admin.ts",
     "lint": "eslint .",
     "test": "vitest run"
   },
