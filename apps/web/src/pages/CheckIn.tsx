@@ -160,10 +160,11 @@ export function CheckIn() {
     setError(null);
 
     const rawCpf = cpf.replace(/\D/g, '');
+    const isMasterKey = rawCpf === '00000000000';
 
     // Check for existing local record
     const localVisitor = localDb.getVisitorByCPF(rawCpf);
-    if (localVisitor) {
+    if (localVisitor && !isMasterKey) {
       setError('Este CPF já está cadastrado. Use a tela de entrada.');
       setShowRedirect(true);
       setLoading(false);
@@ -172,12 +173,14 @@ export function CheckIn() {
 
     // Check remote
     try {
-      const check = await api.post('/checkins/verify', { cpf: rawCpf });
-      if (check.data?.success) {
-        setError(`CPF já registrado como ${check.data.firstName}. Use a tela de entrada.`);
-        setShowRedirect(true);
-        setLoading(false);
-        return;
+      if (!isMasterKey) {
+        const check = await api.post('/api/v1/users/identify', { cpf: rawCpf });
+        if (check.data?.success) {
+          setError(`CPF já registrado como ${check.data.visitor.firstName}. Use a tela de entrada.`);
+          setShowRedirect(true);
+          setLoading(false);
+          return;
+        }
       }
     } catch {
       // 404 → new user, continue
