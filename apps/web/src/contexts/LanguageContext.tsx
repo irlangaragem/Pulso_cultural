@@ -6,8 +6,8 @@ type Translations = Record<Language, Record<string, string>>;
 
 const translations: Translations = {
   pt: {
-    'venue.status': 'MAM Salvador · Aberto agora',
-    'exhibition.label': 'EXPOSIÇÃO EM CARTAZ',
+    'venue.status': 'MAM SALVADOR',
+    'exhibition.label': 'Exposição atual',
     'exhibition.title': 'Uma História da Arte Brasileira',
     'checkin.cta': 'Seu guia começa pelo seu pulso.',
     'checkin.cta.returning': 'Bem-vindo de volta, {name}! 👋 Seu guia começa pelo seu pulso.',
@@ -16,7 +16,7 @@ const translations: Translations = {
     'source.question': 'Como soube desta exposição?',
     'source.social': 'Redes sociais',
     'source.referral': 'Indicação',
-    'source.walked_by': 'Passei na frente',
+    'source.walked_by': 'Passando pela rua',
     'source.tv': 'Jornal / TV',
     'source.school': 'Escola / faculdade',
     'source.other': 'Outro',
@@ -32,8 +32,8 @@ const translations: Translations = {
     'success.redirecting': 'Redirecionando para o guia...'
   },
   en: {
-    'venue.status': 'MAM Salvador · Open now',
-    'exhibition.label': 'CURRENT EXHIBITION',
+    'venue.status': 'MAM SALVADOR',
+    'exhibition.label': 'Current exhibition',
     'exhibition.title': 'A History of Brazilian Art',
     'checkin.cta': 'Your guide starts with your pulse.',
     'checkin.cta.returning': 'Welcome back, {name}! 👋 Your guide starts with your pulse.',

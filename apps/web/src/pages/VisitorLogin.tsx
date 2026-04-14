@@ -11,11 +11,11 @@ import { useLanguage } from '../contexts/LanguageContext';
 const CANAIS = [
   { id: 'Redes sociais', key: 'source.social' },
   { id: 'Indicação', key: 'source.referral' },
-  { id: 'Passei na frente', key: 'source.walked_by' },
-  { id: 'Jornal / TV', key: 'source.tv' },
-  { id: 'Escola / faculdade', key: 'source.school' },
-  { id: 'Outro', key: 'source.other' }
+  { id: 'Passando pela rua', key: 'source.walked_by' },
+  { id: 'Escola / faculdade', key: 'source.school' }
 ];
+
+const CANAL_OUTRO = { id: 'Outro', key: 'source.other' };
 
 export function VisitorLogin() {
   const [cpf, setCpf] = useState('');
@@ -130,22 +130,27 @@ export function VisitorLogin() {
           <PulseSymbol size={64} />
         </div>
 
-        {/* Wordmark */}
-        <h1 className="v-wordmark">PULSO</h1>
-        <p className="v-wordmark-sub">CULTURAL</p>
-
-        {/* Venue tag */}
-        <div className="v-venue-tag">
-          <span className="v-venue-dot" />
-          {t('venue.status')}
+        {/* Unified Logo & Context */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, margin: '4vh 0 16px' }}>
+          <span className="v-venue-dot" style={{ position: 'relative', margin: 0, padding: 0 }} />
+          <h1 style={{ fontFamily: 'Sora, sans-serif', fontSize: 18, fontWeight: 800, margin: 0, color: '#F5ECE4', letterSpacing: 2 }}>PULSO</h1>
+          <span style={{ fontSize: 10, color: '#6B5A60', fontWeight: 600, letterSpacing: 1 }}>{t('venue.status')}</span>
         </div>
 
-        {/* Exhibition name */}
-        <div className="v-expo-tag">
-          <p style={{ fontFamily: "'Space Mono', monospace", fontSize: 8, color: '#E8554E', letterSpacing: 3, marginBottom: 4 }}>
+        {/* Exhibition Card */}
+        <div style={{ 
+          background: 'rgba(255, 255, 255, 0.03)', 
+          border: '1px solid rgba(255, 255, 255, 0.05)',
+          borderRadius: 16,
+          padding: '12px 16px',
+          margin: '0 auto 4vh',
+          width: '100%',
+          textAlign: 'left'
+        }}>
+          <p style={{ fontFamily: 'Sora, sans-serif', fontSize: 10, color: '#6B5A60', letterSpacing: 0.5, marginBottom: 4 }}>
             {t('exhibition.label')}
           </p>
-          <p style={{ fontFamily: 'Sora, sans-serif', fontSize: 14, fontWeight: 600, color: '#F5ECE4', lineHeight: 1.3 }}>
+          <p style={{ fontFamily: 'Sora, sans-serif', fontSize: 13, fontWeight: 600, color: '#F5ECE4', lineHeight: 1.3, margin: 0 }}>
             {t('exhibition.title')}
           </p>
         </div>
@@ -182,20 +187,37 @@ export function VisitorLogin() {
 
         {/* Como soube */}
         <label className="v-label" style={{ marginTop: 8 }}>{t('source.question')}</label>
-        <div className="v-chip-row" style={{ marginBottom: como === 'Outro' ? 8 : 16 }}>
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: '1fr 1fr', 
+          gap: 8, 
+          marginBottom: 8 
+        }}>
           {CANAIS.map(c => (
             <button
               key={c.id}
               type="button"
               className={`v-chip ${como === c.id ? 'active' : ''}`}
+              style={{ width: '100%', margin: 0, minHeight: 44, padding: '0 8px', fontSize: 12 }}
               onClick={() => {
                 setComo(c.id);
-                if (c.id !== 'Outro') setComoOutroText('');
+                setComoOutroText('');
               }}
             >
               {t(c.key)}
             </button>
           ))}
+        </div>
+        
+        <div style={{ marginBottom: como === 'Outro' ? 8 : 16 }}>
+          <button
+            type="button"
+            className={`v-chip ${como === CANAL_OUTRO.id ? 'active' : ''}`}
+            style={{ width: '100%', margin: 0, minHeight: 44, justifyContent: 'center' }}
+            onClick={() => setComo(CANAL_OUTRO.id)}
+          >
+            {t(CANAL_OUTRO.key)}
+          </button>
         </div>
 
         {como === 'Outro' && (

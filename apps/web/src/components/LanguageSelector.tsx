@@ -7,18 +7,18 @@ export function LanguageSelector() {
     <div 
       style={{
         position: 'absolute',
-        top: 24,
-        right: 24,
+        top: 20,
+        right: 20,
         display: 'flex',
         alignItems: 'center',
-        gap: 8,
-        background: 'rgba(255, 255, 255, 0.05)',
-        padding: '4px 8px',
-        borderRadius: 20,
-        backdropFilter: 'blur(8px)',
+        background: 'rgba(30, 25, 28, 0.6)',
+        padding: '4px',
+        borderRadius: 30,
+        backdropFilter: 'blur(12px)',
+        border: '1px solid rgba(255, 255, 255, 0.05)',
         zIndex: 50,
         fontFamily: 'Sora, sans-serif',
-        fontSize: 12,
+        fontSize: 11,
         fontWeight: 600,
         letterSpacing: 1
       }}
@@ -27,32 +27,58 @@ export function LanguageSelector() {
       <button
         onClick={() => setLanguage('pt')}
         style={{
-          background: 'none',
+          background: language === 'pt' ? '#F5ECE4' : 'transparent',
+          color: language === 'pt' ? '#120F11' : '#A4969B',
           border: 'none',
-          color: language === 'pt' ? '#F5ECE4' : '#6B5A60',
+          borderRadius: 24,
           cursor: 'pointer',
-          transition: 'color 0.2s',
-          padding: '4px 8px',
+          transition: 'all 0.2s',
+          minWidth: 44,
+          height: 32,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
         }}
         aria-label="Português"
       >
         PT
       </button>
-      <span style={{ color: '#6B5A60' }}>|</span>
       <button
         onClick={() => setLanguage('en')}
         style={{
-          background: 'none',
+          background: language === 'en' ? '#F5ECE4' : 'transparent',
+          color: language === 'en' ? '#120F11' : '#A4969B',
           border: 'none',
-          color: language === 'en' ? '#F5ECE4' : '#6B5A60',
+          borderRadius: 24,
           cursor: 'pointer',
-          transition: 'color 0.2s',
-          padding: '4px 8px',
+          transition: 'all 0.2s',
+          minWidth: 44,
+          height: 32,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
         }}
         aria-label="English"
       >
         EN
       </button>
+      
+      {/* Indicador +2 (Mock para escalabilidade FR/ES exigida no UX) */}
+      <div 
+        title="Mais idiomas em breve"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minWidth: 44,
+          height: 32,
+          color: '#6B5A60',
+          cursor: 'not-allowed',
+          fontSize: 11
+        }}
+      >
+        +2
+      </div>
     </div>
   );
 }
