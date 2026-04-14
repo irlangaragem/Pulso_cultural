@@ -3,6 +3,7 @@ import { museumRoutes } from './museum.routes';
 import { exhibitionRoutes } from './exhibition.routes';
 import { checkinRoutes } from './checkin.routes';
 import { authRoutes } from './auth.routes';
+import { prisma } from '../lib/prisma';
 import { analyticsRoutes } from './analytics.routes';
 import { dashboardRoutes } from './dashboard.routes';
 import { healthRoutes } from './health.routes';
@@ -36,6 +37,16 @@ routes.use('/', authMiddleware, dashboardRoutes);
 
 // Public / Visitor routes
 routes.use('/checkins', checkinRoutes);
+
+// TEMP: one-time DB setup — creates pg_stat_statements extension
+routes.get('/admin/setup-db', authMiddleware, async (req, res) => {
+  try {
+    await prisma.$executeRawUnsafe('CREATE EXTENSION IF NOT EXISTS pg_stat_statements;');
+    res.json({ ok: true, message: 'Extension pg_stat_statements created (or already exists).' });
+  } catch (err: any) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
 
 
 export { routes };
