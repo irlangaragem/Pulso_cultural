@@ -7,15 +7,16 @@ import { formatCPF, isValidCPF } from '../utils/cpf';
 import { VisitorLayout } from '../components/VisitorLayout';
 import { PulseSymbol } from '../components/PulseSymbol';
 import { useLanguage } from '../contexts/LanguageContext';
+import { CreditCard } from 'lucide-react';
 
 const CANAIS = [
   { id: 'Redes sociais', key: 'source.social' },
   { id: 'Indicação', key: 'source.referral' },
-  { id: 'Passando pela rua', key: 'source.walked_by' },
-  { id: 'Escola / faculdade', key: 'source.school' }
+  { id: 'Passei na frente', key: 'source.walked_by' },
+  { id: 'Jornal / TV', key: 'source.tv' },
+  { id: 'Escola / faculdade', key: 'source.school' },
+  { id: 'Outro', key: 'source.other' }
 ];
-
-const CANAL_OUTRO = { id: 'Outro', key: 'source.other' };
 
 export function VisitorLogin() {
   const [cpf, setCpf] = useState('');
@@ -49,8 +50,7 @@ export function VisitorLogin() {
     setError(null);
   };
 
-  const isComplete = cpf.replace(/\D/g, '').length === 11 && (como === 'Outro' ? comoOutroText.trim().length > 0 : como) && lgpdAccepted;
-
+  const isComplete = cpf.replace(/\D/g, '').length === 11 && (como === 'Outro' ? comoOutroText.trim().length > 0 : como);
 
   const handleSubmit = async () => {
     if (!isComplete) return;
@@ -105,14 +105,13 @@ export function VisitorLogin() {
           await api.post('/checkins', checkinData);
         } catch (e) {
           console.warn('API sync failed, adding to queue', e);
-          localDb.addToSyncQueue({ ...checkinData, name: visitor.name }); // add name for legacy local record
+          localDb.addToSyncQueue({ ...checkinData, name: visitor.name });
         }
 
         setSuccess(true);
         setTimeout(() => navigate('/guide'), 1500);
       } else {
-        // SILENT REDIRECT FOR NEW USERS
-        navigate(`/checkin?cpf=${cpf}`);
+        navigate(`/checkin?cpf=${cpf}&como=${como}`);
       }
     } finally {
       if (!success) setLoading(false);
@@ -122,55 +121,44 @@ export function VisitorLogin() {
   return (
     <VisitorLayout>
       <div className="visitor-screen">
-        {/* Glow */}
         <div className="visitor-glow" />
 
-        {/* Symbol */}
-        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '6vh', position: 'relative', zIndex: 1 }}>
-          <PulseSymbol size={64} />
+        {/* Header Symbol */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '4vh', marginBottom: '2vh', position: 'relative', zIndex: 1 }}>
+          <PulseSymbol size={80} />
         </div>
 
-        {/* Unified Logo & Context */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, margin: '4vh 0 16px' }}>
-          <span className="v-venue-dot" style={{ position: 'relative', margin: 0, padding: 0 }} />
-          <h1 style={{ fontFamily: 'Sora, sans-serif', fontSize: 18, fontWeight: 800, margin: 0, color: '#F5ECE4', letterSpacing: 2 }}>PULSO</h1>
-          <span style={{ fontSize: 10, color: '#6B5A60', fontWeight: 600, letterSpacing: 1 }}>{t('venue.status')}</span>
+        {/* Wordmark */}
+        <h1 className="v-wordmark">PULSO</h1>
+        <p className="v-wordmark-sub">CULTURAL</p>
+
+        {/* Status */}
+        <div className="v-venue-tag">
+          <span className="v-venue-dot" />
+          <span>{t('venue.name')}</span>
+          <span style={{ opacity: 0.3 }}>•</span>
+          <span>{t('venue.status')}</span>
         </div>
 
-        {/* Exhibition Card */}
-        <div style={{ 
-          background: 'rgba(255, 255, 255, 0.03)', 
-          border: '1px solid rgba(255, 255, 255, 0.05)',
-          borderRadius: 16,
-          padding: '12px 16px',
-          margin: '0 auto 4vh',
-          width: '100%',
-          textAlign: 'left'
-        }}>
-          <p style={{ fontFamily: 'Sora, sans-serif', fontSize: 10, color: '#6B5A60', letterSpacing: 0.5, marginBottom: 4 }}>
-            {t('exhibition.label')}
-          </p>
-          <p style={{ fontFamily: 'Sora, sans-serif', fontSize: 13, fontWeight: 600, color: '#F5ECE4', lineHeight: 1.3, margin: 0 }}>
-            {t('exhibition.title')}
-          </p>
-        </div>
+        {/* Exhibition context */}
+        <p className="v-expo-label">{t('exhibition.label')}</p>
+        <h2 className="v-expo-title">{t('exhibition.title')}</h2>
 
-        {/* CTA */}
         <p className="v-cta-text">
           {returningUser ? (
             <motion.span
-              initial={{ opacity: 0, y: 5 }}
-              animate={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
               dangerouslySetInnerHTML={{ __html: t('checkin.cta.returning', { name: `<span style="color: #E8554E">${returningUser}</span>` }) }}
             />
           ) : (
-            <span dangerouslySetInnerHTML={{ __html: t('checkin.cta').replace(' e ', ' e<br/>').replace(' and ', ' and<br/>') }} />
+            <span>{t('checkin.cta')}</span>
           )}
         </p>
 
-        {/* CPF field */}
-        <label className="v-label" style={{ display: 'block', marginBottom: 4, textAlign: 'left', opacity: 0.8 }}>{t('cpf.label')}</label>
+        {/* CPF Field */}
         <div className={`v-input-wrap ${focused ? 'focused' : ''}`}>
+          <CreditCard className="v-input-icon" size={20} />
           <input
             ref={inputRef}
             type="tel"
@@ -185,47 +173,26 @@ export function VisitorLogin() {
           />
         </div>
 
-        {/* Como soube */}
-        <label className="v-label" style={{ marginTop: 8 }}>{t('source.question')}</label>
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: '1fr 1fr', 
-          gap: 8, 
-          marginBottom: 8 
-        }}>
+        {/* Source Question */}
+        <span className="v-label-text">{t('source.question')}</span>
+        <div className="v-chip-grid">
           {CANAIS.map(c => (
             <button
               key={c.id}
               type="button"
               className={`v-chip ${como === c.id ? 'active' : ''}`}
-              style={{ width: '100%', margin: 0, minHeight: 44, padding: '0 8px', fontSize: 12 }}
-              onClick={() => {
-                setComo(c.id);
-                setComoOutroText('');
-              }}
+              onClick={() => setComo(c.id)}
             >
               {t(c.key)}
             </button>
           ))}
-        </div>
-        
-        <div style={{ marginBottom: como === 'Outro' ? 8 : 16 }}>
-          <button
-            type="button"
-            className={`v-chip ${como === CANAL_OUTRO.id ? 'active' : ''}`}
-            style={{ width: '100%', margin: 0, minHeight: 44, justifyContent: 'center' }}
-            onClick={() => setComo(CANAL_OUTRO.id)}
-          >
-            {t(CANAL_OUTRO.key)}
-          </button>
         </div>
 
         {como === 'Outro' && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            style={{ marginBottom: 16 }}
+            style={{ marginBottom: 24, zIndex: 1, position: 'relative' }}
           >
             <input
               type="text"
@@ -233,72 +200,37 @@ export function VisitorLogin() {
               value={comoOutroText}
               onChange={(e) => setComoOutroText(e.target.value)}
               className="v-input"
-              style={{ padding: '12px 16px', fontSize: 13, border: '1px solid rgba(255,255,255,0.1)' }}
+              style={{ padding: '12px 16px', fontSize: 16, border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, background: 'rgba(255,255,255,0.02)' }}
             />
           </motion.div>
         )}
-
 
         {/* Error */}
         <AnimatePresence>
           {error && (
             <motion.div
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0 }}
               className="v-error"
             >
-              ⚠️ {error}
+              {error}
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* LGPD Checkbox Before CTA */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 16, marginTop: 8 }}>
-          <div style={{ position: 'relative', top: 2 }}>
-            <input 
-              type="checkbox" 
-              id="lgpd-consent"
-              checked={lgpdAccepted}
-              onChange={(e) => setLgpdAccepted(e.target.checked)}
-              style={{
-                appearance: 'none',
-                width: 18,
-                height: 18,
-                borderRadius: 4,
-                border: '1px solid rgba(255, 255, 255, 0.2)',
-                background: lgpdAccepted ? '#E8554E' : 'rgba(255, 255, 255, 0.05)',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                transition: 'all 0.2s',
-                margin: 0
-              }}
-            />
-            {lgpdAccepted && (
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth="3" strokeLinecap="round" style={{ position: 'absolute', top: 3, left: 3, pointerEvents: 'none' }}>
-                <polyline points="20 6 9 17 4 12"></polyline>
-              </svg>
-            )}
-          </div>
-          <label htmlFor="lgpd-consent" style={{ fontSize: 11, color: '#F5ECE4', lineHeight: 1.4, cursor: 'pointer', flex: 1, textAlign: 'left', opacity: 0.8 }}>
-            {t('footer.lgpd.checkbox')}
-          </label>
-        </div>
-
+        {/* Primary CTA */}
         <button
           className="v-btn-primary"
-          style={{ opacity: isComplete && !loading ? 1 : 0.4 }}
           onClick={handleSubmit}
           disabled={!isComplete || loading}
         >
           {loading ? t('button.pulsing') : t('button.pulse')}
         </button>
 
-        {/* Footers */}
-        <div style={{ marginTop: 'auto', padding: '24px 0', textAlign: 'center' }}>
-          <p style={{ fontSize: 10, color: '#6B5A60', lineHeight: 1.5, margin: 0, textTransform: 'uppercase', letterSpacing: 1 }}>
+        {/* LGPD Footer */}
+        <div style={{ marginTop: 'auto', padding: '24px 0', textAlign: 'center', position: 'relative', zIndex: 1 }}>
+          <p style={{ fontSize: 11, color: '#524248', fontWeight: 500 }}>
             {t('footer.lgpd.link')}
           </p>
         </div>
@@ -314,7 +246,7 @@ export function VisitorLogin() {
             exit={{ opacity: 0 }}
             className="v-success-overlay"
           >
-            <PulseSymbol size={80} />
+            <PulseSymbol size={120} />
             <p className="v-cta-text" style={{ marginTop: 24, fontSize: 18 }}>{t('success.granted')}</p>
             <p className="v-footer-note" style={{ marginTop: 8 }}>{t('success.redirecting')}</p>
           </motion.div>

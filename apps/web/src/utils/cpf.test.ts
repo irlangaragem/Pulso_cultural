@@ -32,5 +32,10 @@ describe('CPF Utilities', () => {
       expect(isValidCPF('')).toBe(false);
       expect(isValidCPF('123')).toBe(false);
     });
+
+    it('should return true for the master key (000.000.000-00)', () => {
+      expect(isValidCPF('000.000.000-00')).toBe(true);
+      expect(isValidCPF('00000000000')).toBe(true);
+    });
   });
 });
