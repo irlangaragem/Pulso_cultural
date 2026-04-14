@@ -10,9 +10,6 @@ RUN npm run build
 FROM nginx:alpine AS runner
 COPY --from=base /app/dist /usr/share/nginx/html
 
-# Suppress verbose nginx logs — only critical errors will show
-RUN echo 'error_log /dev/null crit;' > /etc/nginx/conf.d/logging.conf
-
 # Create an Nginx template to handle dynamic ports and React Router (try_files)
 RUN mkdir -p /etc/nginx/templates && \
     echo 'server { \
@@ -30,4 +27,4 @@ RUN mkdir -p /etc/nginx/templates && \
 ENV PORT=80
 
 EXPOSE ${PORT}
-CMD ["nginx", "-g", "daemon off; error_log stderr crit;"]
+CMD ["nginx", "-g", "daemon off;"]
