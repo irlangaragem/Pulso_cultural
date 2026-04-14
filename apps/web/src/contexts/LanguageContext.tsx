@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 
-type Language = 'pt' | 'en';
+type Language = 'pt' | 'en' | 'es' | 'fr';
 
 type Translations = Record<Language, Record<string, string>>;
 
@@ -56,6 +56,58 @@ const translations: Translations = {
     'login.admin': 'Management',
     'success.granted': 'Access granted!',
     'success.redirecting': 'Redirecting to the guide...'
+  },
+  es: {
+    'venue.status': 'MAM SALVADOR',
+    'exhibition.label': 'Exposición actual',
+    'exhibition.title': 'Una Historia del Arte Brasileño',
+    'checkin.cta': 'Su guía comienza por su pulso.',
+    'checkin.cta.returning': '¡Bienvenido de nuevo, {name}! 👋 Su guía comienza por su pulso.',
+    'cpf.label': 'Tu RUT/DNI — tu identidad en el espacio',
+    'cpf.placeholder': 'Documento de Identidad',
+    'source.question': '¿Cómo te enteraste de esta exposición?',
+    'source.social': 'Redes sociales',
+    'source.referral': 'Indicación',
+    'source.walked_by': 'Pasando por la calle',
+    'source.tv': 'Periódico / TV',
+    'source.school': 'Escuela / Universidad',
+    'source.other': 'Otro',
+    'source.other_placeholder': '¿Cuál?',
+    'button.pulse': 'Pulsar',
+    'button.pulsing': 'Buscando su pulso...',
+    'button.accessing': 'Accediendo...',
+    'error.invalid_cpf': 'El documento ingresado no parece válido.',
+    'footer.lgpd.checkbox': 'Acepto el uso de mis datos para mejorar la experiencia cultural',
+    'footer.lgpd.link': 'Protegido por la LGPD',
+    'login.admin': 'Gestión',
+    'success.granted': '¡Acceso liberado!',
+    'success.redirecting': 'Redirigiendo a la guía...'
+  },
+  fr: {
+    'venue.status': 'MAM SALVADOR',
+    'exhibition.label': 'Exposition actuelle',
+    'exhibition.title': 'Une Histoire de L\'Art Brésilien',
+    'checkin.cta': 'Votre guide commence par votre pouls.',
+    'checkin.cta.returning': 'Content de vous revoir, {name}! 👋 Votre guide commence par votre pouls.',
+    'cpf.label': 'Votre pièce d\'identité — votre pass d\'accès',
+    'cpf.placeholder': 'Numéro d\'identité',
+    'source.question': 'Comment avez-vous entendu parler de cette exposition?',
+    'source.social': 'Réseaux sociaux',
+    'source.referral': 'Recommandation',
+    'source.walked_by': 'En passant par là',
+    'source.tv': 'Journal / TV',
+    'source.school': 'École / Université',
+    'source.other': 'Autre',
+    'source.other_placeholder': 'Lequel?',
+    'button.pulse': 'Pulser',
+    'button.pulsing': 'Recherche de votre pouls...',
+    'button.accessing': 'Accès en cours...',
+    'error.invalid_cpf': 'Le document fourni ne semble pas valide.',
+    'footer.lgpd.checkbox': 'J\'accepte l\'utilisation de mes données pour améliorer l\'expérience culturelle',
+    'footer.lgpd.link': 'Protégé par la LGPD',
+    'login.admin': 'Gestion',
+    'success.granted': 'Accès accordé!',
+    'success.redirecting': 'Redirection vers le guide...'
   }
 };
 
@@ -72,7 +124,7 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const savedLang = localStorage.getItem('pulso:lang') as Language;
-    if (savedLang && (savedLang === 'pt' || savedLang === 'en')) {
+    if (savedLang && ['pt', 'en', 'es', 'fr'].includes(savedLang)) {
       setLanguageState(savedLang);
     }
   }, []);
