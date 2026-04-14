@@ -7,7 +7,6 @@ import { formatCPF, isValidCPF } from '../utils/cpf';
 import { VisitorLayout } from '../components/VisitorLayout';
 import { PulseSymbol } from '../components/PulseSymbol';
 import { useLanguage } from '../contexts/LanguageContext';
-import { LanguageSelector } from '../components/LanguageSelector';
 
 const CANAIS = [
   { id: 'Redes sociais', key: 'source.social' },
@@ -121,7 +120,6 @@ export function VisitorLogin() {
 
   return (
     <VisitorLayout>
-      <LanguageSelector />
       <div className="visitor-screen">
         {/* Glow */}
         <div className="visitor-glow" />

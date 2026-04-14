@@ -1,4 +1,5 @@
 import React from 'react';
+import { LanguageSelector } from './LanguageSelector';
 import '../visitor.css';
 
 interface VisitorLayoutProps {
@@ -12,6 +13,7 @@ export function VisitorLayout({ children }: VisitorLayoutProps) {
   return (
     <div className="visitor-viewport">
       <div className="visitor-phone">
+        <LanguageSelector />
         {/* Status Bar */}
         <div className="visitor-status-bar">
           <span style={{ fontSize: 11, fontWeight: 600 }}>{timeStr}</span>
