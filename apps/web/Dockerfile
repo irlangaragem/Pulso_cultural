@@ -30,4 +30,4 @@ RUN mkdir -p /etc/nginx/templates && \
 ENV PORT=80
 
 EXPOSE ${PORT}
-CMD ["nginx", "-g", "daemon off; error_log stderr crit; worker_processes 1;"]
+CMD ["nginx", "-g", "daemon off; error_log stderr crit;"]
