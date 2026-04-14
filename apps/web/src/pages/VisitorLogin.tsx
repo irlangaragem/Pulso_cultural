@@ -21,6 +21,7 @@ export function VisitorLogin() {
   const [cpf, setCpf] = useState('');
   const [como, setComo] = useState('');
   const [comoOutroText, setComoOutroText] = useState('');
+  const [lgpdAccepted, setLgpdAccepted] = useState(false);
 
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -48,7 +49,7 @@ export function VisitorLogin() {
     setError(null);
   };
 
-  const isComplete = cpf.replace(/\D/g, '').length === 11 && (como === 'Outro' ? comoOutroText.trim().length > 0 : como);
+  const isComplete = cpf.replace(/\D/g, '').length === 11 && (como === 'Outro' ? comoOutroText.trim().length > 0 : como) && lgpdAccepted;
 
 
   const handleSubmit = async () => {
@@ -163,13 +164,8 @@ export function VisitorLogin() {
         </p>
 
         {/* CPF field */}
+        <label className="v-label" style={{ display: 'block', marginBottom: 4, textAlign: 'left', opacity: 0.8 }}>{t('cpf.label')}</label>
         <div className={`v-input-wrap ${focused ? 'focused' : ''}`}>
-          <span style={{ flexShrink: 0, display: 'flex' }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6B5A60" strokeWidth="2" strokeLinecap="round">
-              <rect x="3" y="4" width="18" height="16" rx="2" />
-              <line x1="3" y1="10" x2="21" y2="10" />
-            </svg>
-          </span>
           <input
             ref={inputRef}
             type="tel"
@@ -235,6 +231,40 @@ export function VisitorLogin() {
           )}
         </AnimatePresence>
 
+        {/* LGPD Checkbox Before CTA */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 16, marginTop: 8 }}>
+          <div style={{ position: 'relative', top: 2 }}>
+            <input 
+              type="checkbox" 
+              id="lgpd-consent"
+              checked={lgpdAccepted}
+              onChange={(e) => setLgpdAccepted(e.target.checked)}
+              style={{
+                appearance: 'none',
+                width: 18,
+                height: 18,
+                borderRadius: 4,
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                background: lgpdAccepted ? '#E8554E' : 'rgba(255, 255, 255, 0.05)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s',
+                margin: 0
+              }}
+            />
+            {lgpdAccepted && (
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth="3" strokeLinecap="round" style={{ position: 'absolute', top: 3, left: 3, pointerEvents: 'none' }}>
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            )}
+          </div>
+          <label htmlFor="lgpd-consent" style={{ fontSize: 11, color: '#F5ECE4', lineHeight: 1.4, cursor: 'pointer', flex: 1, textAlign: 'left', opacity: 0.8 }}>
+            {t('footer.lgpd.checkbox')}
+          </label>
+        </div>
+
         <button
           className="v-btn-primary"
           style={{ opacity: isComplete && !loading ? 1 : 0.4 }}
@@ -244,26 +274,11 @@ export function VisitorLogin() {
           {loading ? t('button.pulsing') : t('button.pulse')}
         </button>
 
-        {/* Footer */}
-        <div style={{ height: 24 }} />
-
-        {/* Admin trap / Easy access */}
-        <button 
-          onClick={() => navigate('/login')}
-          className="v-admin-link"
-          aria-label="Acesso Gestão"
-        >
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-          </svg>
-          {t('login.admin')}
-        </button>
-
-
-        {/* LGPD Footer */}
+        {/* Footers */}
         <div style={{ marginTop: 'auto', padding: '24px 0', textAlign: 'center' }}>
-          <p style={{ fontSize: 10, color: '#6B5A60', lineHeight: 1.5, margin: 0 }} dangerouslySetInnerHTML={{ __html: t('footer.lgpd').replace('. ', '.<br />') }} />
+          <p style={{ fontSize: 10, color: '#6B5A60', lineHeight: 1.5, margin: 0, textTransform: 'uppercase', letterSpacing: 1 }}>
+            {t('footer.lgpd.link')}
+          </p>
         </div>
 
       </div>
