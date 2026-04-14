@@ -1,3 +1,4 @@
+import 'dotenv/config'; // loads .env in local dev; Railway injects vars automatically
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
