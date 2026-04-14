@@ -7,8 +7,12 @@ window.addEventListener('error', (event) => {
   console.error('Global Error Captured:', event.error);
 });
 
+import { LanguageProvider } from './contexts/LanguageContext'
+
 createRoot(document.getElementById('root')!).render(
   <BrowserRouter>
-    <App />
+    <LanguageProvider>
+      <App />
+    </LanguageProvider>
   </BrowserRouter>,
 )

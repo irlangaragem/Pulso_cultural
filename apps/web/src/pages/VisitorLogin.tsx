@@ -6,8 +6,17 @@ import { api } from '../services/api';
 import { formatCPF, isValidCPF } from '../utils/cpf';
 import { VisitorLayout } from '../components/VisitorLayout';
 import { PulseSymbol } from '../components/PulseSymbol';
+import { useLanguage } from '../contexts/LanguageContext';
+import { LanguageSelector } from '../components/LanguageSelector';
 
-const CANAIS = ['Redes sociais', 'Indicação', 'Passei na frente', 'Jornal / TV', 'Escola / faculdade', 'Outro'];
+const CANAIS = [
+  { id: 'Redes sociais', key: 'source.social' },
+  { id: 'Indicação', key: 'source.referral' },
+  { id: 'Passei na frente', key: 'source.walked_by' },
+  { id: 'Jornal / TV', key: 'source.tv' },
+  { id: 'Escola / faculdade', key: 'source.school' },
+  { id: 'Outro', key: 'source.other' }
+];
 
 export function VisitorLogin() {
   const [cpf, setCpf] = useState('');
@@ -22,6 +31,7 @@ export function VisitorLogin() {
 
   const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   useEffect(() => {
     const stored = localStorage.getItem('pulso:return_cpf');
@@ -45,7 +55,7 @@ export function VisitorLogin() {
   const handleSubmit = async () => {
     if (!isComplete) return;
     if (!isValidCPF(cpf)) {
-      setError('O CPF informado não parece válido.');
+      setError(t('error.invalid_cpf'));
       return;
     }
 
@@ -111,6 +121,7 @@ export function VisitorLogin() {
 
   return (
     <VisitorLayout>
+      <LanguageSelector />
       <div className="visitor-screen">
         {/* Glow */}
         <div className="visitor-glow" />
@@ -127,16 +138,16 @@ export function VisitorLogin() {
         {/* Venue tag */}
         <div className="v-venue-tag">
           <span className="v-venue-dot" />
-          MAM Salvador · Aberto agora
+          {t('venue.status')}
         </div>
 
         {/* Exhibition name */}
         <div className="v-expo-tag">
           <p style={{ fontFamily: "'Space Mono', monospace", fontSize: 8, color: '#E8554E', letterSpacing: 3, marginBottom: 4 }}>
-            EXPOSIÇÃO EM CARTAZ
+            {t('exhibition.label')}
           </p>
           <p style={{ fontFamily: 'Sora, sans-serif', fontSize: 14, fontWeight: 600, color: '#F5ECE4', lineHeight: 1.3 }}>
-            Uma História da Arte Brasileira
+            {t('exhibition.title')}
           </p>
         </div>
 
@@ -146,12 +157,10 @@ export function VisitorLogin() {
             <motion.span
               initial={{ opacity: 0, y: 5 }}
               animate={{ opacity: 1, y: 0 }}
-            >
-              Bem-vindo de volta, <span style={{ color: '#E8554E' }}>{returningUser}</span>! 👋<br />
-              Siga para o guia da exposição
-            </motion.span>
+              dangerouslySetInnerHTML={{ __html: t('checkin.cta.returning', { name: `<span style="color: #E8554E">${returningUser}</span>` }) }}
+            />
           ) : (
-            <>Dê seu pulso e acesse<br />o guia da exposição</>
+            <span dangerouslySetInnerHTML={{ __html: t('checkin.cta').replace(' e ', ' e<br/>').replace(' and ', ' and<br/>') }} />
           )}
         </p>
 
@@ -167,7 +176,7 @@ export function VisitorLogin() {
             ref={inputRef}
             type="tel"
             inputMode="numeric"
-            placeholder="000.000.000-00"
+            placeholder={t('cpf.placeholder')}
             value={cpf}
             onChange={handleCPFChange}
             onFocus={() => setFocused(true)}
@@ -178,19 +187,19 @@ export function VisitorLogin() {
         </div>
 
         {/* Como soube */}
-        <label className="v-label" style={{ marginTop: 8 }}>Como soube desta exposição?</label>
+        <label className="v-label" style={{ marginTop: 8 }}>{t('source.question')}</label>
         <div className="v-chip-row" style={{ marginBottom: como === 'Outro' ? 8 : 16 }}>
           {CANAIS.map(c => (
             <button
-              key={c}
+              key={c.id}
               type="button"
-              className={`v-chip ${como === c ? 'active' : ''}`}
+              className={`v-chip ${como === c.id ? 'active' : ''}`}
               onClick={() => {
-                setComo(c);
-                if (c !== 'Outro') setComoOutroText('');
+                setComo(c.id);
+                if (c.id !== 'Outro') setComoOutroText('');
               }}
             >
-              {c}
+              {t(c.key)}
             </button>
           ))}
         </div>
@@ -204,7 +213,7 @@ export function VisitorLogin() {
           >
             <input
               type="text"
-              placeholder="Especifique como soube"
+              placeholder={t('source.other_placeholder')}
               value={comoOutroText}
               onChange={(e) => setComoOutroText(e.target.value)}
               className="v-input"
@@ -228,14 +237,13 @@ export function VisitorLogin() {
           )}
         </AnimatePresence>
 
-        {/* Button */}
         <button
           className="v-btn-primary"
           style={{ opacity: isComplete && !loading ? 1 : 0.4 }}
           onClick={handleSubmit}
           disabled={!isComplete || loading}
         >
-          {loading ? 'Validando...' : 'Pulsar'}
+          {loading ? t('button.pulsing') : t('button.pulse')}
         </button>
 
         {/* Footer */}
@@ -251,16 +259,13 @@ export function VisitorLogin() {
             <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
             <path d="M7 11V7a5 5 0 0 1 10 0v4" />
           </svg>
-          Gestão
+          {t('login.admin')}
         </button>
 
 
         {/* LGPD Footer */}
         <div style={{ marginTop: 'auto', padding: '24px 0', textAlign: 'center' }}>
-          <p style={{ fontSize: 10, color: '#6B5A60', lineHeight: 1.5, margin: 0 }}>
-            Seus dados são protegidos pela LGPD.<br />
-            Usamos apenas para melhorar sua experiência.
-          </p>
+          <p style={{ fontSize: 10, color: '#6B5A60', lineHeight: 1.5, margin: 0 }} dangerouslySetInnerHTML={{ __html: t('footer.lgpd').replace('. ', '.<br />') }} />
         </div>
 
       </div>
@@ -275,8 +280,8 @@ export function VisitorLogin() {
             className="v-success-overlay"
           >
             <PulseSymbol size={80} />
-            <p className="v-cta-text" style={{ marginTop: 24, fontSize: 18 }}>Acesso liberado!</p>
-            <p className="v-footer-note" style={{ marginTop: 8 }}>Redirecionando para o guia...</p>
+            <p className="v-cta-text" style={{ marginTop: 24, fontSize: 18 }}>{t('success.granted')}</p>
+            <p className="v-footer-note" style={{ marginTop: 8 }}>{t('success.redirecting')}</p>
           </motion.div>
         )}
       </AnimatePresence>
