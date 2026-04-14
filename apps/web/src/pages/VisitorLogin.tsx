@@ -22,7 +22,6 @@ export function VisitorLogin() {
   const [cpf, setCpf] = useState('');
   const [como, setComo] = useState('');
   const [comoOutroText, setComoOutroText] = useState('');
-  const [lgpdAccepted, setLgpdAccepted] = useState(false);
 
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);

@@ -1,5 +1,6 @@
 interface PulseSymbolProps {
   size?: number;
+  animated?: boolean;
 }
 
 export function PulseSymbol({ size = 120 }: PulseSymbolProps) {
