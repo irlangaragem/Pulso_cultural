@@ -12,6 +12,7 @@ FROM node:20-alpine AS runner
 RUN apk add --no-cache openssl
 WORKDIR /app
 ENV NODE_ENV production
+ENV NPM_CONFIG_UPDATE_NOTIFIER false
 COPY --from=base /app/node_modules ./node_modules
 COPY --from=base /app/package.json ./package.json
 COPY --from=base /app/dist ./dist
