@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'pulso-cultural-default-secret-key-2026';
-if (JWT_SECRET === 'pulso-cultural-default-secret-key-2026') {
+if (JWT_SECRET === 'pulso-cultural-default-secret-key-2026' && process.env.NODE_ENV !== 'production') {
   console.warn('⚠️ JWT_SECRET env variable is not set. Using default secret. Please change this in production.');
 }
 
