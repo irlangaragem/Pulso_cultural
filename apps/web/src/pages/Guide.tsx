@@ -295,6 +295,7 @@ export function Guide() {
           <div className="v-share-cta">
             <PulseSymbol size={28} />
             <p style={{ color: '#F5ECE4', fontSize: 14, fontFamily: 'Sora, sans-serif', fontWeight: 600, margin: '12px 0 4px' }}>Curtiu a visita?</p>
+
             {!feedbackSubmitted ? (
               <>
                 <p style={{ color: '#A8969A', fontSize: 12 }}>Compartilhe que você fez a cultura pulsar hoje.</p>
@@ -336,19 +337,21 @@ export function Guide() {
                     </button>
                   </>
                 )}
-
-                <button
-                  className="v-btn-primary"
-                  onClick={() => navigate('/card')}
-                >
-                  Compartilhar meu pulso
-                </button>
               </>
             ) : (
               <div className="v-feedback-success">
                 ✨ Obrigado por fazer a cultura pulsar!
               </div>
             )}
+
+            {/* Sempre visível — antes e depois de enviar a avaliação */}
+            <button
+              className="v-btn-primary"
+              style={{ marginTop: 16 }}
+              onClick={() => navigate('/card')}
+            >
+              Compartilhar meu pulso
+            </button>
           </div>
 
         </div>
