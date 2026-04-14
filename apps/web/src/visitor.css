@@ -528,14 +528,15 @@
 .v-share-cta {
   margin-top: 32px;
   padding: 24px;
-  background: var(--color-bg-cta);
+  background: rgba(28, 18, 24, 0.95);
   border-radius: 16px;
-  border: 1px solid rgba(232, 85, 78, 0.1);
+  border: 1px solid rgba(232, 85, 78, 0.2);
   text-align: center;
   display: flex;
   flex-direction: column;
   align-items: center;
   backdrop-filter: blur(8px);
+  box-shadow: 0 4px 24px rgba(232, 85, 78, 0.08);
 }
 
 /* ── Post-CTA Feedback ── */
@@ -548,24 +549,25 @@
 }
 
 .v-feedback-star {
-  font-size: 26px;
+  font-size: 32px;
   cursor: pointer;
-  opacity: 0.25;
+  opacity: 0.45;
   transition: all 0.2s ease;
   user-select: none;
-  color: #A8969A;
+  color: #C4A882;
 }
 
 .v-feedback-star:hover {
-  transform: scale(1.1);
+  transform: scale(1.15);
   opacity: 1;
+  color: #F28C38;
 }
 
 .v-feedback-star.active {
-  color: #E8554E;
+  color: #F28C38;
   opacity: 1;
-  transform: scale(1.2);
-  text-shadow: 0 0 10px rgba(232, 85, 78, 0.3);
+  transform: scale(1.25);
+  text-shadow: 0 0 14px rgba(242, 140, 56, 0.5);
 }
 
 .v-feedback-label {

@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 
 interface TrackPayload {
@@ -22,7 +23,7 @@ export class AnalyticsService {
           event: payload.event,
           exhibitionId: payload.exhibitionId || null,
           museumSlug: payload.museumSlug || null,
-          properties: payload.properties || {}
+          properties: (payload.properties ?? {}) as Prisma.InputJsonValue
         }
       });
     } catch (error) {
