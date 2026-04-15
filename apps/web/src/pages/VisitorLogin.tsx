@@ -7,7 +7,7 @@ import { formatCPF, isValidCPF } from '../utils/cpf';
 import { VisitorLayout } from '../components/VisitorLayout';
 import { PulseSymbol } from '../components/PulseSymbol';
 import { useLanguage } from '../contexts/LanguageContext';
-import { CreditCard, Lock } from 'lucide-react';
+import { CreditCard } from 'lucide-react';
 
 const CANAIS = [
   { id: 'Redes sociais', key: 'source.social' },
