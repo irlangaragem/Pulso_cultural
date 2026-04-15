@@ -126,12 +126,12 @@ export function VisitorLogin() {
         <div style={{ 
           display: 'flex', 
           justifyContent: 'center', 
-          marginTop: '3vh', 
-          marginBottom: '1.5vh', 
+          marginTop: 10, 
+          marginBottom: 10, 
           position: 'relative', 
           zIndex: 1 
         }}>
-          <PulseSymbol size={80} />
+          <PulseSymbol size={70} />
         </div>
 
         {/* Wordmark */}
@@ -139,7 +139,7 @@ export function VisitorLogin() {
         <p className="v-wordmark-sub">CULTURAL</p>
 
         {/* Status */}
-        <div className="v-venue-tag" style={{ margin: '12px 0' }}>
+        <div className="v-venue-tag" style={{ margin: '8px 0' }}>
           <span className="v-venue-dot" />
           <span>{t('venue.name')}</span>
           <span style={{ opacity: 0.3 }}>•</span>
@@ -150,7 +150,7 @@ export function VisitorLogin() {
         <p className="v-expo-label" style={{ marginBottom: 4 }}>{t('exhibition.label')}</p>
         <h2 className="v-expo-title" style={{ marginBottom: 24 }}>{t('exhibition.title')}</h2>
 
-        <p className="v-cta-text" style={{ marginTop: 16, marginBottom: 24 }}>
+        <p className="v-cta-text" style={{ marginTop: 8, marginBottom: 16 }}>
           {returningUser ? (
             <motion.span
               initial={{ opacity: 0 }}
@@ -239,13 +239,16 @@ export function VisitorLogin() {
         </button>
 
         {/* Consolidated Footer Block */}
-        <div style={{ marginTop: 24, paddingBottom: 32, textAlign: 'center', position: 'relative', zIndex: 1 }}>
+        <div style={{ marginTop: 16, paddingBottom: 20, textAlign: 'center', position: 'relative', zIndex: 10 }}>
           <button 
+            id="gestao-btn"
             onClick={() => navigate('/login')}
             style={{ 
-              background: 'none', 
-              border: 'none', 
-              color: '#888888', 
+              background: 'rgba(255,255,255,0.05)', 
+              border: '1px solid rgba(255,255,255,0.1)', 
+              borderRadius: '20px',
+              padding: '10px 20px',
+              color: '#FFFFFF', 
               fontSize: 11, 
               fontWeight: 700, 
               letterSpacing: 2, 
@@ -253,17 +256,17 @@ export function VisitorLogin() {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: 8,
+              gap: 10,
               width: '100%',
               textTransform: 'uppercase',
-              marginBottom: 20
+              marginBottom: 16
             }}
           >
-            <Lock size={14} color="#FFFFFF" opacity={0.6} />
+            <Lock size={14} color="#FFFFFF" strokeWidth={3} />
             <span>{t('login.admin')}</span>
           </button>
           
-          <p style={{ fontSize: 10, color: '#6B5A60', lineHeight: 1.5, margin: 0 }}>
+          <p style={{ fontSize: 10, color: '#888888', lineHeight: 1.5, margin: 0 }}>
             Seus dados são protegidos pela LGPD.<br />
             Usamos apenas para melhorar sua experiência.
           </p>
