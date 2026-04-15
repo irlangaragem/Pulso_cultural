@@ -243,13 +243,11 @@ export function VisitorLogin() {
           <button 
             onClick={() => navigate('/login')}
             style={{ 
-              background: 'rgba(255,255,255,0.06)', 
-              border: '1px solid rgba(255,255,255,0.1)', 
-              borderRadius: '12px',
-              padding: '10px 20px',
-              color: '#FFFFFF', 
-              fontSize: 11, 
-              fontWeight: 800, 
+              background: 'none', 
+              border: 'none', 
+              color: 'rgba(255,255,255,0.15)', 
+              fontSize: 10, 
+              fontWeight: 700, 
               letterSpacing: 2, 
               cursor: 'pointer',
               display: 'flex',
@@ -261,7 +259,7 @@ export function VisitorLogin() {
               marginBottom: 16
             }}
           >
-            <Lock size={14} strokeWidth={2.5} />
+            <Lock size={12} strokeWidth={2} opacity={0.3} />
             <span>GESTÃO</span>
           </button>
           
