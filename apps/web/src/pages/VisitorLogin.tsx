@@ -126,8 +126,8 @@ export function VisitorLogin() {
         <div style={{ 
           display: 'flex', 
           justifyContent: 'center', 
-          marginTop: '4vh', 
-          marginBottom: '2vh', 
+          marginTop: '3vh', 
+          marginBottom: '1.5vh', 
           position: 'relative', 
           zIndex: 1 
         }}>
@@ -139,7 +139,7 @@ export function VisitorLogin() {
         <p className="v-wordmark-sub">CULTURAL</p>
 
         {/* Status */}
-        <div className="v-venue-tag">
+        <div className="v-venue-tag" style={{ margin: '12px 0' }}>
           <span className="v-venue-dot" />
           <span>{t('venue.name')}</span>
           <span style={{ opacity: 0.3 }}>•</span>
@@ -150,7 +150,7 @@ export function VisitorLogin() {
         <p className="v-expo-label" style={{ marginBottom: 4 }}>{t('exhibition.label')}</p>
         <h2 className="v-expo-title" style={{ marginBottom: 24 }}>{t('exhibition.title')}</h2>
 
-        <p className="v-cta-text" style={{ marginTop: 24, marginBottom: 28 }}>
+        <p className="v-cta-text" style={{ marginTop: 16, marginBottom: 24 }}>
           {returningUser ? (
             <motion.span
               initial={{ opacity: 0 }}
@@ -238,8 +238,8 @@ export function VisitorLogin() {
           {loading ? t('button.pulsing') : t('button.pulse')}
         </button>
 
-        {/* Management Access */}
-        <div style={{ marginTop: 'auto', padding: '24px 0', textAlign: 'center', position: 'relative', zIndex: 1 }}>
+        {/* Footer Block */}
+        <div style={{ marginTop: 28, paddingBottom: 16, textAlign: 'center', position: 'relative', zIndex: 1 }}>
           <button 
             onClick={() => navigate('/login')}
             style={{ 
@@ -255,12 +255,18 @@ export function VisitorLogin() {
               justifyContent: 'center',
               gap: 8,
               width: '100%',
-              textTransform: 'uppercase'
+              textTransform: 'uppercase',
+              marginBottom: 16
             }}
           >
-            <Lock size={12} opacity={0.6} />
+            <Lock size={12} opacity={0.4} />
             <span>{t('login.admin')}</span>
           </button>
+          
+          <p style={{ fontSize: 10, color: '#4A3F44', lineHeight: 1.5, margin: 0 }}>
+            Seus dados são protegidos pela LGPD.<br />
+            Usamos apenas para melhorar sua experiência.
+          </p>
         </div>
 
       </div>
