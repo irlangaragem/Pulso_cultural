@@ -17,7 +17,8 @@
 
 /* ── Phone Frame Wrapper ── */
 .visitor-viewport {
-  min-height: 100vh;
+  /* Use 100dvh so the element fills the visual viewport on mobile */
+  min-height: 100dvh;
   background: #000000;
   display: flex;
   flex-direction: column;
@@ -29,13 +30,18 @@
 
 .visitor-phone {
   width: 100%;
-  max-width: 430px; /* iPhone 15 Pro Max width */
-  min-height: 100vh;
+  max-width: 430px;
+  min-height: 100dvh;
   background: var(--color-bg-primary);
   display: flex;
   flex-direction: column;
   position: relative;
   overflow: hidden;
+  /* Respect notch / rounded corners using safe-area insets */
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
 }
 
 @media (min-width: 640px) {
@@ -46,19 +52,37 @@
     border: 8px solid #1A1A1A;
     margin: 20px 0;
     box-shadow: 0 50px 100px -20px rgba(0, 0, 0, 0.5);
+    /* Desktop preview: no safe-area padding needed */
+    padding-top: 0;
+    padding-bottom: 0;
+    padding-left: 0;
+    padding-right: 0;
   }
 }
 
-.visitor-status-bar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px 32px 8px;
-  color: #FFFFFF;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 14px;
-  font-weight: 600;
-  flex-shrink: 0;
+/* ── Immersive top fade — blends device status bar into background ── */
+.visitor-top-fade {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  /* Tall enough to cover status bar on all devices */
+  height: calc(60px + env(safe-area-inset-top));
+  background: linear-gradient(
+    to bottom,
+    #0D0709 0%,
+    rgba(13, 7, 9, 0.85) 55%,
+    transparent 100%
+  );
+  pointer-events: none;
+  z-index: 100;
+}
+
+/* On desktop preview the fade doesn't make sense inside the phone frame */
+@media (min-width: 640px) {
+  .visitor-top-fade {
+    display: none;
+  }
 }
 
 .visitor-content {

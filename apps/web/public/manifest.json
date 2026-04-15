@@ -1,0 +1,19 @@
+{
+  "name": "Pulso Cultural",
+  "short_name": "Pulso",
+  "description": "O guia digital imersivo das exposições do MAM Salvador.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "fullscreen",
+  "orientation": "portrait",
+  "background_color": "#0D0709",
+  "theme_color": "#0D0709",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
