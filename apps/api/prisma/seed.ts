@@ -23,9 +23,9 @@ async function main() {
   });
 
   // 1.1 Create Default Admin User with hashed password
-  const rawPassword = process.env.ADMIN_PASSWORD || 'PUL_$O=CL';
-  if (rawPassword === 'PUL_$O=CL') {
-    console.warn('⚠️ ADMIN_PASSWORD env variable is not set. Using default password "PUL_$O=CL". Please change this in production.');
+  const rawPassword = process.env.ADMIN_PASSWORD || 'PUL_$0=CL';
+  if (rawPassword === 'PUL_$0=CL') {
+    console.warn('⚠️ ADMIN_PASSWORD env variable is not set. Using default password "PUL_$0=CL". Please change this in production.');
   }
   const passwordHash = await bcrypt.hash(rawPassword, 12);
 
