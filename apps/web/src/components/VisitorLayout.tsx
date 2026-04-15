@@ -20,17 +20,7 @@ export function VisitorLayout({ children, hideLanguage = false }: VisitorLayoutP
         {/* Language selector sits below the safe-area, inside the fade */}
         {!hideLanguage && <LanguageSelector />}
 
-        {/* Header Symbol - Absolute bleed-to-top immersion */}
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
-          marginTop: '-10px', 
-          marginBottom: '1vh', 
-          position: 'relative', 
-          zIndex: 1 
-        }}>
-          <PulseSymbol size={100} />
-        </div>
+
 
         {/* Page Content */}
         <div className="visitor-content">
