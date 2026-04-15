@@ -127,6 +127,14 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
     const savedLang = localStorage.getItem('pulso:lang') as Language;
     if (savedLang && ['pt', 'en', 'es', 'fr'].includes(savedLang)) {
       setLanguageState(savedLang);
+    } else {
+      // Auto-detect browser language
+      const browserLang = navigator.language.split('-')[0] as Language;
+      if (['pt', 'en', 'es', 'fr'].includes(browserLang)) {
+        setLanguageState(browserLang);
+      } else {
+        setLanguageState('pt'); // Default fallback
+      }
     }
   }, []);
 

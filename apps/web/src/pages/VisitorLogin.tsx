@@ -127,7 +127,7 @@ export function VisitorLogin() {
           display: 'flex', 
           justifyContent: 'center', 
           marginTop: '-12px', 
-          marginBottom: '2vh', 
+          marginBottom: 12, 
           position: 'relative', 
           zIndex: 1 
         }}>
@@ -135,11 +135,11 @@ export function VisitorLogin() {
         </div>
 
         {/* Wordmark */}
-        <h1 className="v-wordmark">PULSO</h1>
-        <p className="v-wordmark-sub">CULTURAL</p>
+        <h1 className="v-wordmark" style={{ marginBottom: 4 }}>PULSO</h1>
+        <p className="v-wordmark-sub" style={{ marginBottom: 16 }}>CULTURAL</p>
 
         {/* Status */}
-        <div className="v-venue-tag">
+        <div className="v-venue-tag" style={{ marginBottom: 20 }}>
           <span className="v-venue-dot" />
           <span>{t('venue.name')}</span>
           <span style={{ opacity: 0.3 }}>•</span>
@@ -147,18 +147,21 @@ export function VisitorLogin() {
         </div>
 
         {/* Exhibition context */}
-        <p className="v-expo-label">{t('exhibition.label')}</p>
-        <h2 className="v-expo-title">{t('exhibition.title')}</h2>
+        <p className="v-expo-label" style={{ marginBottom: 4 }}>{t('exhibition.label')}</p>
+        <h2 className="v-expo-title" style={{ marginBottom: 24 }}>{t('exhibition.title')}</h2>
 
-        <p className="v-cta-text">
+        <p className="v-cta-text" style={{ marginTop: 24, marginBottom: 28 }}>
           {returningUser ? (
             <motion.span
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              dangerouslySetInnerHTML={{ __html: t('checkin.cta.returning', { name: `<span style="color: #E8554E">${returningUser}</span>` }) }}
+              dangerouslySetInnerHTML={{ __html: t('checkin.cta.returning', { name: `<span style="color: #c94040">${returningUser}</span>` }) }}
             />
           ) : (
-            <span>{t('checkin.cta')}</span>
+            <>
+              Dê seu pulso e acesse<br />
+              o guia da exposição
+            </>
           )}
         </p>
 
@@ -180,7 +183,7 @@ export function VisitorLogin() {
         </div>
 
         {/* Source Question */}
-        <span className="v-label-text">{t('source.question')}</span>
+        <span className="v-label-text" style={{ color: '#666666', marginBottom: 8, fontSize: 13 }}>{t('source.question')}</span>
         <div className="v-chip-grid">
           {CANAIS.map(c => (
             <button
@@ -230,14 +233,16 @@ export function VisitorLogin() {
           className="v-btn-primary"
           onClick={handleSubmit}
           disabled={!isComplete || loading}
+          style={{ marginTop: 24 }}
         >
           {loading ? t('button.pulsing') : t('button.pulse')}
         </button>
 
-        {/* LGPD Footer */}
-        <div style={{ marginTop: 'auto', padding: '24px 0', textAlign: 'center', position: 'relative', zIndex: 1 }}>
-          <p style={{ fontSize: 11, color: '#524248', fontWeight: 500 }}>
-            {t('footer.lgpd.link')}
+        {/* LGPD Declaration */}
+        <div style={{ marginTop: 16, textAlign: 'center', position: 'relative', zIndex: 1 }}>
+          <p style={{ fontSize: 12, color: '#666666', lineHeight: 1.5 }}>
+            Seus dados são protegidos pela LGPD.<br />
+            Usamos apenas para melhorar sua experiência.
           </p>
         </div>
 
