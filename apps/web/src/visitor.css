@@ -3,7 +3,7 @@
 
 /* ---- Design Tokens ---- */
 :root {
-  --color-bg-primary: #0D0709;
+  --color-bg-primary: #0B0B0F;
   --color-bg-card: rgba(255, 255, 255, 0.04);
   --color-bg-cta: #7D1B36; /* The 'Pulsar' button color */
   --color-primary-gradient: linear-gradient(135deg, #8A1A2E, #5D1221);
@@ -70,8 +70,9 @@
   height: calc(60px + env(safe-area-inset-top));
   background: linear-gradient(
     to bottom,
-    #0D0709 0%,
-    rgba(13, 7, 9, 0.85) 55%,
+    #0B0B0F 0%,
+    #0B0B0F 45%,
+    rgba(11, 11, 15, 0.8) 75%,
     transparent 100%
   );
   pointer-events: none;

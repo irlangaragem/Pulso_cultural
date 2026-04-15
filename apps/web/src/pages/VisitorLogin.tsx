@@ -122,8 +122,15 @@ export function VisitorLogin() {
       <div className="visitor-screen">
         <div className="visitor-glow" />
 
-        {/* Header Symbol */}
-        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '4vh', marginBottom: '2vh', position: 'relative', zIndex: 1 }}>
+        {/* Header Symbol - Generous spacing for cinematic entry ritual */}
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          marginTop: '6vh', 
+          marginBottom: '3vh', 
+          position: 'relative', 
+          zIndex: 1 
+        }}>
           <PulseSymbol size={80} />
         </div>
 
