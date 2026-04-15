@@ -118,20 +118,20 @@ export function VisitorLogin() {
   };
 
   return (
-    <VisitorLayout>
+    <VisitorLayout hideLanguage>
       <div className="visitor-screen">
         <div className="visitor-glow" />
 
-        {/* Header Symbol - Generous spacing for cinematic entry ritual */}
+        {/* Header Symbol - Absolute bleed-to-top immersion */}
         <div style={{ 
           display: 'flex', 
           justifyContent: 'center', 
-          marginTop: '6vh', 
-          marginBottom: '3vh', 
+          marginTop: '-12px', 
+          marginBottom: '2vh', 
           position: 'relative', 
           zIndex: 1 
         }}>
-          <PulseSymbol size={80} />
+          <PulseSymbol size={100} />
         </div>
 
         {/* Wordmark */}

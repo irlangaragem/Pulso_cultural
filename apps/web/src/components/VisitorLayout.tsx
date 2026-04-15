@@ -4,9 +4,10 @@ import '../visitor.css';
 
 interface VisitorLayoutProps {
   children: React.ReactNode;
+  hideLanguage?: boolean;
 }
 
-export function VisitorLayout({ children }: VisitorLayoutProps) {
+export function VisitorLayout({ children, hideLanguage = false }: VisitorLayoutProps) {
   return (
     <div className="visitor-viewport">
       <div className="visitor-phone">
@@ -17,7 +18,19 @@ export function VisitorLayout({ children }: VisitorLayoutProps) {
         <div className="visitor-top-fade" aria-hidden="true" />
 
         {/* Language selector sits below the safe-area, inside the fade */}
-        <LanguageSelector />
+        {!hideLanguage && <LanguageSelector />}
+
+        {/* Header Symbol - Absolute bleed-to-top immersion */}
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          marginTop: '-10px', 
+          marginBottom: '1vh', 
+          position: 'relative', 
+          zIndex: 1 
+        }}>
+          <PulseSymbol size={100} />
+        </div>
 
         {/* Page Content */}
         <div className="visitor-content">
