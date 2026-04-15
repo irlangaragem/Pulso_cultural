@@ -7,7 +7,7 @@ import { formatCPF, isValidCPF } from '../utils/cpf';
 import { VisitorLayout } from '../components/VisitorLayout';
 import { PulseSymbol } from '../components/PulseSymbol';
 import { useLanguage } from '../contexts/LanguageContext';
-import { CreditCard } from 'lucide-react';
+import { CreditCard, Lock } from 'lucide-react';
 
 const CANAIS = [
   { id: 'Redes sociais', key: 'source.social' },
@@ -228,43 +228,46 @@ export function VisitorLogin() {
           )}
         </AnimatePresence>
 
-        {/* Diagnostic Gestão Access */}
-        <div style={{ marginBottom: 16, textAlign: 'center', position: 'relative', zIndex: 10 }}>
-          <button 
-            onClick={() => navigate('/login')}
-            style={{ 
-              background: 'rgba(255,255,255,0.05)', 
-              border: '1px solid rgba(255,255,255,0.1)', 
-              borderRadius: '12px',
-              padding: '8px 16px',
-              color: '#FFFFFF', 
-              fontSize: 10, 
-              fontWeight: 700, 
-              letterSpacing: 2, 
-              cursor: 'pointer',
-              textTransform: 'uppercase',
-              width: '100%'
-            }}
-          >
-            🔒 ACESSO GESTÃO
-          </button>
-        </div>
-
         {/* Primary CTA */}
         <button
           className="v-btn-primary"
           onClick={handleSubmit}
           disabled={!isComplete || loading}
-          style={{ marginTop: 0 }}
+          style={{ marginTop: 24 }}
         >
           {loading ? t('button.pulsing') : t('button.pulse')}
         </button>
 
-        {/* Footer Block */}
-        <div style={{ marginTop: 16, paddingBottom: 20, textAlign: 'center', position: 'relative', zIndex: 1 }}>
-          <p style={{ fontSize: 10, color: '#888888', lineHeight: 1.5, margin: 0 }}>
+        {/* Final Footer Ritual */}
+        <div style={{ marginTop: 20, paddingBottom: 20, width: '100%', textAlign: 'center', position: 'relative', zIndex: 10 }}>
+          <button 
+            onClick={() => navigate('/login')}
+            style={{ 
+              background: 'rgba(255,255,255,0.06)', 
+              border: '1px solid rgba(255,255,255,0.1)', 
+              borderRadius: '12px',
+              padding: '10px 20px',
+              color: '#FFFFFF', 
+              fontSize: 11, 
+              fontWeight: 800, 
+              letterSpacing: 2, 
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              width: '100%',
+              textTransform: 'uppercase',
+              marginBottom: 16
+            }}
+          >
+            <Lock size={14} strokeWidth={2.5} />
+            <span>GESTÃO</span>
+          </button>
+          
+          <p style={{ fontSize: 10, color: '#6B5A60', lineHeight: 1.5, margin: 0, fontWeight: 500 }}>
             Seus dados são protegidos pela LGPD.<br />
-            Usamos apenas para melhorar sua experiência.
+            Usamos apenas para melhorar sua experiencia.
           </p>
         </div>
 
