@@ -228,44 +228,40 @@ export function VisitorLogin() {
           )}
         </AnimatePresence>
 
+        {/* Diagnostic Gestão Access */}
+        <div style={{ marginBottom: 16, textAlign: 'center', position: 'relative', zIndex: 10 }}>
+          <button 
+            onClick={() => navigate('/login')}
+            style={{ 
+              background: 'rgba(255,255,255,0.05)', 
+              border: '1px solid rgba(255,255,255,0.1)', 
+              borderRadius: '12px',
+              padding: '8px 16px',
+              color: '#FFFFFF', 
+              fontSize: 10, 
+              fontWeight: 700, 
+              letterSpacing: 2, 
+              cursor: 'pointer',
+              textTransform: 'uppercase',
+              width: '100%'
+            }}
+          >
+            🔒 ACESSO GESTÃO
+          </button>
+        </div>
+
         {/* Primary CTA */}
         <button
           className="v-btn-primary"
           onClick={handleSubmit}
           disabled={!isComplete || loading}
-          style={{ marginTop: 24 }}
+          style={{ marginTop: 0 }}
         >
           {loading ? t('button.pulsing') : t('button.pulse')}
         </button>
 
-        {/* Consolidated Footer Block */}
-        <div style={{ marginTop: 16, paddingBottom: 20, textAlign: 'center', position: 'relative', zIndex: 10 }}>
-          <button 
-            id="gestao-btn"
-            onClick={() => navigate('/login')}
-            style={{ 
-              background: 'rgba(255,255,255,0.05)', 
-              border: '1px solid rgba(255,255,255,0.1)', 
-              borderRadius: '20px',
-              padding: '10px 20px',
-              color: '#FFFFFF', 
-              fontSize: 11, 
-              fontWeight: 700, 
-              letterSpacing: 2, 
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 10,
-              width: '100%',
-              textTransform: 'uppercase',
-              marginBottom: 16
-            }}
-          >
-            <Lock size={14} color="#FFFFFF" strokeWidth={3} />
-            <span>{t('login.admin')}</span>
-          </button>
-          
+        {/* Footer Block */}
+        <div style={{ marginTop: 16, paddingBottom: 20, textAlign: 'center', position: 'relative', zIndex: 1 }}>
           <p style={{ fontSize: 10, color: '#888888', lineHeight: 1.5, margin: 0 }}>
             Seus dados são protegidos pela LGPD.<br />
             Usamos apenas para melhorar sua experiência.
