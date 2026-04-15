@@ -118,7 +118,7 @@ export function VisitorLogin() {
   };
 
   return (
-    <VisitorLayout hideLanguage>
+    <VisitorLayout>
       <div className="visitor-screen">
         <div className="visitor-glow" />
 
@@ -126,20 +126,20 @@ export function VisitorLogin() {
         <div style={{ 
           display: 'flex', 
           justifyContent: 'center', 
-          marginTop: '-12px', 
-          marginBottom: 12, 
+          marginTop: '4vh', 
+          marginBottom: '2vh', 
           position: 'relative', 
           zIndex: 1 
         }}>
-          <PulseSymbol size={100} />
+          <PulseSymbol size={80} />
         </div>
 
         {/* Wordmark */}
-        <h1 className="v-wordmark" style={{ marginBottom: 4 }}>PULSO</h1>
-        <p className="v-wordmark-sub" style={{ marginBottom: 16 }}>CULTURAL</p>
+        <h1 className="v-wordmark">PULSO</h1>
+        <p className="v-wordmark-sub">CULTURAL</p>
 
         {/* Status */}
-        <div className="v-venue-tag" style={{ marginBottom: 20 }}>
+        <div className="v-venue-tag">
           <span className="v-venue-dot" />
           <span>{t('venue.name')}</span>
           <span style={{ opacity: 0.3 }}>•</span>
@@ -238,12 +238,28 @@ export function VisitorLogin() {
           {loading ? t('button.pulsing') : t('button.pulse')}
         </button>
 
-        {/* LGPD Declaration */}
-        <div style={{ marginTop: 16, textAlign: 'center', position: 'relative', zIndex: 1 }}>
-          <p style={{ fontSize: 12, color: '#666666', lineHeight: 1.5 }}>
-            Seus dados são protegidos pela LGPD.<br />
-            Usamos apenas para melhorar sua experiência.
-          </p>
+        {/* Management Access */}
+        <div style={{ marginTop: 'auto', padding: '24px 0', textAlign: 'center', position: 'relative', zIndex: 1 }}>
+          <button 
+            onClick={() => navigate('/login')}
+            style={{ 
+              background: 'none', 
+              border: 'none', 
+              color: 'rgba(255,255,255,0.2)', 
+              fontSize: 10, 
+              fontWeight: 700, 
+              letterSpacing: 2, 
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 6,
+              width: '100%',
+              textTransform: 'uppercase'
+            }}
+          >
+            <span style={{ fontSize: 12 }}>🔒</span> {t('login.admin')}
+          </button>
         </div>
 
       </div>
