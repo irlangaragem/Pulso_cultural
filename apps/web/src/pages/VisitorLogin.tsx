@@ -7,7 +7,7 @@ import { formatCPF, isValidCPF } from '../utils/cpf';
 import { VisitorLayout } from '../components/VisitorLayout';
 import { PulseSymbol } from '../components/PulseSymbol';
 import { useLanguage } from '../contexts/LanguageContext';
-import { CreditCard } from 'lucide-react';
+import { CreditCard, Lock } from 'lucide-react';
 
 const CANAIS = [
   { id: 'Redes sociais', key: 'source.social' },
@@ -245,7 +245,7 @@ export function VisitorLogin() {
             style={{ 
               background: 'none', 
               border: 'none', 
-              color: 'rgba(255,255,255,0.2)', 
+              color: 'rgba(255,255,255,0.15)', 
               fontSize: 10, 
               fontWeight: 700, 
               letterSpacing: 2, 
@@ -253,12 +253,13 @@ export function VisitorLogin() {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: 6,
+              gap: 8,
               width: '100%',
               textTransform: 'uppercase'
             }}
           >
-            <span style={{ fontSize: 12 }}>🔒</span> {t('login.admin')}
+            <Lock size={12} opacity={0.6} />
+            <span>{t('login.admin')}</span>
           </button>
         </div>
 
