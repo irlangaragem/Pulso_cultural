@@ -238,15 +238,15 @@ export function VisitorLogin() {
           {loading ? t('button.pulsing') : t('button.pulse')}
         </button>
 
-        {/* Footer Block */}
-        <div style={{ marginTop: 28, paddingBottom: 16, textAlign: 'center', position: 'relative', zIndex: 1 }}>
+        {/* Consolidated Footer Block */}
+        <div style={{ marginTop: 24, paddingBottom: 32, textAlign: 'center', position: 'relative', zIndex: 1 }}>
           <button 
             onClick={() => navigate('/login')}
             style={{ 
               background: 'none', 
               border: 'none', 
-              color: 'rgba(255,255,255,0.15)', 
-              fontSize: 10, 
+              color: '#888888', 
+              fontSize: 11, 
               fontWeight: 700, 
               letterSpacing: 2, 
               cursor: 'pointer',
@@ -256,14 +256,14 @@ export function VisitorLogin() {
               gap: 8,
               width: '100%',
               textTransform: 'uppercase',
-              marginBottom: 16
+              marginBottom: 20
             }}
           >
-            <Lock size={12} opacity={0.4} />
+            <Lock size={14} color="#FFFFFF" opacity={0.6} />
             <span>{t('login.admin')}</span>
           </button>
           
-          <p style={{ fontSize: 10, color: '#4A3F44', lineHeight: 1.5, margin: 0 }}>
+          <p style={{ fontSize: 10, color: '#6B5A60', lineHeight: 1.5, margin: 0 }}>
             Seus dados são protegidos pela LGPD.<br />
             Usamos apenas para melhorar sua experiência.
           </p>
