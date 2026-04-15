@@ -4,6 +4,8 @@ import cors from 'cors';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import { routes } from './routes';
+import bcrypt from 'bcryptjs';
+import { prisma } from './lib/prisma';
 
 import helmet from 'helmet';
 import { rateLimit } from 'express-rate-limit';
@@ -47,8 +49,44 @@ io.on('connection', (socket) => {
   console.log(`New connection: ${socket.id}`);
 });
 
-server.listen(PORT, () => {
+async function ensureAdmin() {
+  try {
+    const museum = await prisma.museum.upsert({
+      where: { slug: 'mam-bahia' },
+      update: {},
+      create: {
+        name: 'Museu de Arte Moderna da Bahia',
+        slug: 'mam-bahia',
+        address: 'Av. Lafayete Coutinho, s/n - Comércio',
+        city: 'Salvador',
+        state: 'BA',
+        openingHours: { tue_sun: '10:00-18:00', mon: 'Closed' }
+      }
+    });
+
+    const email = 'admin@mam.ba.gov.br';
+    const passwordHash = await bcrypt.hash('PUL_$0=CL', 12);
+    
+    await prisma.user.upsert({
+      where: { email },
+      update: { passwordHash },
+      create: {
+        email,
+        passwordHash,
+        name: 'Administrador MAM',
+        role: 'GESTOR',
+        museumId: museum.id
+      }
+    });
+    console.log('✅ Default admin ensured and password reset to PUL_$0=CL');
+  } catch (err) {
+    console.error('❌ Failed to ensure default admin:', err);
+  }
+}
+
+server.listen(PORT, async () => {
   console.log(`HTTP and WebSocket server running on port ${PORT}`);
+  await ensureAdmin();
 });
 
 export { io };
