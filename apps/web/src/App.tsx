@@ -1,14 +1,16 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
+import { lazy, Suspense } from 'react';
 import { Route, Routes } from 'react-router-dom';
-import { CheckIn } from './pages/CheckIn';
-import { Dashboard } from './pages/Dashboard';
-import { Guide } from './pages/Guide';
-import { Login } from './pages/Login';
-import { VisitorLogin } from './pages/VisitorLogin';
-import { CardShare } from './pages/CardShare';
-import { Feedback } from './pages/Feedback';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { DashErrorBoundary } from './components/DashErrorBoundary';
+
+const VisitorLogin = lazy(() => import('./pages/VisitorLogin').then(m => ({ default: m.VisitorLogin })));
+const CheckIn = lazy(() => import('./pages/CheckIn').then(m => ({ default: m.CheckIn })));
+const Dashboard = lazy(() => import('./pages/Dashboard').then(m => ({ default: m.Dashboard })));
+const Guide = lazy(() => import('./pages/Guide').then(m => ({ default: m.Guide })));
+const Login = lazy(() => import('./pages/Login').then(m => ({ default: m.Login })));
+const CardShare = lazy(() => import('./pages/CardShare').then(m => ({ default: m.CardShare })));
+const Feedback = lazy(() => import('./pages/Feedback').then(m => ({ default: m.Feedback })));
 
 
 
@@ -33,22 +35,24 @@ function App() {
 
   return (
     <ErrorBoundary>
-      <Routes>
-        <Route path="/" element={<VisitorLogin />} />
-        <Route path="/checkin" element={<CheckIn />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/guide" element={<Guide />} />
-        <Route path="/card" element={<CardShare />} />
-        <Route path="/feedback" element={<Feedback />} />
+      <Suspense fallback={<div style={{ background: '#0B0B0F', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }} />}>
+        <Routes>
+          <Route path="/" element={<VisitorLogin />} />
+          <Route path="/checkin" element={<CheckIn />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/guide" element={<Guide />} />
+          <Route path="/card" element={<CardShare />} />
+          <Route path="/feedback" element={<Feedback />} />
 
-        <Route element={<ProtectedRoute />}>
-          <Route path="/dashboard" element={
-            <DashErrorBoundary>
-              <Dashboard />
-            </DashErrorBoundary>
-          } />
-        </Route>
-      </Routes>
+          <Route element={<ProtectedRoute />}>
+            <Route path="/dashboard" element={
+              <DashErrorBoundary>
+                <Dashboard />
+              </DashErrorBoundary>
+            } />
+          </Route>
+        </Routes>
+      </Suspense>
     </ErrorBoundary>
   );
 }

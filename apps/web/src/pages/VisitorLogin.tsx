@@ -53,6 +53,12 @@ export function VisitorLogin() {
 
   const handleSubmit = async () => {
     if (!isComplete) return;
+
+    // Sensorial Ritual: Haptic feedback (Pulse)
+    if ('vibrate' in navigator) {
+      navigator.vibrate([30, 20, 30]);
+    }
+
     if (!isValidCPF(cpf)) {
       setError(t('error.invalid_cpf'));
       return;
