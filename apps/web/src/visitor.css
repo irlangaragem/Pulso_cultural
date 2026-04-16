@@ -205,7 +205,8 @@
   color: #F5ECE4;
   text-align: center;
   line-height: 1.2;
-  margin-bottom: 24px;
+  margin: 0 0 16px 0;
+  padding: 0;
   position: relative;
   z-index: 1;
 }
@@ -226,7 +227,7 @@
   font-family: 'DM Sans', sans-serif;
   font-size: 13px;
   font-weight: 500;
-  color: #6B5A60;
+  color: #6B5A60 !important;
   margin-bottom: 8px;
   display: block;
 }
@@ -291,9 +292,12 @@
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
+  width: auto;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .v-chip.active {
@@ -327,7 +331,7 @@
   transform: scale(0.98);
   opacity: 0.9;
 }
-.v-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+.v-btn-primary:disabled { opacity: 0.72; cursor: not-allowed; }
 
 .v-btn-secondary {
   background: transparent;

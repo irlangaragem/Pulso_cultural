@@ -128,20 +128,8 @@ export function VisitorLogin() {
       <div className="visitor-screen">
         <div className="visitor-glow" />
 
-        {/* Header Symbol */}
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
-          marginTop: 8, 
-          marginBottom: 6, 
-          position: 'relative', 
-          zIndex: 1 
-        }}>
-          <PulseSymbol size={52} />
-        </div>
-
         {/* Wordmark */}
-        <h1 className="v-wordmark" style={{ marginBottom: -4 }}>PULSO</h1>
+        <h1 className="v-wordmark" style={{ marginTop: 56, marginBottom: -4 }}>PULSO</h1>
         <p className="v-wordmark-sub">CULTURAL</p>
 
         {/* Status — venue tag */}
