@@ -154,12 +154,7 @@ export function VisitorLogin() {
 
         {/* Exhibition context */}
         <p className="v-expo-label" style={{ marginBottom: 4 }}>{t('exhibition.label')}</p>
-        <h2 className="v-expo-title" style={{ marginBottom: 4 }}>{t('exhibition.title')}</h2>
-        <p className="v-expo-subtitle" style={{ fontSize: 13, color: '#A8969A', marginBottom: 20 }}>{t('exhibition.subtitle')}</p>
-        
-        <p className="v-expo-description" style={{ fontSize: 13, color: '#6B5A60', lineHeight: 1.6, marginBottom: 24 }}>
-          {t('exhibition.description')}
-        </p>
+        <h2 className="v-expo-title" style={{ marginBottom: 24, fontSize: 22 }}>{t('exhibition.title')}</h2>
 
         <p className="v-cta-text" style={{ marginTop: 8, marginBottom: 16 }}>
           {returningUser ? (
@@ -193,7 +188,7 @@ export function VisitorLogin() {
         </div>
 
         {/* Source Question */}
-        <span className="v-label-text" style={{ color: '#666666', marginBottom: 8, fontSize: 13 }}>{t('source.question')}</span>
+        <span className="v-label-text" style={{ color: '#6B5A60', marginBottom: 12, fontSize: 12 }}>{t('source.question')}</span>
         <div className="v-chip-grid">
           {CANAIS.map(c => (
             <button
@@ -251,25 +246,10 @@ export function VisitorLogin() {
         {/* Final Footer Ritual */}
         <div style={{ marginTop: 20, paddingBottom: 20, width: '100%', textAlign: 'center', position: 'relative', zIndex: 10 }}>
           <button 
+            className="v-admin-link"
             onClick={() => navigate('/login')}
-            style={{ 
-              background: 'none', 
-              border: 'none', 
-              color: 'rgba(255,255,255,0.15)', 
-              fontSize: 10, 
-              fontWeight: 700, 
-              letterSpacing: 2, 
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 8,
-              width: '100%',
-              textTransform: 'uppercase',
-              marginBottom: 16
-            }}
           >
-            <Lock size={12} strokeWidth={2} opacity={0.3} />
+            <Lock size={12} strokeWidth={2} opacity={0.5} />
             <span>GESTÃO</span>
           </button>
           
