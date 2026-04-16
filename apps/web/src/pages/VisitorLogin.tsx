@@ -245,6 +245,13 @@ export function VisitorLogin() {
 
         {/* Final Footer Ritual */}
         <div style={{ marginTop: 20, paddingBottom: 20, width: '100%', textAlign: 'center', position: 'relative', zIndex: 10 }}>
+          <button 
+            className="v-admin-link"
+            onClick={() => navigate('/login')}
+          >
+            <Lock size={12} strokeWidth={2} opacity={0.5} />
+            <span>GESTÃO</span>
+          </button>
           
           <p style={{ fontSize: 10, color: '#6B5A60', lineHeight: 1.5, margin: 0, fontWeight: 500 }}>
             Seus dados são protegidos pela LGPD.<br />
