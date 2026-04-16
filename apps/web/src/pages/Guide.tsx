@@ -40,7 +40,7 @@ const EXHIBITION_ID = 'default-exhibition';
 export function Guide() {
   const navigate = useNavigate();
   const { t } = useLanguage();
-  const [exhibition, setExhibition] = useState<any>(null);
+  const [_exhibition, setExhibition] = useState<any>(null);
   const [works] = useState<Work[]>(FALLBACK_WORKS.slice(0, 6));
   const [activeWork, setActiveWork] = useState<string | null>('6'); // default: Núcleo open
   const [playingId, setPlayingId] = useState<string | null>(null);

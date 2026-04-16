@@ -31,6 +31,7 @@ export interface RegisterVisitorPayload {
   origin: Origin;
   originDetail?: string;  // city / country for non-Salvador origins
   accessibilityNeeds: AccessibilityNeed[];
+  accessibilityDetail?: string; // details if OUTRA is selected
   exhibitionId: string;
   channel: string;
 }
