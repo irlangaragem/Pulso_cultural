@@ -148,20 +148,20 @@ export function VisitorLogin() {
         <div className="v-venue-tag" style={{ margin: '16px 0 32px' }}>
           <span className="v-venue-dot" />
           <span>{t('venue.name')}</span>
-          <span>•</span>
-          <span>{t('venue.status')}</span>
+          <span style={{ color: '#6B5A60', fontWeight: 400 }}>•</span>
+          <span className="v-venue-status">{t('venue.status')}</span>
         </div>
 
         {/* Exhibition context */}
         <p className="v-expo-label" style={{ marginBottom: 4 }}>{t('exhibition.label')}</p>
-        <h2 className="v-expo-title" style={{ marginBottom: 40, fontSize: 22 }}>{t('exhibition.title')}</h2>
+        <h2 className="v-expo-title" style={{ marginBottom: 40 }}>{t('exhibition.title')}</h2>
 
-        <p className="v-cta-text" style={{ marginTop: 0, marginBottom: 24, fontSize: 22 }}>
+        <p className="v-cta-text" style={{ marginTop: 0, marginBottom: 24 }}>
           {returningUser ? (
             <motion.span
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              dangerouslySetInnerHTML={{ __html: t('checkin.cta.returning', { name: `<span style="color: #c94040">${returningUser}</span>` }) }}
+              dangerouslySetInnerHTML={{ __html: t('checkin.cta.returning', { name: `<span style="color: #E8554E">${returningUser}</span>` }) }}
             />
           ) : (
             <>
@@ -188,7 +188,7 @@ export function VisitorLogin() {
         </div>
 
         {/* Source Question */}
-        <span className="v-label-text" style={{ color: '#6B5A60', marginBottom: 12, fontSize: 12 }}>{t('source.question')}</span>
+        <span className="v-label-text">{t('source.question')}</span>
         <div className="v-chip-grid">
           {CANAIS.map(c => (
             <button
@@ -253,9 +253,9 @@ export function VisitorLogin() {
             <span>GESTÃO</span>
           </button>
           
-          <p style={{ fontSize: 10, color: '#6B5A60', lineHeight: 1.5, margin: 0, fontWeight: 500 }}>
+          <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 10, color: '#6B5A60', lineHeight: 1.5, margin: 0, fontWeight: 400 }}>
             Seus dados são protegidos pela LGPD.<br />
-            Usamos apenas para melhorar sua experiencia.
+            Usamos apenas para melhorar sua experiência.
           </p>
         </div>
 
