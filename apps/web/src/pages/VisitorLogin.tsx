@@ -141,22 +141,22 @@ export function VisitorLogin() {
         </div>
 
         {/* Wordmark */}
-        <h1 className="v-wordmark">PULSO</h1>
+        <h1 className="v-wordmark" style={{ marginBottom: -4 }}>PULSO</h1>
         <p className="v-wordmark-sub">CULTURAL</p>
 
         {/* Status */}
-        <div className="v-venue-tag" style={{ margin: '8px 0' }}>
+        <div className="v-venue-tag" style={{ margin: '16px 0 32px' }}>
           <span className="v-venue-dot" />
           <span>{t('venue.name')}</span>
-          <span style={{ opacity: 0.3 }}>-</span>
+          <span>•</span>
           <span>{t('venue.status')}</span>
         </div>
 
         {/* Exhibition context */}
         <p className="v-expo-label" style={{ marginBottom: 4 }}>{t('exhibition.label')}</p>
-        <h2 className="v-expo-title" style={{ marginBottom: 24, fontSize: 22 }}>{t('exhibition.title')}</h2>
+        <h2 className="v-expo-title" style={{ marginBottom: 40, fontSize: 22 }}>{t('exhibition.title')}</h2>
 
-        <p className="v-cta-text" style={{ marginTop: 8, marginBottom: 16 }}>
+        <p className="v-cta-text" style={{ marginTop: 0, marginBottom: 24, fontSize: 22 }}>
           {returningUser ? (
             <motion.span
               initial={{ opacity: 0 }}
