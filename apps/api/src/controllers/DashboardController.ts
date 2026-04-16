@@ -96,7 +96,9 @@ export const DashboardController = {
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no'); // Disable Nginx buffering
     res.write('retry: 10000\n\n');
+    res.write(': keep-alive\n\n'); // Send initial comment
 
     const interval = setInterval(async () => {
       try {

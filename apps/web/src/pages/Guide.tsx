@@ -6,6 +6,7 @@ import { api } from '../services/api';
 import { analytics } from '../services/analytics';
 import { VisitorLayout } from '../components/VisitorLayout';
 import { PulseSymbol } from '../components/PulseSymbol';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface Work {
   id: string;
@@ -38,6 +39,7 @@ const EXHIBITION_ID = 'default-exhibition';
 
 export function Guide() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [exhibition, setExhibition] = useState<any>(null);
   const [works] = useState<Work[]>(FALLBACK_WORKS.slice(0, 6));
   const [activeWork, setActiveWork] = useState<string | null>('6'); // default: Núcleo open
@@ -57,11 +59,11 @@ export function Guide() {
   const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
 
   const feedbackLabels: Record<number, string> = {
-    1: "Pode melhorar",
-    2: "Pode melhorar",
-    3: "Interessante",
-    4: "Muito bom",
-    5: "Incrível 🔥"
+    1: t('feedback.label.1'),
+    2: t('feedback.label.2'),
+    3: t('feedback.label.3'),
+    4: t('feedback.label.4'),
+    5: t('feedback.label.5')
   };
 
   const handleSubmitFeedback = async () => {
@@ -190,10 +192,10 @@ export function Guide() {
             </div>
           </div>
           <p style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, color: '#E8554E', letterSpacing: 3, marginBottom: 6, position: 'relative', zIndex: 1 }}>
-            EXPOSIÇÃO PRINCIPAL
+            {t('exhibition.label')}
           </p>
-          <h1 className="v-guide-title">{exhibition?.name || 'Uma História da Arte Brasileira'}</h1>
-          <p className="v-guide-subtitle">{exhibition?.subtitle || '80 obras do MAM Rio · Entrada gratuita'}</p>
+          <h1 className="v-guide-title">{t('exhibition.title')}</h1>
+          <p className="v-guide-subtitle">{t('exhibition.subtitle')}</p>
           <p className="v-guide-meta">Ter a Dom · 10h às 18h</p>
         </div>
 
@@ -201,8 +203,7 @@ export function Guide() {
         {/* Description */}
         <div style={{ padding: '0 20px' }}>
           <p style={{ fontSize: 13, color: '#A8969A', lineHeight: 1.7 }}>
-            80 obras do acervo do MAM Rio chegam a Salvador numa celebração da arte brasileira do século XX.
-            De Portinari a Anita Malfatti, de Di Cavalcanti a Lygia Clark — um percurso que atravessa movimentos, gerações e visões de Brasil.
+            {t('exhibition.description')}
           </p>
 
           {/* Works */}
@@ -294,11 +295,11 @@ export function Guide() {
           {/* Share CTA */}
           <div className="v-share-cta">
             <PulseSymbol size={28} />
-            <p style={{ color: '#F5ECE4', fontSize: 14, fontFamily: 'Sora, sans-serif', fontWeight: 600, margin: '12px 0 4px' }}>Curtiu a visita?</p>
+            <p style={{ color: '#F5ECE4', fontSize: 14, fontFamily: 'Sora, sans-serif', fontWeight: 600, margin: '12px 0 4px' }}>{t('feedback.title')}</p>
 
             {!feedbackSubmitted ? (
               <>
-                <p style={{ color: '#A8969A', fontSize: 12 }}>Compartilhe que você fez a cultura pulsar hoje.</p>
+                <p style={{ color: '#A8969A', fontSize: 12 }}>{t('feedback.subtitle')}</p>
 
                 {/* Stars Rating */}
                 <div className="v-feedback-stars">
@@ -323,7 +324,7 @@ export function Guide() {
                   <>
                     <textarea
                       className="v-feedback-textarea"
-                      placeholder="O que mais te marcou nessa experiência?"
+                      placeholder={t('feedback.placeholder')}
                       value={feedbackComment}
                       onChange={(e) => setFeedbackComment(e.target.value)}
                       rows={3}
@@ -333,14 +334,14 @@ export function Guide() {
                       disabled={isSubmittingFeedback}
                       onClick={handleSubmitFeedback}
                     >
-                      {isSubmittingFeedback ? 'Enviando...' : 'Enviar avaliação'}
+                      {isSubmittingFeedback ? 'Enviando...' : t('feedback.button.send')}
                     </button>
                   </>
                 )}
               </>
             ) : (
               <div className="v-feedback-success">
-                ✨ Obrigado por fazer a cultura pulsar!
+                {t('feedback.success')}
               </div>
             )}
 
@@ -350,7 +351,7 @@ export function Guide() {
               style={{ marginTop: 16 }}
               onClick={() => navigate('/card')}
             >
-              Compartilhar meu pulso
+              {t('feedback.button.share')}
             </button>
           </div>
 

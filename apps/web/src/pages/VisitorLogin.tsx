@@ -154,7 +154,12 @@ export function VisitorLogin() {
 
         {/* Exhibition context */}
         <p className="v-expo-label" style={{ marginBottom: 4 }}>{t('exhibition.label')}</p>
-        <h2 className="v-expo-title" style={{ marginBottom: 24 }}>{t('exhibition.title')}</h2>
+        <h2 className="v-expo-title" style={{ marginBottom: 4 }}>{t('exhibition.title')}</h2>
+        <p className="v-expo-subtitle" style={{ fontSize: 13, color: '#A8969A', marginBottom: 20 }}>{t('exhibition.subtitle')}</p>
+        
+        <p className="v-expo-description" style={{ fontSize: 13, color: '#6B5A60', lineHeight: 1.6, marginBottom: 24 }}>
+          {t('exhibition.description')}
+        </p>
 
         <p className="v-cta-text" style={{ marginTop: 8, marginBottom: 16 }}>
           {returningUser ? (

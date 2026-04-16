@@ -210,7 +210,11 @@ function TabRealTime() {
     const eventSource = new EventSource(`${API_BASE_URL}/stream`);
     
     eventSource.onopen = () => sendTelemetry('sse_stream_connected');
-    eventSource.onerror = (err) => sendTelemetryError('sse_stream_error', err);
+    eventSource.onerror = (e) => {
+      // EventSource error object is generic, so we capture the readyState state
+      const state = eventSource.readyState === 0 ? 'CONNECTING' : eventSource.readyState === 2 ? 'CLOSED' : 'ERROR';
+      sendTelemetryError('sse_stream_error', { state });
+    };
 
     eventSource.onmessage = (event: MessageEvent) => {
       try {

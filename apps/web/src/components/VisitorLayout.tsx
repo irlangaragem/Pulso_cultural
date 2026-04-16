@@ -1,5 +1,5 @@
 import React from 'react';
-import { LanguageSelector } from './LanguageSelector';
+import { SmartLanguageFAB } from './SmartLanguageFAB';
 import '../visitor.css';
 
 interface VisitorLayoutProps {
@@ -17,8 +17,8 @@ export function VisitorLayout({ children, hideLanguage = false }: VisitorLayoutP
         */}
         <div className="visitor-top-fade" aria-hidden="true" />
 
-        {/* Language selector sits below the safe-area, inside the fade */}
-        {!hideLanguage && <LanguageSelector />}
+        {/* Floating Language FAB - Draggable and Persistent */}
+        {!hideLanguage && <SmartLanguageFAB defaultPosition={{ x: window.innerWidth - 80, y: window.innerHeight - 180 }} />}
 
 
 
