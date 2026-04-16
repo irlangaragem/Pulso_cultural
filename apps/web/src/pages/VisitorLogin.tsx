@@ -128,24 +128,24 @@ export function VisitorLogin() {
       <div className="visitor-screen">
         <div className="visitor-glow" />
 
-        {/* Header Symbol - Absolute bleed-to-top immersion */}
+        {/* Header Symbol */}
         <div style={{ 
           display: 'flex', 
           justifyContent: 'center', 
-          marginTop: 10, 
-          marginBottom: 10, 
+          marginTop: 8, 
+          marginBottom: 6, 
           position: 'relative', 
           zIndex: 1 
         }}>
-          <PulseSymbol size={70} />
+          <PulseSymbol size={52} />
         </div>
 
         {/* Wordmark */}
         <h1 className="v-wordmark" style={{ marginBottom: -4 }}>PULSO</h1>
         <p className="v-wordmark-sub">CULTURAL</p>
 
-        {/* Status */}
-        <div className="v-venue-tag" style={{ margin: '16px 0 32px' }}>
+        {/* Status — venue tag */}
+        <div className="v-venue-tag" style={{ margin: '12px 0 20px' }}>
           <span className="v-venue-dot" />
           <span>{t('venue.name')}</span>
           <span style={{ color: '#6B5A60', fontWeight: 400 }}>•</span>
@@ -154,9 +154,9 @@ export function VisitorLogin() {
 
         {/* Exhibition context */}
         <p className="v-expo-label" style={{ marginBottom: 4 }}>{t('exhibition.label')}</p>
-        <h2 className="v-expo-title" style={{ marginBottom: 40 }}>{t('exhibition.title')}</h2>
+        <h2 className="v-expo-title" style={{ marginBottom: 16 }}>{t('exhibition.title')}</h2>
 
-        <p className="v-cta-text" style={{ marginTop: 0, marginBottom: 24 }}>
+        <p className="v-cta-text" style={{ marginTop: 0, marginBottom: 16 }}>
           {returningUser ? (
             <motion.span
               initial={{ opacity: 0 }}

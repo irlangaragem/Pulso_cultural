@@ -8,7 +8,7 @@
   --color-primary-gradient: linear-gradient(135deg, #E8554E, #D4267E);
   --color-bg-cta: linear-gradient(135deg, #E8554E, #D4267E);
   --color-secondary: #E8554E;
-  --color-text-primary: #FFFFFF;
+  --color-text-primary: #F5ECE4;
   --color-text-muted: #6B5A60;
   --color-text-accent: #E8554E;
   --color-border: rgba(255, 255, 255, 0.08);
@@ -19,7 +19,7 @@
 .visitor-viewport {
   /* Use 100dvh so the element fills the visual viewport on mobile */
   min-height: 100dvh;
-  background: #000000;
+  background: #0E0B0D;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -327,7 +327,7 @@
   transform: scale(0.98);
   opacity: 0.9;
 }
-.v-btn-primary:disabled { opacity: 0.3; cursor: not-allowed; }
+.v-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .v-btn-secondary {
   background: transparent;
@@ -924,11 +924,10 @@
 }
 
 .v-chip-row .v-chip.active {
-  background: #E05A2A;
-  border-color: #E05A2A;
-  color: #FFFFFF;
+  background: rgba(232,85,78,0.12);
+  border-color: rgba(232,85,78,0.3);
+  color: #E8554E;
   font-weight: 600;
-  box-shadow: 0 4px 12px rgba(224, 90, 42, 0.4);
 }
 
 /* removed .v-btn-primary.checkin-submit since standard .v-btn-primary controls now */

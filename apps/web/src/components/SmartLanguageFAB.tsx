@@ -15,19 +15,21 @@ export function SmartLanguageFAB() {
     <div
       style={{
         position: 'absolute',
-        top: 24,
-        right: 24,
+        top: 20,
+        right: 16,
         zIndex: 9999,
         display: 'flex',
         alignItems: 'center',
-        gap: '8px',
+        gap: '4px',
         fontFamily: "'DM Sans', sans-serif",
-        fontSize: '12px',
+        fontSize: '11px',
         color: '#6B5A60',
-        background: 'rgba(28, 22, 32, 0.6)',
-        padding: '8px 16px',
+        background: 'rgba(28, 22, 32, 0.7)',
+        padding: '6px 12px',
         borderRadius: '100px',
-        border: '1px solid rgba(255, 255, 255, 0.08)'
+        border: '1px solid rgba(255, 255, 255, 0.08)',
+        backdropFilter: 'blur(8px)',
+        whiteSpace: 'nowrap'
       }}
     >
       {LANGUAGES.map((lang, idx) => (
