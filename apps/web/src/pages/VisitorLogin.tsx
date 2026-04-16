@@ -132,13 +132,28 @@ export function VisitorLogin() {
         <p className="v-wordmark-sub">CULTURAL</p>
 
         {/* Venue tag — MAM Salvador · Aberto agora */}
-        <div className="v-venue-tag" style={{ margin: '14px 0 20px' }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 8,
+          margin: '14px 0 20px',
+          position: 'relative',
+          zIndex: 1,
+          fontFamily: "'Sora', sans-serif",
+          fontSize: 13
+        }}>
+          {/* Dot verde pulsante */}
           <span className="v-venue-dot" />
-          <span>
-            <strong style={{ color: '#F5ECE4', fontWeight: 700 }}>{t('venue.name')}</strong>
+          {/* Nome do local */}
+          <span style={{ color: '#F5ECE4', fontWeight: 700, fontFamily: "'Sora', sans-serif", fontSize: 13 }}>
+            {t('venue.name')}
           </span>
-          <span style={{ color: '#6B5A60', fontWeight: 400, margin: '0 2px' }}>·</span>
-          <span className="v-venue-status">{t('venue.status')}</span>
+          <span style={{ color: '#6B5A60', fontWeight: 400, fontSize: 13 }}>·</span>
+          {/* Status */}
+          <span style={{ color: '#48BB78', fontWeight: 400, fontFamily: "'Sora', sans-serif", fontSize: 13 }}>
+            {t('venue.status')}
+          </span>
         </div>
 
         {/* Exhibition context */}
@@ -161,7 +176,15 @@ export function VisitorLogin() {
         </p>
 
         {/* Divider */}
-        <div className="v-divider" />
+        <div style={{
+          width: '100%',
+          height: '1px',
+          background: 'rgba(255,255,255,0.08)',
+          margin: '4px 0 0',
+          position: 'relative',
+          zIndex: 1,
+          flexShrink: 0
+        }} />
 
         {/* CPF Field */}
         <div className={`v-input-wrap ${focused ? 'focused' : ''}`} style={{ marginTop: 20 }}>
