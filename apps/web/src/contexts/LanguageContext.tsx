@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 
 type Language = 'pt' | 'en' | 'es' | 'fr';
 
@@ -93,7 +93,8 @@ const translations: Translations = {
     'checkin.form.validating': 'Validando...'
   },
   en: {
-    'venue.status': 'MAM SALVADOR',
+    'venue.name': 'MAM Salvador',
+    'venue.status': 'Open now',
     'exhibition.label': 'PRINCIPAL EXHIBITION',
     'exhibition.title': 'A History of Brazilian Art',
     'exhibition.subtitle': '80 works from MAM Rio · Free admission',
@@ -179,7 +180,8 @@ const translations: Translations = {
     'checkin.form.validating': 'Validating...'
   },
   es: {
-    'venue.status': 'MAM SALVADOR',
+    'venue.name': 'MAM Salvador',
+    'venue.status': 'Abierto ahora',
     'exhibition.label': 'EXPOSICIÓN PRINCIPAL',
     'exhibition.title': 'Una Historia del Arte Brasileño',
     'exhibition.subtitle': '80 obras del MAM Rio · Entrada gratuita',
@@ -265,7 +267,8 @@ const translations: Translations = {
     'checkin.form.validating': 'Validando...'
   },
   fr: {
-    'venue.status': 'MAM SALVADOR',
+    'venue.name': 'MAM Salvador',
+    'venue.status': 'Ouvert maintenant',
     'exhibition.label': 'EXPOSITION PRINCIPALE',
     'exhibition.title': 'Une Histoire de L\'Art Brésilien',
     'exhibition.subtitle': '80 œuvres du MAM Rio · Entrée gratuite',
@@ -302,6 +305,15 @@ const translations: Translations = {
     'feedback.label.4': 'Très bien',
     'feedback.label.5': 'Incroyable 🔥',
     'feedback.success': '✨ Merci de faire vibrer la culture !',
+    'feedback.title.page': 'Évaluation',
+    'feedback.desc.page': 'Votre avis est essentiel pour améliorer l\'expérience culturelle.',
+    'feedback.question': 'Comment s\'est passée votre visite ?',
+    'feedback.comment.label': 'Laisser un commentaire (optionnel)',
+    'feedback.comment.placeholder': 'Qu\'avez-vous le plus aimé dans l\'exposition ?',
+    'feedback.button.submit': 'Terminer et envoyer',
+    'feedback.thanks': 'Merci !',
+    'feedback.thanks.desc': 'Votre avis aide le MAM Salvador à créer de meilleures expériences.',
+    'feedback.back_home': '← Retour à l\'accueil',
     'share.label': 'J\'ai fait vibrer la culture aujourd\'hui.',
     'share.button.generate': 'Génération...',
     'share.button.share': 'Partager',
@@ -343,8 +355,7 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
     setLanguageState(lang);
   };
 
-  const t = (key: string, variables?: Record<string, string>): string => {
-    console.log(`[LanguageContext] Translating ${key} to ${language}`);
+  const t = useCallback((key: string, variables?: Record<string, string>): string => {
     let text = translations[language][key] || translations['pt'][key] || key;
     
     if (variables) {
@@ -354,7 +365,7 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
     }
     
     return text;
-  };
+  }, [language]);
 
   useEffect(() => {
     console.log(`[LanguageContext] Language changed to: ${language}`);

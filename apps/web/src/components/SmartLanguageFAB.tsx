@@ -39,7 +39,7 @@ export function SmartLanguageFAB() {
               border: 'none',
               padding: 0,
               cursor: 'pointer',
-              color: language === lang.code ? '#E05A2A' : '#A8969A',
+              color: language === lang.code ? '#E8554E' : '#A8969A',
               fontWeight: language === lang.code ? 700 : 500,
               fontFamily: 'inherit',
               fontSize: 'inherit',
@@ -59,7 +59,7 @@ export function SmartLanguageFAB() {
                   width: '4px',
                   height: '4px',
                   borderRadius: '50%',
-                  background: '#E05A2A'
+                  background: '#E8554E'
                 }}
               />
             )}
