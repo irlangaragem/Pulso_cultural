@@ -3,10 +3,10 @@
 
 /* ---- Design Tokens ---- */
 :root {
-  --color-bg-primary: #0B0B0F;
+  --color-bg-primary: #0E0B0D;
   --color-bg-card: rgba(255, 255, 255, 0.03);
-  --color-primary-gradient: linear-gradient(135deg, #5D2A2A, #3D1A1A);
-  --color-bg-cta: linear-gradient(to right, #6B2D2D, #4A1D1D);
+  --color-primary-gradient: linear-gradient(135deg, #E8554E, #D4267E);
+  --color-bg-cta: linear-gradient(135deg, #E8554E, #D4267E);
   --color-secondary: #E8554E;
   --color-text-primary: #FFFFFF;
   --color-text-muted: #6B5A60;
@@ -69,9 +69,9 @@
   height: calc(60px + env(safe-area-inset-top));
   background: linear-gradient(
     to bottom,
-    #0B0B0F 0%,
-    #0B0B0F 45%,
-    rgba(11, 11, 15, 0.8) 75%,
+    #0E0B0D 0%,
+    #0E0B0D 45%,
+    rgba(14, 11, 13, 0.8) 75%,
     transparent 100%
   );
   pointer-events: none;
@@ -114,7 +114,7 @@
 /* ── Screen Base ── */
 .visitor-screen {
   flex: 1;
-  padding: 0 32px;
+  padding: 0 24px;
   display: flex;
   flex-direction: column;
   position: relative;
@@ -127,7 +127,7 @@
   transform: translateX(-50%);
   width: 400px;
   height: 400px;
-  background: radial-gradient(circle at center, rgba(232, 85, 78, 0.08) 0%, transparent 70%);
+  background: radial-gradient(ellipse at center, rgba(212, 38, 126, 0.08) 0%, transparent 70%);
   pointer-events: none;
   z-index: 0;
 }
@@ -137,7 +137,7 @@
   font-family: 'Sora', sans-serif;
   font-size: 32px;
   font-weight: 800;
-  color: #FFFFFF;
+  color: #F5ECE4;
   text-align: center;
   margin: 0;
   letter-spacing: 4px;
@@ -149,7 +149,7 @@
   font-family: 'Sora', sans-serif;
   font-size: 11px;
   font-weight: 400;
-  color: #FFFFFF;
+  color: #F5ECE4;
   text-align: center;
   letter-spacing: 5px;
   margin: 4px 0 0;
@@ -291,9 +291,10 @@
 }
 
 .v-chip.active {
-  background: #2D1A1F;
-  border-color: #E8554E;
-  color: #FFFFFF;
+  background: rgba(232, 85, 78, 0.12);
+  border-color: rgba(232, 85, 78, 0.3);
+  color: #E8554E;
+  font-weight: 500;
 }
 
 /* ── Buttons ── */
@@ -921,15 +922,15 @@
 }
 
 .v-btn-primary.checkin-submit {
-  background: #E05A2A !important;
-  border-radius: 8px !important;
-  color: #FFFFFF !important;
-  padding: 12px 0 !important;
-  width: 100% !important;
+  background: linear-gradient(135deg, #E8554E, #D4267E);
+  border-radius: 18px;
+  color: #FFFFFF;
+  padding: 18px 24px;
+  width: 100%;
   max-width: 600px;
   margin: 24px auto 0;
   display: block;
 }
 .v-btn-primary.checkin-submit:hover, .v-btn-primary.checkin-submit:focus {
-  background: #C44C22 !important;
+  background: linear-gradient(135deg, #d94a43, #bd2070);
 }
