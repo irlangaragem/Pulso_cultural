@@ -4,8 +4,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { api } from '../services/api';
 import { localDb } from '../services/localDb';
 import { formatCPF, isValidCPF } from '../utils/cpf';
-import { VisitorLayout } from '../components/VisitorLayout';
 import { PulseSymbol } from '../components/PulseSymbol';
+import { SmartLanguageFAB } from '../components/SmartLanguageFAB';
+import { useLanguage } from '../contexts/LanguageContext';
 import type {
   Gender,
   Origin,
@@ -49,6 +50,7 @@ export function CheckIn() {
   const navigate   = useNavigate();
   const location   = useLocation();
   const cpfRef     = useRef<HTMLInputElement>(null);
+  const { t }      = useLanguage();
 
   // ── Form state ──
   const [cpf,           setCpf]           = useState('');
@@ -58,6 +60,7 @@ export function CheckIn() {
   const [origem,        setOrigem]        = useState<Origin | ''>('');
   const [origemDetalhe, setOrigemDetalhe] = useState('');
   const [acessibilidades, setAcessibilidades] = useState<AccessibilityNeed[]>([]);
+  const [outraDetalhe, setOutraDetalhe] = useState('');
   const [consent,       setConsent]       = useState(false);
 
   // ── UI state ──
@@ -65,6 +68,7 @@ export function CheckIn() {
   const [nameFocused,     setNameFocused]      = useState(false);
   const [birthFocused,    setBirthFocused]     = useState(false);
   const [detailFocused,   setDetailFocused]    = useState(false);
+  const [outraFocused,    setOutraFocused]     = useState(false);
   const [error,           setError]            = useState<string | null>(null);
   const [loading,         setLoading]          = useState(false);
   const [success,         setSuccess]          = useState(false);
@@ -194,6 +198,7 @@ export function CheckIn() {
       origin:            origem as Origin,
       originDetail:      origemDetalhe.trim() || undefined,
       accessibilityNeeds: acessibilidades,
+      accessibilityDetail: outraDetalhe.trim() || undefined,
       exhibitionId:      'default-exhibition',
       channel:           'OUTRO',
     };
@@ -229,12 +234,13 @@ export function CheckIn() {
   // ── Success screen ──
   if (success) {
     return (
-      <VisitorLayout>
+      <div style={{ background: '#0B0B0F', minHeight: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+        <SmartLanguageFAB />
         <motion.div
-          className="visitor-screen"
-          style={{ justifyContent: 'center', alignItems: 'center', minHeight: '100%' }}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
+           className="visitor-screen"
+           style={{ justifyContent: 'center', alignItems: 'center', minHeight: '100%', maxWidth: 600, width: '100%', position: 'relative' }}
+           initial={{ opacity: 0 }}
+           animate={{ opacity: 1 }}
         >
           <div className="visitor-glow" />
           <motion.div
@@ -263,13 +269,14 @@ export function CheckIn() {
             Preparando seu guia cultural...
           </motion.p>
         </motion.div>
-      </VisitorLayout>
+      </div>
     );
   }
 
   return (
-    <VisitorLayout>
-      <div className="visitor-screen" style={{ paddingTop: 20, paddingBottom: 48 }}>
+    <div style={{ background: '#0B0B0F', minHeight: '100dvh', width: '100%', display: 'flex', justifyContent: 'center', fontFamily: "'DM Sans', sans-serif" }}>
+      <SmartLanguageFAB />
+      <div className="visitor-screen" style={{ paddingTop: 60, paddingBottom: 48, maxWidth: 600, width: '100%', margin: '0 auto', textAlign: 'left', position: 'relative' }}>
         <div className="visitor-glow" />
 
         {/* ── Header ── */}
@@ -311,19 +318,18 @@ export function CheckIn() {
         </div>
 
         {/* ── Title ── */}
-        <h1 className="v-screen-title" id="checkin-heading">
-          Primeiro pulso!
+        <h1 className="v-screen-title" id="checkin-heading" style={{ fontSize: 'clamp(24px, 5vw, 32px)', fontWeight: 700, marginBottom: 12 }}>
+          {t('checkin.form.title')}
         </h1>
-        <p className="v-screen-desc">
-          Conte um pouco sobre você. Esse cadastro é único —<br />
-          nas próximas visitas, basta o CPF.
+        <p className="v-screen-desc" style={{ fontSize: 16, color: '#A8969A', marginBottom: 24, lineHeight: 1.5 }}>
+          {t('checkin.form.desc')}
         </p>
 
         {/* ════════════════════════════════════════════
             FIELD 1 — CPF
         ════════════════════════════════════════════ */}
-        <label className="v-label" htmlFor="field-cpf">
-          CPF
+        <label className="v-label" htmlFor="field-cpf" style={{ fontSize: 14, fontWeight: 700, marginBottom: 8, display: 'block' }}>
+          {t('checkin.form.cpf.label')}
         </label>
         <div
           className={`v-input-sm-wrap ${cpfFocused ? 'focused' : ''}`}
@@ -334,7 +340,7 @@ export function CheckIn() {
             id="field-cpf"
             type="tel"
             inputMode="numeric"
-            placeholder="000.000.000-00"
+            placeholder={t('checkin.form.cpf.placeholder')}
             value={cpf}
             onChange={handleCPFChange}
             onFocus={() => setCpfFocused(true)}
@@ -351,8 +357,8 @@ export function CheckIn() {
         {/* ════════════════════════════════════════════
             FIELD 2 — Nome
         ════════════════════════════════════════════ */}
-        <label className="v-label" htmlFor="field-nome">
-          Nome
+        <label className="v-label" htmlFor="field-nome" style={{ fontSize: 14, fontWeight: 700, marginBottom: 8, display: 'block' }}>
+          {t('checkin.form.nome.label')}
         </label>
         <div
           className={`v-input-sm-wrap ${nameFocused ? 'focused' : ''}`}
@@ -361,7 +367,7 @@ export function CheckIn() {
           <input
             id="field-nome"
             type="text"
-            placeholder="Como quer ser chamado?"
+            placeholder={t('checkin.form.nome.placeholder')}
             value={nome}
             onChange={handleNameChange}
             onFocus={() => setNameFocused(true)}
@@ -377,8 +383,8 @@ export function CheckIn() {
         {/* ════════════════════════════════════════════
             FIELD 3 — Ano de nascimento
         ════════════════════════════════════════════ */}
-        <label className="v-label" htmlFor="field-nascimento">
-          Ano de nascimento
+        <label className="v-label" htmlFor="field-nascimento" style={{ fontSize: 14, fontWeight: 700, marginBottom: 8, display: 'block' }}>
+          {t('checkin.form.nascimento.label')}
         </label>
         <div
           className={`v-input-sm-wrap ${birthFocused ? 'focused' : ''}`}
@@ -388,7 +394,7 @@ export function CheckIn() {
             id="field-nascimento"
             type="tel"
             inputMode="numeric"
-            placeholder="Ex: 1992"
+            placeholder={t('checkin.form.nascimento.placeholder')}
             value={nascimento}
             onChange={handleNascimento}
             onFocus={() => setBirthFocused(true)}
@@ -403,8 +409,8 @@ export function CheckIn() {
         {/* ════════════════════════════════════════════
             FIELD 4 — Identidade de gênero
         ════════════════════════════════════════════ */}
-        <label className="v-label" id="label-genero">
-          Identidade de gênero
+        <label className="v-label" id="label-genero" style={{ fontSize: 14, fontWeight: 700, marginBottom: 8, display: 'block' }}>
+          {t('checkin.form.genero.label')}
         </label>
         <div
           className="v-chip-row"
@@ -412,19 +418,27 @@ export function CheckIn() {
           aria-labelledby="label-genero"
           style={{ marginBottom: 14 }}
         >
-          {GENEROS.map(g => (
-            <button
-              key={g.value}
-              type="button"
-              id={`chip-gender-${g.value}`}
-              className={`v-chip ${genero === g.value ? 'active' : ''}`}
-              onClick={() => setGenero(g.value)}
-              aria-pressed={genero === g.value}
-              aria-label={`Gênero: ${g.label}`}
-            >
-              {g.label}
-            </button>
-          ))}
+          {GENEROS.map(g => {
+            const keyMap: any = {
+              'FEMININO': 'checkin.form.genero.f',
+              'MASCULINO': 'checkin.form.genero.m',
+              'NAO_BINARIO': 'checkin.form.genero.nb',
+              'PREFIRO_NAO_DIZER': 'checkin.form.genero.pnd',
+            };
+            return (
+              <button
+                key={g.value}
+                type="button"
+                id={`chip-gender-${g.value}`}
+                className={`v-chip ${genero === g.value ? 'active' : ''}`}
+                onClick={() => setGenero(g.value)}
+                aria-pressed={genero === g.value}
+                aria-label={`Gênero: ${g.label}`}
+              >
+                {t(keyMap[g.value] || g.label)}
+              </button>
+            )
+          })}
         </div>
 
         {/* ════════════════════════════════════════════
@@ -444,36 +458,69 @@ export function CheckIn() {
           }}
           aria-hidden={!(ENABLE_ACCESSIBILITY_FIELD && genero !== '')}
         >
-          <label className="v-label" id="label-acessibilidade">
-            Necessidades de acessibilidade{' '}
-            <span style={{ color: '#4A3A40', fontWeight: 400 }}>(opcional)</span>
+          <label className="v-label" id="label-acessibilidade" style={{ fontSize: 14, fontWeight: 700, marginBottom: 8, display: 'block' }}>
+            {t('checkin.form.acc.label')} <span style={{ color: '#A8969A', fontWeight: 400 }}>{t('checkin.form.acc.optional')}</span>
           </label>
           <div
             className="v-chip-row"
             role="group"
             aria-labelledby="label-acessibilidade"
           >
-            {ACESSIBILIDADES.map(a => (
-              <button
-                key={a.value}
-                type="button"
-                id={`chip-acc-${a.value}`}
-                className={`v-chip ${acessibilidades.includes(a.value) ? 'active' : ''}`}
-                onClick={() => toggleAcessibilidade(a.value)}
-                aria-pressed={acessibilidades.includes(a.value)}
-                aria-label={`Necessidade: ${a.label}`}
-              >
-                {a.label}
-              </button>
-            ))}
+            {ACESSIBILIDADES.map(a => {
+              const accMap: any = {
+                'MOBILIDADE_REDUZIDA': 'checkin.form.acc.mob',
+                'BAIXA_VISAO': 'checkin.form.acc.vis',
+                'SENSIBILIDADE_SENSORIAL': 'checkin.form.acc.sen',
+                'NEURODIVERGENCIA': 'checkin.form.acc.neu',
+                'OUTRA': 'checkin.form.acc.outra',
+              };
+              return (
+                <button
+                  key={a.value}
+                  type="button"
+                  id={`chip-acc-${a.value}`}
+                  className={`v-chip ${acessibilidades.includes(a.value) ? 'active' : ''}`}
+                  onClick={() => toggleAcessibilidade(a.value)}
+                  aria-pressed={acessibilidades.includes(a.value)}
+                  aria-label={`Necessidade: ${a.label}`}
+                >
+                  {t(accMap[a.value] || a.label)}
+                </button>
+              )
+            })}
           </div>
+
+          <AnimatePresence>
+            {acessibilidades.includes('OUTRA') && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.25 }}
+                style={{ marginTop: 14 }}
+              >
+                <div className={`v-input-sm-wrap ${outraFocused ? 'focused' : ''}`}>
+                  <input
+                    type="text"
+                    placeholder={t('checkin.form.acc.outra_placeholder')}
+                    value={outraDetalhe}
+                    onChange={e => setOutraDetalhe(e.target.value)}
+                    onFocus={() => setOutraFocused(true)}
+                    onBlur={() => setOutraFocused(false)}
+                    className="v-input-sm"
+                    aria-label="Especificar necessidade de acessibilidade"
+                  />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* ════════════════════════════════════════════
             FIELD 5 — Origem
         ════════════════════════════════════════════ */}
-        <label className="v-label" id="label-origem">
-          De onde você vem?
+        <label className="v-label" id="label-origem" style={{ fontSize: 14, fontWeight: 700, marginBottom: 8, display: 'block' }}>
+          {t('checkin.form.origem.label')}
         </label>
         <div
           className="v-chip-row"
@@ -481,22 +528,30 @@ export function CheckIn() {
           aria-labelledby="label-origem"
           style={{ marginBottom: 14 }}
         >
-          {ORIGENS.map(o => (
-            <button
-              key={o.value}
-              type="button"
-              id={`chip-origin-${o.value}`}
-              className={`v-chip ${origem === o.value ? 'active' : ''}`}
-              onClick={() => {
-                setOrigem(o.value);
-                setOrigemDetalhe('');
-              }}
-              aria-pressed={origem === o.value}
-              aria-label={`Origem: ${o.label}`}
-            >
-              {o.label}
-            </button>
-          ))}
+          {ORIGENS.map(o => {
+            const orgMap: any = {
+              'SALVADOR': 'checkin.form.origem.sal',
+              'INTERIOR_BA': 'checkin.form.origem.int',
+              'OUTRO_ESTADO': 'checkin.form.origem.out',
+              'INTERNACIONAL': 'checkin.form.origem.tur',
+            };
+            return (
+              <button
+                key={o.value}
+                type="button"
+                id={`chip-origin-${o.value}`}
+                className={`v-chip ${origem === o.value ? 'active' : ''}`}
+                onClick={() => {
+                  setOrigem(o.value);
+                  setOrigemDetalhe('');
+                }}
+                aria-pressed={origem === o.value}
+                aria-label={`Origem: ${o.label}`}
+              >
+                {t(orgMap[o.value] || o.label)}
+              </button>
+            )
+          })}
         </div>
 
         {/* Origin detail — animated expansion */}
@@ -511,7 +566,7 @@ export function CheckIn() {
               style={{ marginBottom: 14 }}
             >
               <label className="v-label" htmlFor="field-origem-detalhe">
-                {origem === 'INTERNACIONAL' ? 'Qual país e cidade?' : 'Qual cidade / estado?'}
+                {origem === 'INTERNACIONAL' ? t('checkin.form.origem.tur_placeholder') : t('checkin.form.origem.out_placeholder')}
               </label>
               <div className={`v-input-sm-wrap ${detailFocused ? 'focused' : ''}`}>
                 <input
@@ -519,8 +574,8 @@ export function CheckIn() {
                   type="text"
                   placeholder={
                     origem === 'INTERNACIONAL'
-                      ? 'Ex: Buenos Aires, Argentina'
-                      : 'Ex: São Paulo, SP'
+                      ? 'Ex: Buenos Aires'
+                      : 'Ex: São Paulo'
                   }
                   value={origemDetalhe}
                   onChange={e => setOrigemDetalhe(e.target.value)}
@@ -543,10 +598,10 @@ export function CheckIn() {
           onClick={() => setConsent(c => !c)}
           role="checkbox"
           aria-checked={consent}
-          aria-label="Concordar com uso de dados para melhoria da experiência cultural"
+          aria-label={t('checkin.form.lgpd')}
           tabIndex={0}
           onKeyDown={e => { if (e.key === ' ' || e.key === 'Enter') setConsent(c => !c); }}
-          style={{ marginBottom: 4 }}
+          style={{ marginBottom: 20, display: 'flex', gap: 12, alignItems: 'flex-start' }}
         >
           <div className={`v-checkbox ${consent ? 'checked' : ''}`} aria-hidden="true">
             {consent && (
@@ -555,9 +610,8 @@ export function CheckIn() {
               </svg>
             )}
           </div>
-          <span className="v-consent-text">
-            Concordo com o uso dos meus dados para melhoria da experiência cultural
-            e relatórios de impacto do espaço, conforme a LGPD.
+          <span className="v-consent-text" style={{ fontSize: 13, color: '#A8969A', lineHeight: 1.5, marginTop: 2 }}>
+            {t('checkin.form.lgpd')}
           </span>
         </div>
 
@@ -595,10 +649,16 @@ export function CheckIn() {
         <motion.button
           type="button"
           id="btn-register"
-          className="v-btn-primary"
+          className="v-btn-primary checkin-submit"
           style={{
-            marginTop: 22,
+            marginTop: 32,
             opacity: isFormComplete && !loading ? 1 : 0.35,
+            width: '100%',
+            background: '#E05A2A',
+            borderRadius: 8,
+            padding: '16px 0',
+            color: '#FFFFFF',
+            fontSize: 16
           }}
           onClick={handleSubmit}
           disabled={!isFormComplete || loading}
@@ -613,16 +673,16 @@ export function CheckIn() {
                 animate={{ rotate: 360 }}
                 transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }}
               />
-              Validando...
+              {t('checkin.form.validating')}
             </span>
           ) : (
-            'Registrar e acessar guia'
+            t('checkin.form.submit')
           )}
         </motion.button>
 
         {/* Bottom spacer */}
         <div style={{ height: 40 }} />
       </div>
-    </VisitorLayout>
+    </div>
   );
 }
