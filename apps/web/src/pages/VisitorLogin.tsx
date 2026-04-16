@@ -54,7 +54,6 @@ export function VisitorLogin() {
   const handleSubmit = async () => {
     if (!isComplete) return;
 
-    // Sensorial Ritual: Haptic feedback (Pulse)
     if ('vibrate' in navigator) {
       navigator.vibrate([30, 20, 30]);
     }
@@ -132,19 +131,22 @@ export function VisitorLogin() {
         <h1 className="v-wordmark" style={{ marginTop: 56, marginBottom: -4 }}>PULSO</h1>
         <p className="v-wordmark-sub">CULTURAL</p>
 
-        {/* Status — venue tag */}
-        <div className="v-venue-tag" style={{ margin: '12px 0 20px' }}>
+        {/* Venue tag — MAM Salvador · Aberto agora */}
+        <div className="v-venue-tag" style={{ margin: '14px 0 20px' }}>
           <span className="v-venue-dot" />
-          <span>{t('venue.name')}</span>
-          <span style={{ color: '#6B5A60', fontWeight: 400 }}>•</span>
+          <span>
+            <strong style={{ color: '#F5ECE4', fontWeight: 700 }}>{t('venue.name')}</strong>
+          </span>
+          <span style={{ color: '#6B5A60', fontWeight: 400, margin: '0 2px' }}>·</span>
           <span className="v-venue-status">{t('venue.status')}</span>
         </div>
 
         {/* Exhibition context */}
-        <p className="v-expo-label" style={{ marginBottom: 4 }}>{t('exhibition.label')}</p>
-        <h2 className="v-expo-title" style={{ marginBottom: 16 }}>{t('exhibition.title')}</h2>
+        <p className="v-expo-label" style={{ marginBottom: 6 }}>{t('exhibition.label')}</p>
+        <h2 className="v-expo-title" style={{ marginBottom: 20 }}>{t('exhibition.title')}</h2>
 
-        <p className="v-cta-text" style={{ marginTop: 0, marginBottom: 16 }}>
+        {/* CTA copy */}
+        <p className="v-cta-text" style={{ marginTop: 0, marginBottom: 20 }}>
           {returningUser ? (
             <motion.span
               initial={{ opacity: 0 }}
@@ -158,8 +160,11 @@ export function VisitorLogin() {
           )}
         </p>
 
+        {/* Divider */}
+        <div className="v-divider" />
+
         {/* CPF Field */}
-        <div className={`v-input-wrap ${focused ? 'focused' : ''}`}>
+        <div className={`v-input-wrap ${focused ? 'focused' : ''}`} style={{ marginTop: 20 }}>
           <CreditCard className="v-input-icon" size={20} />
           <input
             ref={inputRef}
@@ -221,27 +226,26 @@ export function VisitorLogin() {
           )}
         </AnimatePresence>
 
-        {/* Primary CTA */}
+        {/* Primary CTA — always visually active, validates on click */}
         <button
           className="v-btn-primary"
           onClick={handleSubmit}
-          disabled={!isComplete || loading}
           style={{ marginTop: 24 }}
         >
           {loading ? t('button.pulsing') : t('button.pulse')}
         </button>
 
-        {/* Final Footer Ritual */}
-        <div style={{ marginTop: 20, paddingBottom: 20, width: '100%', textAlign: 'center', position: 'relative', zIndex: 10 }}>
-          <button 
+        {/* Footer — GESTÃO (preservado) + LGPD */}
+        <div style={{ marginTop: 24, paddingBottom: 24, width: '100%', textAlign: 'center', position: 'relative', zIndex: 10 }}>
+          <button
             className="v-admin-link"
             onClick={() => navigate('/login')}
           >
             <Lock size={12} strokeWidth={2} opacity={0.5} />
             <span>GESTÃO</span>
           </button>
-          
-          <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 10, color: '#6B5A60', lineHeight: 1.5, margin: 0, fontWeight: 400 }}>
+
+          <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 10, color: '#6B5A60', lineHeight: 1.6, margin: 0, fontWeight: 400 }}>
             Seus dados são protegidos pela LGPD.<br />
             Usamos apenas para melhorar sua experiência.
           </p>
