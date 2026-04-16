@@ -18,7 +18,7 @@ export function VisitorLayout({ children, hideLanguage = false }: VisitorLayoutP
         <div className="visitor-top-fade" aria-hidden="true" />
 
         {/* Floating Language FAB - Draggable and Persistent */}
-        {!hideLanguage && <SmartLanguageFAB defaultPosition={{ x: window.innerWidth - 80, y: window.innerHeight - 180 }} />}
+        {!hideLanguage && <SmartLanguageFAB />}
 
 
 

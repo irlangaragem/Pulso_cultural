@@ -5,16 +5,18 @@ import { Share2, Download } from 'lucide-react';
 import { VisitorLayout } from '../components/VisitorLayout';
 import { analytics } from '../services/analytics';
 import { api } from '../services/api';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const EXHIBITION_ID = 'default-exhibition';
 const MUSEUM_SLUG = 'mam-salvador';
 
 export function CardShare() {
   const navigate = useNavigate();
+  const { t, language } = useLanguage();
   const shareRef = useRef<HTMLDivElement>(null);
   const [isSharing, setIsSharing] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
-  const dateStr = new Date().toLocaleDateString('pt-BR', { 
+  const dateStr = new Date().toLocaleDateString(language === 'pt' ? 'pt-BR' : 'en-US', { 
     day: '2-digit', month: 'short', year: 'numeric' 
   }).toUpperCase().replace(/ DE /g, ' DE ');
 
@@ -67,8 +69,8 @@ export function CardShare() {
 
       if (navigator.share) {
         await navigator.share({
-          title: 'Meu Pulso Cultural',
-          text: 'Eu fiz a cultura pulsar hoje. 🔴\n\nUma História da Arte Brasileira · MAM Salvador',
+          title: t('venue.name'),
+          text: t('share.message'),
           files: [file],
           url: `https://pulsocultural.art/?utm_source=share&utm_medium=app&utm_campaign=visitor_share&utm_content=${MUSEUM_SLUG}`
         });
@@ -101,7 +103,7 @@ export function CardShare() {
       <div className="v-card-screen">
         <div className="visitor-glow" />
 
-        <p className="v-card-label">Eu fiz a cultura pulsar hoje.</p>
+        <p className="v-card-label">{t('share.label')}</p>
 
         {/* The Card to be shared / exported */}
         <div className="v-share-card" ref={shareRef}>
@@ -137,13 +139,13 @@ export function CardShare() {
 
           <div className="v-share-card-body">
             <h1 className="v-share-card-headline v-text-gradient" style={{ marginBottom: '8px' }}>
-              Eu fiz a cultura pulsar hoje.
+              {t('share.label')}
             </h1>
             <p className="v-share-card-date" style={{ marginBottom: '12px' }}>
               {dateStr}
             </p>
             <div className="v-share-card-expo">
-              Uma História da Arte Brasileira
+              {t('exhibition.title')}
             </div>
           </div>
         </div>
@@ -156,7 +158,7 @@ export function CardShare() {
             disabled={isSharing || isDownloading}
           >
             <Share2 size={16} />
-            {isSharing ? 'Gerando...' : 'Compartilhar'}
+            {isSharing ? t('share.button.generate') : t('share.button.share')}
           </button>
           
           <button 
@@ -166,7 +168,7 @@ export function CardShare() {
             style={{ color: '#F5ECE4', borderColor: 'rgba(255,255,255,0.2)' }}
           >
             <Download size={16} />
-            {isDownloading ? 'Salvando...' : 'Salvar'}
+            {isDownloading ? t('share.button.saving') : t('share.button.save')}
           </button>
         </div>
 
@@ -175,7 +177,7 @@ export function CardShare() {
           style={{ marginTop: 24, padding: '8px 24px' }}
           onClick={() => navigate('/guide')}
         >
-          ← Voltar ao guia
+          {t('share.back')}
         </button>
 
       </div>

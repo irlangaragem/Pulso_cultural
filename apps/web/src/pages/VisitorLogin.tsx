@@ -170,8 +170,7 @@ export function VisitorLogin() {
             />
           ) : (
             <>
-              Dê seu pulso e acesse<br />
-              o guia da exposição
+              {t('checkin.cta')}
             </>
           )}
         </p>

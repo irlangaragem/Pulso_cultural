@@ -43,7 +43,23 @@ const translations: Translations = {
     'feedback.label.3': 'Interessante',
     'feedback.label.4': 'Muito bom',
     'feedback.label.5': 'Incrível 🔥',
-    'feedback.success': '✨ Obrigado por fazer a cultura pulsar!'
+    'feedback.success': '✨ Obrigado por fazer a cultura pulsar!',
+    'feedback.title.page': 'Avaliação',
+    'feedback.desc.page': 'Sua opinião é fundamental para melhorar a experiência cultural.',
+    'feedback.question': 'Como foi sua experiência?',
+    'feedback.comment.label': 'Deixe um comentário (opcional)',
+    'feedback.comment.placeholder': 'O que você mais gostou na exposição?',
+    'feedback.button.submit': 'Concluir e Enviar',
+    'feedback.thanks': 'Obrigado!',
+    'feedback.thanks.desc': 'Sua avaliação ajuda o MAM Salvador a criar experiências cada vez melhores.',
+    'feedback.back_home': '← Voltar ao início',
+    'share.label': 'Eu fiz a cultura pulsar hoje.',
+    'share.button.generate': 'Gerando...',
+    'share.button.share': 'Compartilhar',
+    'share.button.saving': 'Salvando...',
+    'share.button.save': 'Salvar',
+    'share.back': '← Voltar ao guia',
+    'share.message': 'Eu fiz a cultura pulsar hoje. 🔴\n\nUma História da Arte Brasileira · MAM Salvador'
   },
   en: {
     'venue.status': 'MAM SALVADOR',
@@ -82,7 +98,23 @@ const translations: Translations = {
     'feedback.label.3': 'Interesting',
     'feedback.label.4': 'Very good',
     'feedback.label.5': 'Amazing 🔥',
-    'feedback.success': '✨ Thanks for making culture pulse!'
+    'feedback.success': '✨ Thanks for making culture pulse!',
+    'feedback.title.page': 'Review',
+    'feedback.desc.page': 'Your opinion is critical for improving the cultural experience.',
+    'feedback.question': 'How was your experience?',
+    'feedback.comment.label': 'Leave a comment (optional)',
+    'feedback.comment.placeholder': 'What did you like most about the exhibition?',
+    'feedback.button.submit': 'Complete and Send',
+    'feedback.thanks': 'Thank you!',
+    'feedback.thanks.desc': 'Your review helps MAM Salvador create better experiences.',
+    'feedback.back_home': '← Back to home',
+    'share.label': 'I made culture pulse today.',
+    'share.button.generate': 'Generating...',
+    'share.button.share': 'Share',
+    'share.button.saving': 'Saving...',
+    'share.button.save': 'Save',
+    'share.back': '← Back to guide',
+    'share.message': 'I made culture pulse today. 🔴\n\nA History of Brazilian Art · MAM Salvador'
   },
   es: {
     'venue.status': 'MAM SALVADOR',
@@ -121,7 +153,23 @@ const translations: Translations = {
     'feedback.label.3': 'Interesante',
     'feedback.label.4': 'Muy bueno',
     'feedback.label.5': 'Increíble 🔥',
-    'feedback.success': '✨ ¡Gracias por hacer pulsar la cultura!'
+    'feedback.success': '✨ ¡Gracias por hacer pulsar la cultura!',
+    'feedback.title.page': 'Evaluación',
+    'feedback.desc.page': 'Su opinión é fundamental para mejorar la experiencia cultural.',
+    'feedback.question': '¿Cómo fue su experiencia?',
+    'feedback.comment.label': 'Deje um comentário (opcional)',
+    'feedback.comment.placeholder': '¿Qué fue lo que más le gustó de la exposición?',
+    'feedback.button.submit': 'Concluir y Enviar',
+    'feedback.thanks': '¡Gracias!',
+    'feedback.thanks.desc': 'Su evaluación ayuda al MAM Salvador a crear experiencias mejores.',
+    'feedback.back_home': '← Voltar à página inicial',
+    'share.label': 'Hice pulsar la cultura hoy.',
+    'share.button.generate': 'Generando...',
+    'share.button.share': 'Compartir',
+    'share.button.saving': 'Guardando...',
+    'share.button.save': 'Guardar',
+    'share.back': '← Voltar à guia',
+    'share.message': 'Hice pulsar la cultura hoy. 🔴\n\nUna Historia del Arte Brasileño · MAM Salvador'
   },
   fr: {
     'venue.status': 'MAM SALVADOR',
@@ -160,7 +208,14 @@ const translations: Translations = {
     'feedback.label.3': 'Intéressant',
     'feedback.label.4': 'Très bien',
     'feedback.label.5': 'Incroyable 🔥',
-    'feedback.success': '✨ Merci de faire vibrer la culture !'
+    'feedback.success': '✨ Merci de faire vibrer la culture !',
+    'share.label': 'J\'ai fait vibrer la culture aujourd\'hui.',
+    'share.button.generate': 'Génération...',
+    'share.button.share': 'Partager',
+    'share.button.saving': 'Enregistrement...',
+    'share.button.save': 'Enregistrer',
+    'share.back': '← Retour au guide',
+    'share.message': 'J\'ai fait vibrer la culture aujourd\'hui. 🔴\n\nUne Histoire de L\'Art Brésilien · MAM Salvador'
   }
 };
 
@@ -196,6 +251,7 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const t = (key: string, variables?: Record<string, string>): string => {
+    console.log(`[LanguageContext] Translating ${key} to ${language}`);
     let text = translations[language][key] || translations['pt'][key] || key;
     
     if (variables) {
@@ -206,6 +262,10 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
     
     return text;
   };
+
+  useEffect(() => {
+    console.log(`[LanguageContext] Language changed to: ${language}`);
+  }, [language]);
 
   return (
     <LanguageContext.Provider value={{ language, setLanguage, t }}>
