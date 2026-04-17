@@ -49,7 +49,8 @@ export function CheckIn() {
   const { t } = useLanguage();
 
   // ── Form state ──
-  const [cpf, setCpf] = useState('');
+  const [cpf,  setCpf]  = useState('');
+  const [email, setEmail] = useState('');
   const [nome, setNome] = useState('');
   const [nascimento, setNascimento] = useState('');
   const [genero, setGenero] = useState<Gender | ''>('');
@@ -76,11 +77,14 @@ export function CheckIn() {
   const comoParam = params.get('como');
 
   useEffect(() => {
-    const cpfParam = params.get('cpf');
-    if (cpfParam) {
-      setCpf(formatCPF(cpfParam));
-    }
+    const cpfParam   = params.get('cpf');
+    const emailParam = params.get('email');
+    if (cpfParam)   setCpf(formatCPF(cpfParam));
+    if (emailParam) setEmail(emailParam);
   }, [location.search]);
+
+  // Derived: which identity mode was passed in?
+  const identityMode: 'cpf' | 'email' = params.get('email') ? 'email' : 'cpf';
 
   // Focus management on step change
   useEffect(() => {
@@ -125,8 +129,9 @@ export function CheckIn() {
 
   const isStep3Valid = true; // Optional
 
-  const isStep4Valid = 
-    cpf.replace(/\D/g, '').length === 11 && isValidCPF(cpf) && consent;
+  const isStep4Valid = identityMode === 'email'
+    ? /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()) && consent
+    : cpf.replace(/\D/g, '').length === 11 && isValidCPF(cpf) && consent;
 
   const canAdvance = 
     (step === 1 && isStep1Valid) ||
@@ -174,10 +179,13 @@ export function CheckIn() {
 
     try {
       if (!isMasterKey) {
-        const check = await api.post('/api/v1/users/identify', { cpf: rawCpf });
+        const identifyBody = identityMode === 'email' ? { email } : { cpf: rawCpf };
+        const check = await api.post('/api/v1/users/identify', identifyBody);
         if (check.data?.success) {
-          localStorage.setItem(CPF_STORAGE_KEY, rawCpf);
-          setError(`CPF já registrado como ${check.data.visitor.firstName}. Use a tela de entrada.`);
+          if (identityMode === 'cpf') localStorage.setItem(CPF_STORAGE_KEY, rawCpf);
+          else localStorage.setItem('pulso:return_email', email);
+          const who = check.data.visitor?.firstName || '';
+          setError(`${identityMode === 'email' ? 'E-mail' : 'CPF'} já registrado como ${who}. Use a tela de entrada.`);
           setShowRedirect(true);
           setLoading(false);
           return;
@@ -197,7 +205,8 @@ export function CheckIn() {
     };
 
     const payload: RegisterVisitorPayload = {
-      cpf: rawCpf,
+      cpf: identityMode === 'email' ? undefined as any : rawCpf,
+      email: identityMode === 'email' ? email : undefined,
       name: nome.trim(),
       birthYear: birthNumber,
       gender: genero as Gender,
@@ -210,16 +219,19 @@ export function CheckIn() {
     };
 
     try {
-      await localDb.saveVisitor({
-        cpf: rawCpf,
-        name: payload.name,
-        birthYear: birthNumber,
-        gender: payload.gender,
-        origin: payload.origin,
-        accessibilityNeeds: acessibilidades,
-      });
-
-      localStorage.setItem(CPF_STORAGE_KEY, rawCpf);
+      if (identityMode === 'cpf') {
+        await localDb.saveVisitor({
+          cpf: rawCpf,
+          name: payload.name,
+          birthYear: birthNumber,
+          gender: payload.gender,
+          origin: payload.origin,
+          accessibilityNeeds: acessibilidades,
+        });
+        localStorage.setItem(CPF_STORAGE_KEY, rawCpf);
+      } else {
+        localStorage.setItem('pulso:return_email', email);
+      }
 
       try {
         await api.post('/api/v1/users/register', payload);
@@ -448,39 +460,41 @@ export function CheckIn() {
           ════════════════════════════════════════════ */}
           {step === 4 && (
             <motion.div key="step4" variants={framerVariants} initial="initial" animate="animate" exit="exit" transition={{ duration: 0.25 }}>
-              <label className="v-label" htmlFor="field-cpf" style={{ fontSize: 14, fontWeight: 500, color: '#D4C6C9', marginBottom: 6, display: 'block' }}>
-                {t('checkin.form.cpf.label')}
+              <label className="v-label" htmlFor={identityMode === 'email' ? 'field-email' : 'field-cpf'} style={{ fontSize: 14, fontWeight: 500, color: '#D4C6C9', marginBottom: 6, display: 'block' }}>
+                {identityMode === 'email' ? t('identity.email') : t('checkin.form.cpf.label')}
               </label>
               <p style={{ fontSize: 13, color: '#A8969A', marginBottom: 12 }}>
                 {t('checkin.form.trust')}
               </p>
-              <div className={`v-input-sm-wrap ${cpfFocused ? 'focused' : ''}`} style={{ maxWidth: 220, marginBottom: 24 }}>
-                <input ref={cpfRef} id="field-cpf" type="tel" inputMode="numeric" placeholder={t('checkin.form.cpf.placeholder')} value={cpf} onChange={handleCPFChange} onFocus={() => setCpfFocused(true)} onBlur={() => setCpfFocused(false)} className="v-input-sm" autoComplete="off" style={{ fontFamily: "'Space Mono', monospace", letterSpacing: 2 }} />
-              </div>
-
+              <AnimatePresence mode="wait">
+                {identityMode === 'email' ? (
+                  <motion.div key="email-field" initial={{ opacity: 0, x: 8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 8 }} transition={{ duration: 0.18 }}>
+                    <div className={`v-input-sm-wrap ${cpfFocused ? 'focused' : ''}`} style={{ marginBottom: 24 }}>
+                      <input id="field-email" type="email" inputMode="email" placeholder={t('identity.email_placeholder')} value={email} onChange={e => setEmail(e.target.value.trim())} onFocus={() => setCpfFocused(true)} onBlur={() => setCpfFocused(false)} className="v-input-sm" autoComplete="email" style={{ letterSpacing: 0, fontSize: 15 }} />
+                    </div>
+                  </motion.div>
+                ) : (
+                  <motion.div key="cpf-field" initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -8 }} transition={{ duration: 0.18 }}>
+                    <div className={`v-input-sm-wrap ${cpfFocused ? 'focused' : ''}`} style={{ maxWidth: 220, marginBottom: 24 }}>
+                      <input ref={cpfRef} id="field-cpf" type="tel" inputMode="numeric" placeholder={t('checkin.form.cpf.placeholder')} value={cpf} onChange={handleCPFChange} onFocus={() => setCpfFocused(true)} onBlur={() => setCpfFocused(false)} className="v-input-sm" autoComplete="off" style={{ fontFamily: "'Space Mono', monospace", letterSpacing: 2 }} />
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
               <div className="v-consent-row" style={{ display: 'flex', gap: 12, alignItems: 'flex-start', cursor: 'pointer', padding: '12px 16px', background: 'rgba(255,255,255,0.03)', borderRadius: 8, border: '1px solid rgba(255,255,255,0.06)' }}>
                 <input type="checkbox" id="lgpd-consent" checked={consent} onChange={(e) => setConsent(e.target.checked)} style={{ appearance: 'none', width: 0, height: 0, opacity: 0, position: 'absolute' }} />
                 <div className={`v-checkbox ${consent ? 'checked' : ''}`} aria-hidden="true" onClick={() => document.getElementById('lgpd-consent')?.click()}>
-                  {consent && (
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round">
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                  )}
+                  {consent && (<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12" /></svg>)}
                 </div>
                 <label htmlFor="lgpd-consent" className="v-consent-text" style={{ fontSize: 13, color: '#A8969A', lineHeight: 1.5, marginTop: 2, cursor: 'pointer' }}>
                   {t('checkin.form.lgpd')}
                 </label>
               </div>
-
               <AnimatePresence>
                 {error && (
                   <motion.div role="alert" initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} style={{ marginTop: 14, color: '#E8554E', fontSize: 14, display: 'flex', flexDirection: 'column' }}>
                     ⚠️ {error}
-                    {showRedirect && (
-                      <button type="button" onClick={() => navigate('/')} className="v-btn-ghost" style={{ alignSelf: 'flex-start', marginTop: 8, fontSize: 13, color: '#E8554E', padding: '6px 0', fontWeight: 500 }}>
-                        → Ir para a página de retorno
-                      </button>
-                    )}
+                    {showRedirect && (<button type="button" onClick={() => navigate('/')} className="v-btn-ghost" style={{ alignSelf: 'flex-start', marginTop: 8, fontSize: 13, color: '#E8554E', padding: '6px 0', fontWeight: 500 }}>→ Ir para a página de retorno</button>)}
                   </motion.div>
                 )}
               </AnimatePresence>

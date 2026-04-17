@@ -24,7 +24,8 @@ export type AccessibilityNeed =
  * Typed payload sent on first-time visitor registration.
  */
 export interface RegisterVisitorPayload {
-  cpf: string;            // raw 11-digit string
+  cpf?: string;           // raw 11-digit string (Brazilian users)
+  email?: string;         // email address (international users)
   name: string;
   birthYear: number;
   gender: Gender;
