@@ -15,15 +15,33 @@ const Feedback = lazy(() => import('./pages/Feedback').then(m => ({ default: m.F
 
 
 
-class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
+class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; error?: Error }> {
   constructor(props: { children: ReactNode }) {
     super(props);
     this.state = { hasError: false };
   }
-  static getDerivedStateFromError(_error: Error) { return { hasError: true }; }
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) { console.error('React Error:', error, errorInfo); }
+  static getDerivedStateFromError(error: Error) { return { hasError: true, error }; }
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error('[ErrorBoundary] Caught error:', error.message, '\n', error.stack, '\n', errorInfo.componentStack);
+  }
   render() {
-    if (this.state.hasError) return <div className="p-20 text-center"><h1>Algo deu errado. Verifique o console.</h1></div>;
+    if (this.state.hasError) {
+      return (
+        <div style={{ background: '#0B0B0F', minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24, fontFamily: 'DM Sans, sans-serif' }}>
+          <div style={{ fontSize: 32, marginBottom: 16 }}>🔴</div>
+          <h1 style={{ color: '#F5ECE4', fontSize: 18, fontWeight: 700, marginBottom: 8, fontFamily: 'Sora, sans-serif', textAlign: 'center' }}>Algo deu errado</h1>
+          <p style={{ color: '#6B5A60', fontSize: 13, marginBottom: 28, textAlign: 'center', maxWidth: 280, lineHeight: 1.5 }}>
+            Ocorreu um problema inesperado. Tente voltar ao início.
+          </p>
+          <button
+            onClick={() => { this.setState({ hasError: false }); window.location.href = '/'; }}
+            style={{ background: 'linear-gradient(135deg, #E8554E, #D4267E)', border: 'none', borderRadius: 12, padding: '14px 28px', color: '#fff', fontFamily: 'Sora, sans-serif', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
+          >
+            Voltar ao início
+          </button>
+        </div>
+      );
+    }
     return this.props.children;
   }
 }

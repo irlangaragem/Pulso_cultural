@@ -135,11 +135,11 @@ export function VisitorLogin() {
     setError(null);
     let currentSuccess = false;
 
-    // ── CPF flow ──
-    if (identityMode === 'cpf') {
-      let visitor = await localDb.getVisitorByCPF(rawCpf);
+    try {
+      // ── CPF flow ──
+      if (identityMode === 'cpf') {
+        let visitor = await localDb.getVisitorByCPF(rawCpf);
 
-      try {
         if (!visitor) {
           try {
             const response = await api.post('/api/v1/users/identify', { cpf: rawCpf });
@@ -154,7 +154,7 @@ export function VisitorLogin() {
                 accessibilityNeeds: vData.accessibilityNeeds,
               });
             }
-          } catch { /* 404 = new user */ }
+          } catch { /* 404 = new user — continue to checkin */ }
         }
 
         if (visitor) {
@@ -180,14 +180,10 @@ export function VisitorLogin() {
           if (como === 'Outro' && comoOutroText) qp.set('comoOutroText', comoOutroText);
           navigate(`/checkin?${qp.toString()}`);
         }
-      } finally {
-        if (!currentSuccess) setLoading(false);
       }
-    }
 
-    // ── Email flow ──
-    if (identityMode === 'email') {
-      try {
+      // ── Email flow ──
+      if (identityMode === 'email') {
         let found = false;
         try {
           const res = await api.post('/api/v1/users/identify', { email });
@@ -204,7 +200,7 @@ export function VisitorLogin() {
             setSuccess(true);
             setTimeout(() => navigate('/guide'), 1500);
           }
-        } catch { /* 404 – new user */ }
+        } catch { /* 404 – new user — continue to checkin */ }
 
         if (!found) {
           const qp = new URLSearchParams();
@@ -212,9 +208,12 @@ export function VisitorLogin() {
           if (como) qp.set('como', como);
           navigate(`/checkin?${qp.toString()}`);
         }
-      } finally {
-        if (!currentSuccess) setLoading(false);
       }
+    } catch (err) {
+      console.error('[VisitorLogin] Unexpected submit error:', err);
+      setError('Ocorreu um erro inesperado. Tente novamente.');
+    } finally {
+      if (!currentSuccess) setLoading(false);
     }
   };
 
