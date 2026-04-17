@@ -33,7 +33,7 @@ export function Feedback() {
       <VisitorLayout>
         <div className="visitor-screen" style={{ justifyContent: 'center', alignItems: 'center', minHeight: '100%' }}>
           <div className="visitor-glow" />
-          <PulseSymbol size={80} animated />
+          <PulseSymbol size={80} />
           <h1 className="v-screen-title" style={{ textAlign: 'center', marginTop: 24 }}>Obrigado!</h1>
           <p style={{ color: '#A8969A', fontSize: 13, textAlign: 'center', maxWidth: 260, lineHeight: 1.5, marginBottom: 32 }}>
             Sua avaliação ajuda o MAM Salvador a criar experiências cada vez melhores.
