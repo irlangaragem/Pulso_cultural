@@ -1,15 +1,19 @@
 interface PulseSymbolProps {
   size?: number;
-  animated?: boolean;
 }
 
 export function PulseSymbol({ size = 120 }: PulseSymbolProps) {
   const r = size / 2;
   const uid = `ps-${size}`;
+  const isSmall = size <= 32;
 
-  const ringR = r * 0.5;       // rings originate at 50% radius
-  const coreR = r * 0.16;      // core dot radius
-  const glowR = r * 0.30;      // ambient glow halo
+  // Scale params depending on size context
+  const ringR     = r * (isSmall ? 0.35 : 0.5);
+  const coreR     = r * (isSmall ? 0.28 : 0.16);
+  const glowR     = r * (isSmall ? 0.44 : 0.30);
+  const maxScale  = isSmall ? 3.2  : 2.4;
+  const strokeW   = isSmall ? Math.max(0.8, size * 0.04) : Math.max(1, size * 0.022);
+  const duration  = isSmall ? '2s' : '2.4s';
 
   return (
     <svg
@@ -26,18 +30,18 @@ export function PulseSymbol({ size = 120 }: PulseSymbolProps) {
           <stop offset="100%" stopColor="#B02030" />
         </radialGradient>
 
-        {/* Core dot glow */}
-        <filter id={`glow-${uid}`} x="-120%" y="-120%" width="340%" height="340%">
-          <feGaussianBlur in="SourceGraphic" stdDeviation={size * 0.05} result="blurred" />
+        {/* Core glow */}
+        <filter id={`glow-${uid}`} x="-150%" y="-150%" width="400%" height="400%">
+          <feGaussianBlur in="SourceGraphic" stdDeviation={isSmall ? size * 0.12 : size * 0.05} result="blurred" />
           <feMerge>
             <feMergeNode in="blurred" />
             <feMergeNode in="SourceGraphic" />
           </feMerge>
         </filter>
 
-        {/* Ring soft glow */}
-        <filter id={`ring-glow-${uid}`} x="-60%" y="-60%" width="220%" height="220%">
-          <feGaussianBlur in="SourceGraphic" stdDeviation={size * 0.022} result="blurred" />
+        {/* Ring glow */}
+        <filter id={`ring-glow-${uid}`} x="-80%" y="-80%" width="260%" height="260%">
+          <feGaussianBlur in="SourceGraphic" stdDeviation={isSmall ? size * 0.06 : size * 0.022} result="blurred" />
           <feMerge>
             <feMergeNode in="blurred" />
             <feMergeNode in="SourceGraphic" />
@@ -46,19 +50,19 @@ export function PulseSymbol({ size = 120 }: PulseSymbolProps) {
 
         <style>{`
           @keyframes ps-expand-${uid} {
-            0%   { transform: scale(0.1); opacity: 0.85; }
-            70%  { opacity: 0.25; }
-            100% { transform: scale(2.4); opacity: 0; }
+            0%   { transform: scale(0.1); opacity: ${isSmall ? 1 : 0.85}; }
+            60%  { opacity: ${isSmall ? 0.5 : 0.25}; }
+            100% { transform: scale(${maxScale}); opacity: 0; }
           }
 
           @keyframes ps-breathe-${uid} {
             0%, 100% { transform: scale(1);    opacity: 1; }
-            50%       { transform: scale(1.15); opacity: 0.88; }
+            50%       { transform: scale(${isSmall ? 1.2 : 1.15}); opacity: 0.88; }
           }
 
           @keyframes ps-halo-${uid} {
-            0%, 100% { transform: scale(1);   opacity: 0.30; }
-            50%       { transform: scale(1.2); opacity: 0.55; }
+            0%, 100% { transform: scale(1);   opacity: ${isSmall ? 0.5 : 0.30}; }
+            50%       { transform: scale(${isSmall ? 1.3 : 1.2}); opacity: ${isSmall ? 0.75 : 0.55}; }
           }
 
           .ps-ring-${uid} {
@@ -66,33 +70,35 @@ export function PulseSymbol({ size = 120 }: PulseSymbolProps) {
             transform-origin: center;
             fill: none;
             stroke: #E8443A;
-            stroke-width: ${Math.max(1, size * 0.022)}px;
-            animation: ps-expand-${uid} 2.4s cubic-bezier(0.15, 0.5, 0.3, 1) infinite;
+            stroke-width: ${strokeW}px;
+            animation: ps-expand-${uid} ${duration} cubic-bezier(0.15, 0.5, 0.3, 1) infinite;
           }
 
           .ps-core-${uid} {
             transform-box: fill-box;
             transform-origin: center;
-            animation: ps-breathe-${uid} 2.4s ease-in-out infinite;
+            animation: ps-breathe-${uid} ${duration} ease-in-out infinite;
           }
 
           .ps-halo-${uid} {
             transform-box: fill-box;
             transform-origin: center;
-            animation: ps-halo-${uid} 2.4s ease-in-out infinite;
+            animation: ps-halo-${uid} ${duration} ease-in-out infinite;
           }
         `}</style>
       </defs>
 
-      {/* Static boundary ring */}
-      <circle
-        cx={r} cy={r}
-        r={r * 0.86}
-        fill="none"
-        stroke="#E8443A"
-        strokeWidth={Math.max(0.5, size * 0.007)}
-        opacity={0.10}
-      />
+      {/* Static boundary ring — only on large sizes */}
+      {!isSmall && (
+        <circle
+          cx={r} cy={r}
+          r={r * 0.86}
+          fill="none"
+          stroke="#E8443A"
+          strokeWidth={Math.max(0.5, size * 0.007)}
+          opacity={0.10}
+        />
+      )}
 
       {/* Expanding Ring 1 — no delay */}
       <circle
@@ -102,27 +108,27 @@ export function PulseSymbol({ size = 120 }: PulseSymbolProps) {
         style={{ animationDelay: '0s' }}
       />
 
-      {/* Expanding Ring 2 — ⅓ offset */}
+      {/* Expanding Ring 2 */}
       <circle
         cx={r} cy={r} r={ringR}
         className={`ps-ring-${uid}`}
         filter={`url(#ring-glow-${uid})`}
-        style={{ animationDelay: '0.8s' }}
+        style={{ animationDelay: isSmall ? '0.65s' : '0.8s' }}
       />
 
-      {/* Expanding Ring 3 — ⅔ offset */}
+      {/* Expanding Ring 3 */}
       <circle
         cx={r} cy={r} r={ringR}
         className={`ps-ring-${uid}`}
         filter={`url(#ring-glow-${uid})`}
-        style={{ animationDelay: '1.6s' }}
+        style={{ animationDelay: isSmall ? '1.3s' : '1.6s' }}
       />
 
-      {/* Ambient glow halo behind core */}
+      {/* Ambient glow halo */}
       <circle
         cx={r} cy={r} r={glowR}
         fill="#E8443A"
-        opacity={0.30}
+        opacity={isSmall ? 0.5 : 0.30}
         className={`ps-halo-${uid}`}
         filter={`url(#ring-glow-${uid})`}
       />
