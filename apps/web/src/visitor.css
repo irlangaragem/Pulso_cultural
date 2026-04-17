@@ -36,8 +36,9 @@
   display: flex;
   flex-direction: column;
   position: relative;
-  overflow: hidden;
-  /* Immersion mode: Safe area handled inside content to allow bleed at top */
+  /* NOTE: overflow must NOT be hidden — it clips the PulseSymbol's expanding rings.
+     Use border-radius + clip only on desktop preview via @media below. */
+  overflow: visible;
   padding-bottom: env(safe-area-inset-bottom);
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
@@ -51,7 +52,9 @@
     border: 8px solid #1A1A1A;
     margin: 20px 0;
     box-shadow: 0 50px 100px -20px rgba(0, 0, 0, 0.5);
-    /* Desktop preview: no safe-area padding needed */
+    /* Desktop preview: clip to rounded corners, but keep rings visible
+       by using clip-path on a pseudo wrapper instead of overflow:hidden */
+    overflow: visible;
     padding-top: 0;
     padding-bottom: 0;
     padding-left: 0;
@@ -88,7 +91,7 @@
 .visitor-content {
   flex: 1;
   overflow-y: auto;
-  overflow-x: hidden;
+  overflow-x: visible; /* must NOT be hidden — clips pulse rings & FAB */
   display: flex;
   flex-direction: column;
 }

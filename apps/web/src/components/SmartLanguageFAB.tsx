@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useLanguage } from '../contexts/LanguageContext';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -11,68 +12,84 @@ const LANGUAGES = [
 
 type LangCode = (typeof LANGUAGES)[number]['code'];
 
-const RETRACT_DELAY = 2200;
+const RETRACT_AFTER_SELECT_MS = 2000;
+const RETRACT_AFTER_OPEN_MS   = 5000; // auto-close if user doesn't pick
 
 export function SmartLanguageFAB() {
   const { language, setLanguage } = useLanguage();
   const [open, setOpen] = useState(false);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const currentLang = LANGUAGES.find(l => l.code === language) || LANGUAGES[0];
+  // useRef so timers survive re-renders without stale closures
+  const selectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const openTimerRef   = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const currentLang = LANGUAGES.find(l => l.code === language) ?? LANGUAGES[0];
 
   // ── Cleanup on unmount ──
   useEffect(() => {
     return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
+      if (selectTimerRef.current) clearTimeout(selectTimerRef.current);
+      if (openTimerRef.current)   clearTimeout(openTimerRef.current);
     };
   }, []);
 
-  // ── Clear any pending retract ──
-  const clearRetractTimer = useCallback(() => {
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
-      timerRef.current = null;
-    }
+  // ── Open selector ──
+  const handleOpen = useCallback(() => {
+    // Cancel any pending retract
+    if (selectTimerRef.current) { clearTimeout(selectTimerRef.current); selectTimerRef.current = null; }
+    if (openTimerRef.current)   { clearTimeout(openTimerRef.current);   openTimerRef.current   = null; }
+
+    setOpen(true);
+
+    // Auto-close if user opens but doesn't pick anything
+    openTimerRef.current = setTimeout(() => {
+      setOpen(false);
+    }, RETRACT_AFTER_OPEN_MS);
   }, []);
 
-  // ── Schedule auto-retract ──
-  const scheduleRetract = useCallback(() => {
-    clearRetractTimer();
-    timerRef.current = setTimeout(() => {
-      setOpen(false);
-    }, RETRACT_DELAY);
-  }, [clearRetractTimer]);
+  // ── Close selector ──
+  const handleClose = useCallback(() => {
+    if (openTimerRef.current)   { clearTimeout(openTimerRef.current);   openTimerRef.current   = null; }
+    if (selectTimerRef.current) { clearTimeout(selectTimerRef.current); selectTimerRef.current = null; }
+    setOpen(false);
+  }, []);
 
-  // ── Toggle selector ──
+  // ── Toggle ──
   const handleToggle = useCallback(() => {
-    clearRetractTimer();
-    setOpen(prev => {
-      const next = !prev;
-      // If opening, schedule retract in case user doesn't pick
-      if (next) {
-        timerRef.current = setTimeout(() => setOpen(false), RETRACT_DELAY * 2);
-      }
-      return next;
-    });
-  }, [clearRetractTimer]);
+    if (open) {
+      handleClose();
+    } else {
+      handleOpen();
+    }
+  }, [open, handleOpen, handleClose]);
 
-  // ── Pick a language ──
+  // ── Select a language ──
   const handleSelect = useCallback((code: LangCode) => {
     setLanguage(code as any);
-    // Micro-haptic feedback
     if ('vibrate' in navigator) navigator.vibrate(15);
-    // Auto-retract after brief visual confirmation
-    scheduleRetract();
-  }, [setLanguage, scheduleRetract]);
 
-  return (
+    // Cancel the open-idle timer
+    if (openTimerRef.current) { clearTimeout(openTimerRef.current); openTimerRef.current = null; }
+    // Cancel any previous select timer
+    if (selectTimerRef.current) { clearTimeout(selectTimerRef.current); selectTimerRef.current = null; }
+
+    // Schedule retract after selection
+    selectTimerRef.current = setTimeout(() => {
+      setOpen(false);
+      selectTimerRef.current = null;
+    }, RETRACT_AFTER_SELECT_MS);
+  }, [setLanguage]);
+
+  // ── Render via portal — avoids being clipped by ANY ancestor ──
+  const fab = (
     <div
       style={{
         position: 'fixed',
         top: 16,
         right: 16,
-        zIndex: 9999,
+        zIndex: 99999,
         fontFamily: "'DM Sans', sans-serif",
+        pointerEvents: 'auto',
       }}
     >
       <motion.div
@@ -80,28 +97,26 @@ export function SmartLanguageFAB() {
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: 0,
-          background: 'rgba(14, 11, 13, 0.85)',
-          backdropFilter: 'blur(16px)',
-          WebkitBackdropFilter: 'blur(16px)',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
+          background: 'rgba(14, 11, 13, 0.9)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          border: '1px solid rgba(255, 255, 255, 0.09)',
           borderRadius: 100,
           padding: '4px',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
+          boxShadow: '0 4px 24px rgba(0,0,0,0.5)',
           overflow: 'hidden',
-          cursor: 'pointer',
         }}
-        transition={{ layout: { duration: 0.28, ease: [0.4, 0, 0.2, 1] } }}
+        transition={{ layout: { duration: 0.26, ease: [0.4, 0, 0.2, 1] } }}
       >
-        {/* ── Collapsed: show only active language ── */}
+        {/* ── COLLAPSED: only show active language ── */}
         {!open && (
           <motion.button
             key="trigger"
-            onClick={handleToggle}
-            initial={{ opacity: 0, scale: 0.8 }}
+            initial={{ opacity: 0, scale: 0.85 }}
             animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8 }}
-            transition={{ duration: 0.18 }}
+            exit={{ opacity: 0, scale: 0.85 }}
+            transition={{ duration: 0.16 }}
+            onClick={handleToggle}
             style={{
               background: 'none',
               border: 'none',
@@ -117,17 +132,18 @@ export function SmartLanguageFAB() {
               letterSpacing: 0.5,
               whiteSpace: 'nowrap',
             }}
-            aria-label={`Idioma: ${currentLang.label}. Clique para mudar.`}
+            aria-label={`Language: ${currentLang.label}. Tap to change.`}
+            aria-expanded={false}
           >
             <span style={{ fontSize: 14, lineHeight: 1 }}>{currentLang.flag}</span>
             <span>{currentLang.label}</span>
-            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style={{ opacity: 0.5 }}>
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style={{ opacity: 0.45 }}>
               <path d="M3 4L5 6L7 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </motion.button>
         )}
 
-        {/* ── Expanded: show all languages ── */}
+        {/* ── EXPANDED: all options ── */}
         <AnimatePresence>
           {open && (
             <motion.div
@@ -135,13 +151,10 @@ export function SmartLanguageFAB() {
               initial={{ opacity: 0, width: 0 }}
               animate={{ opacity: 1, width: 'auto' }}
               exit={{ opacity: 0, width: 0 }}
-              transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 2,
-                overflow: 'hidden',
-              }}
+              transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
+              style={{ display: 'flex', alignItems: 'center', gap: 2, overflow: 'hidden' }}
+              role="group"
+              aria-label="Select language"
             >
               {LANGUAGES.map((lang, idx) => (
                 <motion.button
@@ -149,16 +162,12 @@ export function SmartLanguageFAB() {
                   onClick={() => handleSelect(lang.code)}
                   initial={{ opacity: 0, y: -4 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: idx * 0.04, duration: 0.18 }}
-                  whileHover={{ scale: 1.06 }}
-                  whileTap={{ scale: 0.94 }}
+                  transition={{ delay: idx * 0.04, duration: 0.16 }}
+                  whileHover={{ scale: 1.07 }}
+                  whileTap={{ scale: 0.93 }}
                   style={{
-                    background: language === lang.code
-                      ? 'rgba(232, 85, 78, 0.18)'
-                      : 'transparent',
-                    border: language === lang.code
-                      ? '1px solid rgba(232, 85, 78, 0.35)'
-                      : '1px solid transparent',
+                    background: language === lang.code ? 'rgba(232,85,78,0.18)' : 'transparent',
+                    border: `1px solid ${language === lang.code ? 'rgba(232,85,78,0.4)' : 'transparent'}`,
                     borderRadius: 100,
                     padding: '6px 12px',
                     cursor: 'pointer',
@@ -170,11 +179,10 @@ export function SmartLanguageFAB() {
                     fontSize: 11,
                     fontWeight: language === lang.code ? 700 : 500,
                     whiteSpace: 'nowrap',
-                    transition: 'background 0.15s, color 0.15s, border-color 0.15s',
-                    position: 'relative',
+                    transition: 'background 0.12s, color 0.12s, border-color 0.12s',
                   }}
-                  aria-label={`Selecionar idioma: ${lang.label}`}
                   aria-pressed={language === lang.code}
+                  aria-label={lang.label}
                 >
                   <span style={{ fontSize: 13, lineHeight: 1 }}>{lang.flag}</span>
                   <span>{lang.label}</span>
@@ -183,25 +191,24 @@ export function SmartLanguageFAB() {
 
               {/* Close button */}
               <motion.button
-                onClick={handleToggle}
+                onClick={handleClose}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ delay: 0.15 }}
-                whileHover={{ scale: 1.1 }}
+                transition={{ delay: 0.14 }}
+                whileHover={{ scale: 1.15 }}
                 whileTap={{ scale: 0.9 }}
                 style={{
                   background: 'none',
                   border: 'none',
                   cursor: 'pointer',
-                  padding: '4px 6px',
+                  padding: '4px 8px',
                   color: '#6B5A60',
-                  fontSize: 14,
+                  fontSize: 13,
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
                   flexShrink: 0,
                 }}
-                aria-label="Fechar seletor de idioma"
+                aria-label="Close language selector"
               >
                 ✕
               </motion.button>
@@ -211,4 +218,7 @@ export function SmartLanguageFAB() {
       </motion.div>
     </div>
   );
+
+  // Render into document.body — bypasses ALL ancestor overflow/transform constraints
+  return createPortal(fab, document.body);
 }
