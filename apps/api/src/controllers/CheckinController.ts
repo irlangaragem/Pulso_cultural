@@ -82,9 +82,9 @@ export class CheckinController {
       const validOrigins = ['SALVADOR', 'INTERIOR_BA', 'OUTRO_ESTADO', 'INTERNACIONAL'];
 
       for (const item of checkins) {
-        if (!item.cpf) continue; // Skip invalid entries
+        if (!item.cpf && !item.cpfHash) continue; // Skip invalid entries
         
-        const cpfHash = await HashService.hashCPF(item.cpf);
+        const cpfHash = item.cpfHash || await HashService.hashCPF(item.cpf);
         
         const safeOrigin = validOrigins.includes(item.origin) ? item.origin : 'SALVADOR';
         const safeChannel = validChannels.includes(item.channel) ? item.channel : 'OUTRO';

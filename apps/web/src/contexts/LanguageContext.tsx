@@ -60,8 +60,10 @@ const translations: Translations = {
     'share.button.save': 'Salvar',
     'share.back': '← Voltar ao guia',
     'share.message': 'Eu fiz a cultura pulsar hoje. 🔴\n\nUma História da Arte Brasileira · MAM Salvador',
-    'checkin.form.title': 'Primeiro pulso!',
-    'checkin.form.desc': 'Conte um pouco sobre você. Esse cadastro é único — nas próximas visitas, basta o CPF.',
+    'checkin.form.title': 'Crie seu Perfil Cultural',
+    'checkin.form.desc': 'Responda rápido para desbloquear uma experiência única e acessível.',
+    'checkin.form.trust': 'Protegido pela LGPD. Usado apenas para garantir um acesso único e seguro.',
+    'checkin.form.acc.help': 'Ajude-nos a adaptar a experiência para você.',
     'checkin.form.cpf.label': 'CPF',
     'checkin.form.cpf.placeholder': '000.000.000-00',
     'checkin.form.nome.label': 'Nome',
@@ -147,8 +149,10 @@ const translations: Translations = {
     'share.button.save': 'Save',
     'share.back': '← Back to guide',
     'share.message': 'I made culture pulse today. 🔴\n\nA History of Brazilian Art · MAM Salvador',
-    'checkin.form.title': 'First pulse!',
-    'checkin.form.desc': 'Tell us a bit about yourself. This registration is a one-time thing — next visits only require your ID.',
+    'checkin.form.title': 'Create your Cultural Profile',
+    'checkin.form.desc': 'Answer quickly to unlock a unique and accessible experience.',
+    'checkin.form.trust': 'Protected by LGPD. Used only to ensure a unique and secure access.',
+    'checkin.form.acc.help': 'Help us adapt the experience for you.',
     'checkin.form.cpf.label': 'ID Number',
     'checkin.form.cpf.placeholder': '000.000.000-00',
     'checkin.form.nome.label': 'Name',
@@ -234,8 +238,10 @@ const translations: Translations = {
     'share.button.save': 'Guardar',
     'share.back': '← Voltar à guia',
     'share.message': 'Hice pulsar la cultura hoy. 🔴\n\nUna Historia del Arte Brasileño · MAM Salvador',
-    'checkin.form.title': '¡Primer pulso!',
-    'checkin.form.desc': 'Cuéntanos un poco sobre ti. Este registro es único — en tus próximas visitas solo necesitarás tu documento.',
+    'checkin.form.title': 'Crea tu Perfil Cultural',
+    'checkin.form.desc': 'Responde rápido para desbloquear una experiencia única y accesible.',
+    'checkin.form.trust': 'Protegido por la LGPD. Utilizado solo para garantizar un acceso único y seguro.',
+    'checkin.form.acc.help': 'Ayúdanos a adaptar la experiencia para ti.',
     'checkin.form.cpf.label': 'Documento',
     'checkin.form.cpf.placeholder': '000.000.000-00',
     'checkin.form.nome.label': 'Nombre',
@@ -320,7 +326,11 @@ const translations: Translations = {
     'share.button.saving': 'Enregistrement...',
     'share.button.save': 'Enregistrer',
     'share.back': '← Retour au guide',
-    'share.message': 'J\'ai fait vibrer la culture aujourd\'hui. 🔴\n\nUne Histoire de L\'Art Brésilien · MAM Salvador'
+    'share.message': 'J\'ai fait vibrer la culture aujourd\'hui. 🔴\n\nUne Histoire de L\'Art Brésilien · MAM Salvador',
+    'checkin.form.title': 'Créez votre Profil Culturel',
+    'checkin.form.desc': 'Répondez rapidement pour débloquer une expérience unique et accessible.',
+    'checkin.form.trust': 'Protégé par la LGPD. Utilisé uniquement pour garantir un accès unique et sécurisé.',
+    'checkin.form.acc.help': 'Aidez-nous à adapter l\'expérience pour vous.',
   }
 };
 
@@ -369,6 +379,7 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     console.log(`[LanguageContext] Language changed to: ${language}`);
+    document.documentElement.lang = language === 'pt' ? 'pt-BR' : language;
   }, [language]);
 
   return (

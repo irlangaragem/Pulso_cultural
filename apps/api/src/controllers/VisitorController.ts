@@ -18,12 +18,13 @@ export class VisitorController {
       origin,
       originDetail,
       accessibilityNeeds,
+      accessibilityDetail,
       exhibitionId,
       channel
     } = req.body;
 
     try {
-      if (!cpf || !name || !birthYear || !gender || !origin) {
+      if (!cpf || !name || !birthYear || !origin) {
         return res.status(400).json({ error: 'Missing required visitor fields' });
       }
 
@@ -42,16 +43,20 @@ export class VisitorController {
         });
       }
 
+      const mergedAccessibility = Array.isArray(accessibilityNeeds) 
+        ? (accessibilityDetail ? [...accessibilityNeeds, `OUTRA_DETALHE:${accessibilityDetail}`] : accessibilityNeeds)
+        : [];
+
       // Create visitor with new fields
       visitor = await prisma.visitor.create({
         data: {
           cpfHash,
           name,
           birthYear,
-          gender,
+          gender: gender || 'PREFIRO_NAO_DIZER',
           origin,
           originDetail: originDetail || null,
-          accessibilityNeeds: accessibilityNeeds || [], // Json field
+          accessibilityNeeds: mergedAccessibility, // Json field
         }
       });
 

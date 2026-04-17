@@ -12,14 +12,10 @@ export interface VisitorData {
 const DB_KEY = '@pulso-cultural:visitors';
 const SYNC_KEY = '@pulso-cultural:sync-queue';
 
-function hashCpf(cpf: string) {
+async function hashCpf(cpf: string) {
   const normalized = cpf.replace(/\D/g, '');
-  let hash = 0;
-  for (let i = 0; i < normalized.length; i++) {
-    hash = ((hash << 5) - hash) + normalized.charCodeAt(i);
-    hash |= 0;
-  }
-  return 'p_' + Math.abs(hash).toString(36);
+  const buffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(normalized));
+  return Array.from(new Uint8Array(buffer)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
 
@@ -34,15 +30,15 @@ export const localDb = {
     }
   },
 
-  getVisitorByCPF(cpf: string): any | undefined {
+  async getVisitorByCPF(cpf: string) {
     const visitors = this.getVisitors();
-    const targetHash = hashCpf(cpf);
+    const targetHash = await hashCpf(cpf);
     return visitors.find(v => v.cpfHash === targetHash);
   },
 
-  saveVisitor(visitor: any): any {
+  async saveVisitor(visitor: any) {
     const visitors = this.getVisitors();
-    const targetHash = hashCpf(visitor.cpf);
+    const targetHash = await hashCpf(visitor.cpf);
     const existingIndex = visitors.findIndex(v => v.cpfHash === targetHash);
 
     const visitorToSave = {

@@ -11,7 +11,7 @@ describe('localDb', () => {
     expect(localDb.getVisitors()).toEqual([]);
   });
 
-  it('should save and retrieve a visitor', () => {
+  it('should save and retrieve a visitor', async () => {
     const visitor = {
       cpf: '12345678901',
       name: 'João Silva',
@@ -20,7 +20,7 @@ describe('localDb', () => {
       origin: 'SALVADOR'
     };
 
-    const saved = localDb.saveVisitor(visitor);
+    const saved = await localDb.saveVisitor(visitor);
     expect(saved.name).toBe('João Silva');
     expect(saved.createdAt).toBeDefined();
 
@@ -30,8 +30,8 @@ describe('localDb', () => {
     expect(visitors[0].name).toBe('João Silva');
   });
 
-  it('should find a visitor by CPF (ignoring non-digits)', () => {
-    localDb.saveVisitor({
+  it('should find a visitor by CPF (ignoring non-digits)', async () => {
+    await localDb.saveVisitor({
       cpf: '12345678901',
       name: 'Maria',
       birthYear: 1985,
@@ -39,7 +39,7 @@ describe('localDb', () => {
       origin: 'EXTERIOR'
     });
 
-    const found = localDb.getVisitorByCPF('123.456.789-01');
+    const found = await localDb.getVisitorByCPF('123.456.789-01');
     expect(found).toBeDefined();
     expect(found?.name).toBe('Maria');
   });

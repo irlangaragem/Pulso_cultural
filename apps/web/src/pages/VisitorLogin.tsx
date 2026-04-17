@@ -37,10 +37,9 @@ export function VisitorLogin() {
     const stored = localStorage.getItem('pulso:return_cpf');
     if (stored) {
       setCpf(formatCPF(stored));
-      const visitor = localDb.getVisitorByCPF(stored);
-      if (visitor) {
-        setReturningUser(visitor.name.split(' ')[0]);
-      }
+      localDb.getVisitorByCPF(stored).then(visitor => {
+        if (visitor) setReturningUser(visitor.name.split(' ')[0]);
+      });
     }
   }, []);
 
@@ -49,25 +48,35 @@ export function VisitorLogin() {
     setError(null);
   };
 
-  const isComplete = cpf.replace(/\D/g, '').length === 11 && (como === 'Outro' ? comoOutroText.trim().length > 0 : como);
+  const rawCpf = cpf.replace(/\D/g, '');
+  const isMasterKey = rawCpf === '00000000000';
+  const returningComplete = rawCpf.length === 11;
+  const newVisitorComplete = returningComplete && (como === 'Outro' ? comoOutroText.trim().length > 0 : como !== '');
+  const isComplete = isMasterKey || (returningUser ? returningComplete : newVisitorComplete);
 
   const handleSubmit = async () => {
     if (!isComplete) return;
 
-    if ('vibrate' in navigator) {
-      navigator.vibrate([30, 20, 30]);
+    // Master key: go straight to registration, no CPF validation
+    if (isMasterKey) {
+      navigate('/checkin');
+      return;
     }
 
     if (!isValidCPF(cpf)) {
+      if ('vibrate' in navigator) navigator.vibrate([30, 20, 30]);
       setError(t('error.invalid_cpf'));
       return;
     }
 
-    let visitor = localDb.getVisitorByCPF(cpf);
+    if ('vibrate' in navigator) navigator.vibrate(50);
+
     const rawCpf = cpf.replace(/\D/g, '');
+    let visitor = await localDb.getVisitorByCPF(rawCpf);
 
     setLoading(true);
     setError(null);
+    let currentSuccess = false;
 
     try {
       if (!visitor) {
@@ -75,7 +84,7 @@ export function VisitorLogin() {
           const response = await api.post('/api/v1/users/identify', { cpf: rawCpf });
           if (response.data && response.data.success) {
             const vData = response.data.visitor;
-            visitor = localDb.saveVisitor({
+            visitor = await localDb.saveVisitor({
               cpf: rawCpf,
               name: vData.name,
               birthYear: vData.birthYear,
@@ -109,16 +118,22 @@ export function VisitorLogin() {
           await api.post('/checkins', checkinData);
         } catch (e) {
           console.warn('API sync failed, adding to queue', e);
-          localDb.addToSyncQueue({ ...checkinData, name: visitor.name });
+          const { cpf, ...safeData } = checkinData;
+          localDb.addToSyncQueue({ ...safeData, cpfHash: visitor.cpfHash, name: visitor.name });
         }
 
+        currentSuccess = true;
         setSuccess(true);
         setTimeout(() => navigate('/guide'), 1500);
       } else {
-        navigate(`/checkin?cpf=${cpf}&como=${como}`);
+        const queryParams = new URLSearchParams();
+        queryParams.set('cpf', cpf);
+        if (como) queryParams.set('como', como);
+        if (como === 'Outro' && comoOutroText) queryParams.set('comoOutroText', comoOutroText);
+        navigate(`/checkin?${queryParams.toString()}`);
       }
     } finally {
-      if (!success) setLoading(false);
+      if (!currentSuccess) setLoading(false);
     }
   };
 
@@ -166,8 +181,9 @@ export function VisitorLogin() {
             <motion.span
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              dangerouslySetInnerHTML={{ __html: t('checkin.cta.returning', { name: `<span style="color: #E8554E">${returningUser}</span>` }) }}
-            />
+            >
+              {t('checkin.cta.returning', { name: '' }).replace(/!|👋/g, '').trim()} <span style={{ color: '#E8554E' }}>{returningUser}</span>! 👋
+            </motion.span>
           ) : (
             <>
               {t('checkin.cta')}
@@ -203,36 +219,40 @@ export function VisitorLogin() {
           />
         </div>
 
-        {/* Source Question */}
-        <span className="v-label-text">{t('source.question')}</span>
-        <div className="v-chip-grid">
-          {CANAIS.map(c => (
-            <button
-              key={c.id}
-              type="button"
-              className={`v-chip ${como === c.id ? 'active' : ''}`}
-              onClick={() => setComo(c.id)}
-            >
-              {t(c.key)}
-            </button>
-          ))}
-        </div>
+        {/* Source Question — hidden for master key */}
+        {!returningUser && !isMasterKey && (
+          <>
+            <span className="v-label-text">{t('source.question')}</span>
+            <div className="v-chip-grid">
+              {CANAIS.map(c => (
+                <button
+                  key={c.id}
+                  type="button"
+                  className={`v-chip ${como === c.id ? 'active' : ''}`}
+                  onClick={() => setComo(c.id)}
+                >
+                  {t(c.key)}
+                </button>
+              ))}
+            </div>
 
-        {como === 'Outro' && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            style={{ marginBottom: 24, zIndex: 1, position: 'relative' }}
-          >
-            <input
-              type="text"
-              placeholder={t('source.other_placeholder')}
-              value={comoOutroText}
-              onChange={(e) => setComoOutroText(e.target.value)}
-              className="v-input"
-              style={{ padding: '12px 16px', fontSize: 16, border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, background: 'rgba(255,255,255,0.02)' }}
-            />
-          </motion.div>
+            {como === 'Outro' && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                style={{ marginBottom: 24, zIndex: 1, position: 'relative' }}
+              >
+                <input
+                  type="text"
+                  placeholder={t('source.other_placeholder')}
+                  value={comoOutroText}
+                  onChange={(e) => setComoOutroText(e.target.value)}
+                  className="v-input"
+                  style={{ padding: '12px 16px', fontSize: 16, border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, background: 'rgba(255,255,255,0.02)' }}
+                />
+              </motion.div>
+            )}
+          </>
         )}
 
         {/* Error */}
@@ -249,11 +269,12 @@ export function VisitorLogin() {
           )}
         </AnimatePresence>
 
-        {/* Primary CTA — always visually active, validates on click */}
+        {/* Primary CTA — validators added */}
         <button
           className="v-btn-primary"
           onClick={handleSubmit}
-          style={{ marginTop: 24 }}
+          disabled={!isComplete || loading}
+          style={{ marginTop: 24, opacity: (!isComplete || loading) ? 0.5 : 1 }}
         >
           {loading ? t('button.pulsing') : t('button.pulse')}
         </button>
