@@ -21,7 +21,10 @@ const CANAIS = [
 type IdentityMode = 'cpf' | 'email';
 
 function isValidEmail(email: string) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+  const v = email.trim();
+  // Must have exactly one @, non-empty local part,
+  // domain with no leading/trailing/consecutive dots, TLD >= 2 chars.
+  return /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*\.[a-zA-Z]{2,}$/.test(v);
 }
 
 export function VisitorLogin() {

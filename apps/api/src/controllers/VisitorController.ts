@@ -4,6 +4,12 @@ import { HashService } from '../services/HashService';
 import { io } from '../server';
 import { MLServiceClient } from '../services/MLServiceClient';
 
+// RFC-5321-aligned email validator (mirrors frontend isValidEmail)
+const EMAIL_RE = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*\.[a-zA-Z]{2,}$/;
+function isValidEmail(email: unknown): email is string {
+  return typeof email === 'string' && EMAIL_RE.test(email.trim());
+}
+
 export class VisitorController {
   /**
    * Dedicated registration endpoint for new visitors.
@@ -24,7 +30,15 @@ export class VisitorController {
     } = req.body;
 
     try {
-      if (!cpf || !name || !birthYear || !origin) {
+      // Require at least cpf OR email (email flow)
+      const identity = cpf || req.body.email;
+      if (!identity) {
+        return res.status(400).json({ error: 'CPF or email is required' });
+      }
+      if (req.body.email && !isValidEmail(req.body.email)) {
+        return res.status(400).json({ error: 'Invalid email format' });
+      }
+      if (!name || !birthYear || !origin) {
         return res.status(400).json({ error: 'Missing required visitor fields' });
       }
 
@@ -109,10 +123,17 @@ export class VisitorController {
    * Recognition endpoint for returning visitors.
    */
   async identify(req: Request, res: Response) {
-    const { cpf } = req.body;
+    const { cpf, email } = req.body;
 
+    if (!cpf && !email) {
+      return res.status(400).json({ error: 'CPF or email is required' });
+    }
+    if (email && !isValidEmail(email)) {
+      return res.status(400).json({ error: 'Invalid email format' });
+    }
     if (!cpf) {
-      return res.status(400).json({ error: 'CPF is required' });
+      // Email-only identify — placeholder until email visitor table is added
+      return res.status(404).json({ error: 'Visitor not found' });
     }
 
     try {
