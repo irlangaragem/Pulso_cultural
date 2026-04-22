@@ -3,59 +3,52 @@ interface PulseSymbolProps {
 }
 
 /**
- * PulseSymbol — Animated signal indicator for Pulso Cultural.
+ * PulseSymbol — Animated heartbeat signal for Pulso Cultural.
  *
- * Visual: bright red core dot + 3 staggered ripple rings expanding outward.
- * Uses CSS class-based animations defined in visitor.css for maximum
- * cross-browser reliability (no SVG transform-box quirks).
+ * 4-layer structure (inside → out):
+ *   Core  — bright red glowing dot (breathes gently)
+ *   L1    — thin static inner ring (subtle, always visible)
+ *   L2    — intermediate expanding ring (ripple #1)
+ *   L3    — outer expanding ring (ripple #2, staggered)
  *
- * Usage:
- *   <PulseSymbol size={26} />   — top header (small)
- *   <PulseSymbol size={48} />   — mid-page accent
- *   <PulseSymbol size={120} />  — success overlay (large)
+ * All animation is CSS-only via classes in visitor.css.
  */
-export function PulseSymbol({ size = 32 }: PulseSymbolProps) {
-  const coreSize  = Math.round(size * 0.30);
-  const glowBlur  = Math.round(size * 0.28);
-  const glowSprd  = Math.round(size * 0.10);
+export function PulseSymbol({ size = 48 }: PulseSymbolProps) {
+  // Core sizes relative to container
+  const coreD   = Math.round(size * 0.22);    // ~22% — bright dot
+  const ringInR = Math.round(size * 0.32);    // ~32% — static inner ring radius
+  const glowR   = Math.round(size * 0.15);    // glow spread
 
   return (
     <div
-      className="ps-container"
+      className="ps-wrap"
       style={{ width: size, height: size }}
       aria-hidden="true"
     >
-      {/* Expanding ripple rings — staggered 0.8s each */}
+      {/* Layer 3 — outer ripple (delayed) */}
+      <div className="ps-ripple" style={{ animationDelay: '0s' }} />
+
+      {/* Layer 2 — intermediate ripple */}
+      <div className="ps-ripple" style={{ animationDelay: '1.2s' }} />
+
+      {/* Layer 1 — static inner ring */}
       <div
-        className="ps-ring"
+        className="ps-inner-ring"
         style={{
-          background: 'rgba(232, 68, 58, 0.25)',
-          animationDelay: '0s',
-        }}
-      />
-      <div
-        className="ps-ring"
-        style={{
-          background: 'rgba(232, 68, 58, 0.14)',
-          animationDelay: '0.8s',
-        }}
-      />
-      <div
-        className="ps-ring"
-        style={{
-          background: 'rgba(232, 68, 58, 0.07)',
-          animationDelay: '1.6s',
+          width: ringInR * 2,
+          height: ringInR * 2,
         }}
       />
 
-      {/* Core glowing dot */}
+      {/* Core — bright glowing dot */}
       <div
-        className="ps-core"
+        className="ps-dot"
         style={{
-          width: coreSize,
-          height: coreSize,
-          boxShadow: `0 0 ${glowBlur}px ${glowSprd}px rgba(232, 68, 58, 0.75),
-                      0 0 ${glowBlur * 2}px ${glowSprd * 2}px rgba(232, 68, 58, 0.30)`,
+          width: coreD,
+          height: coreD,
+          boxShadow:
+            `0 0 ${glowR}px ${Math.round(glowR * 0.5)}px rgba(255,45,85,0.85),
+             0 0 ${glowR * 3}px ${glowR}px rgba(255,45,85,0.30)`,
         }}
       />
     </div>

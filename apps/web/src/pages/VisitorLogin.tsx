@@ -222,18 +222,21 @@ export function VisitorLogin() {
       <div className="visitor-screen">
         <div className="visitor-glow" />
 
-        {/* ── Top signal indicator (PulseSymbol) ── */}
+        {/* ── Centered PulseSymbol above wordmark ── */}
         <div style={{
-          position: 'absolute',
-          top: 18,
-          left: 24,
+          width: '100%',
+          display: 'flex',
+          justifyContent: 'center',
+          marginTop: 20,
+          marginBottom: 10,
+          position: 'relative',
           zIndex: 5,
         }}>
-          <PulseSymbol size={26} />
+          <PulseSymbol size={48} />
         </div>
 
         {/* Wordmark */}
-        <h1 className="v-wordmark" style={{ marginTop: 56, marginBottom: -4 }}>PULSO</h1>
+        <h1 className="v-wordmark" style={{ marginTop: 0, marginBottom: -4 }}>PULSO</h1>
         <p className="v-wordmark-sub">CULTURAL</p>
 
         {/* Venue tag */}
