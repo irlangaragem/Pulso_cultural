@@ -159,8 +159,11 @@ export class CheckinController {
   async ingestCameraData(req: Request, res: Response) {
     const { type, exhibitionId, timestamp, secret } = req.body;
 
-    // Basic internal secret check for camera layer security
-    const APP_SECRET = process.env.CAMERA_SECRET || 'pulso-camera-secret-2026';
+    // Require env var — no hardcoded fallback. If absent, camera ingest is disabled.
+    const APP_SECRET = process.env.CAMERA_SECRET;
+    if (!APP_SECRET) {
+      return res.status(503).json({ error: 'Camera ingest not configured' });
+    }
     if (secret !== APP_SECRET) {
       return res.status(403).json({ error: 'Forbidden' });
     }

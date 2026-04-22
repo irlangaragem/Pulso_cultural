@@ -41,18 +41,21 @@ export function CardShare() {
 
   const recordShareChannel = (channel: string) => {
     const cpfHash = localStorage.getItem('pulso:return_hash');
+    // Only include rating in analytics if it was explicitly set (not default 5)
+    const hasRealRating = (location.state as any)?.rating !== undefined;
+
     analytics.track('share_completed', {
       exhibitionId: EXHIBITION_ID,
       museumSlug: MUSEUM_SLUG,
-      properties: { channel, rating: visitorRating }
+      properties: { channel, ...(hasRealRating ? { rating: visitorRating } : {}) }
     });
 
-    // Update evaluation record with share channel and actual rating (non-blocking)
-    if (cpfHash) {
+    // Only write evaluation when we have a real rating AND a visitor identity
+    if (cpfHash && hasRealRating) {
       api.post('/evaluations', {
         cpfHash,
         exhibitionId: EXHIBITION_ID,
-        rating: visitorRating, // Use actual visitor rating, not assumed 5
+        rating: visitorRating,
         shareChannel: channel
       }).catch(() => {});
     }

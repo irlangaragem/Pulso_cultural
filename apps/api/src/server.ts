@@ -51,21 +51,25 @@ export const authLimiter = rateLimit({
   message: { error: 'Too many login attempts. Please wait 15 minutes.' },
 });
 
+// Shared origin list — HTTP CORS and Socket.IO must be identical
+const ALLOWED_ORIGINS = [
+  process.env.WEB_URL || 'http://localhost:5173',
+  'https://pulsocultural.art',
+  'http://localhost:5173',
+];
+
 const io = new Server(server, {
   cors: {
-    origin: process.env.WEB_URL || 'http://localhost:5173',
-    methods: ['GET', 'POST']
+    origin: ALLOWED_ORIGINS,
+    methods: ['GET', 'POST'],
+    credentials: true,
   }
 });
 
 app.use(helmet());
 app.use(globalLimiter);
 app.use(cors({
-  origin: [
-    process.env.WEB_URL || 'http://localhost:5173',
-    'https://pulsocultural.art',
-    'http://localhost:5173',
-  ],
+  origin: ALLOWED_ORIGINS,
   credentials: true,
 }));
 app.use(express.json());

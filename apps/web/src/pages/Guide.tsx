@@ -326,14 +326,23 @@ export function Guide() {
                 <p style={{ color: '#A8969A', fontSize: 12 }}>{t('feedback.subtitle')}</p>
 
                 {/* Stars Rating */}
-                <div className="v-feedback-stars">
+                <div className="v-feedback-stars" role="group" aria-label="Avaliação de 1 a 5 estrelas">
                   {[1, 2, 3, 4, 5].map((val) => (
                     <span
                       key={val}
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`${val} ${val === 1 ? 'estrela' : 'estrelas'}`}
+                      aria-pressed={val === rating}
                       className={`v-feedback-star ${val <= (hoverRating || rating) ? 'active' : ''}`}
                       onMouseEnter={() => setHoverRating(val)}
                       onMouseLeave={() => setHoverRating(0)}
                       onClick={() => setRating(val)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setRating(val); }
+                        if (e.key === 'ArrowRight' && val < 5) { e.preventDefault(); setRating(val + 1); }
+                        if (e.key === 'ArrowLeft' && val > 1) { e.preventDefault(); setRating(val - 1); }
+                      }}
                     >
                       ★
                     </span>

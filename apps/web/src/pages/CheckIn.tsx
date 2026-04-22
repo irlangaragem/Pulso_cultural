@@ -233,7 +233,13 @@ export function CheckIn() {
         // Store hash only — never raw CPF (LGPD compliance)
         if (saved?.cpfHash) localStorage.setItem(CPF_STORAGE_KEY, saved.cpfHash);
       } else if (identityMode === 'email') {
-        localStorage.setItem('pulso:return_email', email);
+        // Hash email before storing — never raw PII (LGPD compliance)
+        crypto.subtle.digest('SHA-256', new TextEncoder().encode(email.trim().toLowerCase()))
+          .then(buf => {
+            const hash = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+            localStorage.setItem('pulso:return_ehash', hash);
+          }).catch(() => {});
+        localStorage.removeItem('pulso:return_email'); // evict legacy key
       }
 
       try {

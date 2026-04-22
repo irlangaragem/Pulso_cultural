@@ -41,17 +41,31 @@ function genId(): string {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 }
 
-/** Migrate or flush stale schema on mount. Called once by useSyncQueue. */
+/**
+ * Migrate or stamp schema on mount. Called once by useSyncQueue.
+ *
+ * Strategy: non-destructive stamp.
+ * v0 → v1: data shape is identical. No flush needed — just write the version key.
+ * Only flush if the stored version is AHEAD of SCHEMA_VERSION (corruption scenario)
+ * or if a future migration explicitly declares the old shape incompatible.
+ */
 export function checkSchemaVersion() {
   try {
     const stored = Number(localStorage.getItem(VER_KEY) ?? 0);
-    if (stored !== SCHEMA_VERSION) {
-      // Clear visitors (schema changed) — sync queue is cleared separately
-      localStorage.removeItem(DB_KEY);
-      localStorage.removeItem(SYNC_KEY);
+    if (stored === SCHEMA_VERSION) return; // nothing to do
+
+    if (stored < SCHEMA_VERSION) {
+      // Non-destructive stamp: data shape is forward-compatible from v0 → v1
       localStorage.setItem(VER_KEY, String(SCHEMA_VERSION));
-      console.info(`[localDb] Schema migrated ${stored}→${SCHEMA_VERSION}. Local cache flushed.`);
+      console.info(`[localDb] Schema stamped ${stored}→${SCHEMA_VERSION}. Existing data preserved.`);
+      return;
     }
+
+    // stored > SCHEMA_VERSION: code is older than data — flush to prevent misuse
+    localStorage.removeItem(DB_KEY);
+    localStorage.removeItem(SYNC_KEY);
+    localStorage.setItem(VER_KEY, String(SCHEMA_VERSION));
+    console.warn(`[localDb] Schema downgrade detected (${stored}→${SCHEMA_VERSION}). Cache flushed.`);
   } catch { /* silent */ }
 }
 
