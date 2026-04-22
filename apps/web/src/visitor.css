@@ -190,6 +190,39 @@
   50% { opacity: 0.6; box-shadow: 0 0 14px rgba(72,187,120,0.9); }
 }
 
+/* ── PulseSymbol Animation ── */
+@keyframes ps-ring-out {
+  0%   { transform: scale(0.1); opacity: 0.8; }
+  100% { transform: scale(1.1); opacity: 0; }
+}
+@keyframes ps-core-beat {
+  0%, 100% { transform: scale(1); }
+  50%       { transform: scale(1.2); }
+}
+.ps-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.ps-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  animation: ps-ring-out 2.4s cubic-bezier(0.2, 0.5, 0.3, 1) infinite;
+  transform-origin: center;
+  transform-box: border-box;
+}
+.ps-core {
+  position: relative;
+  border-radius: 50%;
+  background: radial-gradient(circle at 38% 38%, #FF8A7A 0%, #E8443A 55%, #B02030 100%);
+  animation: ps-core-beat 2.4s ease-in-out infinite;
+  flex-shrink: 0;
+  z-index: 1;
+}
+
 .v-venue-status {
   font-weight: 400;
   color: #48BB78;
