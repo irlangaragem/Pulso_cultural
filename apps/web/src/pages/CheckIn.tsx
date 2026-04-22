@@ -11,26 +11,29 @@ import type { Gender, Origin, AccessibilityNeed, RegisterVisitorPayload } from '
 
 const CPF_STORAGE_KEY = 'pulso:return_cpf';
 
-const GENEROS: { label: string; value: Gender }[] = [
-  { label: 'Feminino',          value: 'FEMININO' },
-  { label: 'Masculino',         value: 'MASCULINO' },
-  { label: 'Não-binário',       value: 'NAO_BINARIO' },
-  { label: 'Prefiro não dizer', value: 'PREFIRO_NAO_DIZER' },
+// Gender options — translation keys mapped to enum values
+const GENEROS: { key: string; value: Gender }[] = [
+  { key: 'checkin.form.genero.f',   value: 'FEMININO' },
+  { key: 'checkin.form.genero.m',   value: 'MASCULINO' },
+  { key: 'checkin.form.genero.nb',  value: 'NAO_BINARIO' },
+  { key: 'checkin.form.genero.pnd', value: 'PREFIRO_NAO_DIZER' },
 ];
 
-const ORIGENS: { label: string; value: Origin }[] = [
-  { label: 'Salvador',              value: 'SALVADOR' },
-  { label: 'Interior da Bahia',     value: 'INTERIOR_BA' },
-  { label: 'Outro estado',          value: 'OUTRO_ESTADO' },
-  { label: 'Turista internacional', value: 'INTERNACIONAL' },
+// Origin options
+const ORIGENS: { key: string; value: Origin }[] = [
+  { key: 'checkin.form.origem.sal', value: 'SALVADOR' },
+  { key: 'checkin.form.origem.int', value: 'INTERIOR_BA' },
+  { key: 'checkin.form.origem.out', value: 'OUTRO_ESTADO' },
+  { key: 'checkin.form.origem.tur', value: 'INTERNACIONAL' },
 ];
 
-const ACESSIBILIDADES: { label: string; value: AccessibilityNeed }[] = [
-  { label: 'Mobilidade reduzida',     value: 'MOBILIDADE_REDUZIDA' },
-  { label: 'Baixa visão',             value: 'BAIXA_VISAO' },
-  { label: 'Sensibilidade sensorial', value: 'SENSIBILIDADE_SENSORIAL' },
-  { label: 'Neurodivergência',        value: 'NEURODIVERGENCIA' },
-  { label: 'Outra',                   value: 'OUTRA' },
+// Accessibility options
+const ACESSIBILIDADES: { key: string; value: AccessibilityNeed }[] = [
+  { key: 'checkin.form.acc.mob',   value: 'MOBILIDADE_REDUZIDA' },
+  { key: 'checkin.form.acc.vis',   value: 'BAIXA_VISAO' },
+  { key: 'checkin.form.acc.sen',   value: 'SENSIBILIDADE_SENSORIAL' },
+  { key: 'checkin.form.acc.neu',   value: 'NEURODIVERGENCIA' },
+  { key: 'checkin.form.acc.outra', value: 'OUTRA' },
 ];
 
 // ── Chip component ──
@@ -59,7 +62,7 @@ function Chip({ label, active, onClick }: { label: string; active: boolean; onCl
 }
 
 // ── Field group ──
-function FieldLabel({ children, optional }: { children: React.ReactNode; optional?: boolean }) {
+function FieldLabel({ children, optional }: { children: React.ReactNode; optional?: string }) {
   return (
     <p style={{
       fontFamily: "'DM Sans', sans-serif",
@@ -70,7 +73,7 @@ function FieldLabel({ children, optional }: { children: React.ReactNode; optiona
       fontWeight: 500,
     }}>
       {children}
-      {optional && <span style={{ color: '#6B5A60', marginLeft: 6, fontWeight: 400 }}>(opcional)</span>}
+      {optional && <span style={{ color: '#6B5A60', marginLeft: 6, fontWeight: 400 }}>{optional}</span>}
     </p>
   );
 }
@@ -157,10 +160,15 @@ export function CheckIn() {
   const needsOriginDetail = origem === 'INTERIOR_BA' || origem === 'OUTRO_ESTADO' || origem === 'INTERNACIONAL';
 
   const getOriginPlaceholder = () => {
-    if (origem === 'INTERIOR_BA')   return 'Ex: Feira de Santana';
-    if (origem === 'OUTRO_ESTADO')  return 'Ex: São Paulo';
-    if (origem === 'INTERNACIONAL') return 'Ex: Portugal';
+    if (origem === 'INTERIOR_BA')   return t('checkin.form.origem.out_placeholder');
+    if (origem === 'OUTRO_ESTADO')  return t('checkin.form.origem.out_placeholder');
+    if (origem === 'INTERNACIONAL') return t('checkin.form.origem.tur_placeholder');
     return '';
+  };
+
+  const getOriginDetailLabel = () => {
+    if (origem === 'INTERNACIONAL') return t('checkin.form.origem.detail_country');
+    return t('checkin.form.origem.detail_city');
   };
 
   const isFormValid =
@@ -193,7 +201,7 @@ export function CheckIn() {
           const check = await api.post('/api/v1/users/identify', { cpf: rawCpf });
           if (check.data?.success) {
             localStorage.setItem(CPF_STORAGE_KEY, rawCpf);
-            setError('CPF já registrado. Use a tela de entrada.');
+            setError(t('checkin.form.already_registered'));
             setShowRedirect(true);
             setLoading(false);
             return;
@@ -245,7 +253,7 @@ export function CheckIn() {
       setTimeout(() => navigate('/guide'), 1500);
     } catch (err) {
       console.error('[CheckIn] submit error:', err);
-      setError('Erro inesperado. Tente novamente.');
+      setError(t('checkin.form.unexpected_error'));
     } finally {
       if (!currentSuccess) setLoading(false);
     }
@@ -265,7 +273,7 @@ export function CheckIn() {
             color: '#F5ECE4',
             margin: '0 0 8px',
           }}>
-            Primeiro pulso!
+            {t('checkin.form.header')}
           </h1>
           <p style={{
             fontFamily: "'DM Sans', sans-serif",
@@ -274,19 +282,22 @@ export function CheckIn() {
             lineHeight: 1.55,
             margin: 0,
           }}>
-            Conte um pouco sobre você. Esse cadastro é único —<br />
-            nas próximas visitas, basta o {identityMode === 'email' ? 'e-mail' : 'CPF'}.
+            {t('checkin.form.header_desc', {
+              identity: identityMode === 'email' ? t('checkin.form.email_label') : t('checkin.form.cpf.label'),
+            })}
           </p>
         </div>
 
         {/* ── CPF or Email (pre-filled, editable) ── */}
         <div style={sectionStyle}>
-          <FieldLabel>{identityMode === 'email' ? 'E-mail' : 'CPF'}</FieldLabel>
+          <FieldLabel>
+            {identityMode === 'email' ? t('checkin.form.email_label') : t('checkin.form.cpf.label')}
+          </FieldLabel>
           {identityMode === 'email' ? (
             <TextInput
               id="field-email"
               value={email}
-              placeholder="seu@email.com"
+              placeholder={t('identity.email_placeholder')}
               readOnly
               style={{ color: '#D4C6C9' }}
             />
@@ -295,7 +306,7 @@ export function CheckIn() {
               id="field-cpf"
               value={cpf}
               onChange={e => { setCpf(formatCPF(e.target.value)); setError(null); setShowRedirect(false); }}
-              placeholder="000.000.000-00"
+              placeholder={t('checkin.form.cpf.placeholder')}
               type="tel"
               inputMode="numeric"
               monospace
@@ -305,23 +316,23 @@ export function CheckIn() {
 
         {/* ── Nome ── */}
         <div style={sectionStyle}>
-          <FieldLabel>Nome</FieldLabel>
+          <FieldLabel>{t('checkin.form.nome.label')}</FieldLabel>
           <TextInput
             id="field-nome"
             value={nome}
             onChange={e => setNome(e.target.value.replace(/[^a-zA-ZÀ-ÿ\s]/g, ''))}
-            placeholder="Como quer ser chamado?"
+            placeholder={t('checkin.form.nome.placeholder')}
           />
         </div>
 
         {/* ── Nascimento ── */}
         <div style={sectionStyle}>
-          <FieldLabel>Ano de nascimento</FieldLabel>
+          <FieldLabel>{t('checkin.form.nascimento.label')}</FieldLabel>
           <TextInput
             id="field-nasc"
             value={nascimento}
             onChange={e => setNascimento(e.target.value.replace(/\D/g, '').slice(0, 4))}
-            placeholder="Ex: 1992"
+            placeholder={t('checkin.form.nascimento.placeholder')}
             type="tel"
             inputMode="numeric"
             monospace
@@ -331,12 +342,12 @@ export function CheckIn() {
 
         {/* ── Gênero ── */}
         <div style={sectionStyle}>
-          <FieldLabel>Identidade de gênero</FieldLabel>
+          <FieldLabel>{t('checkin.form.genero.label')}</FieldLabel>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             {GENEROS.map(g => (
               <Chip
                 key={g.value}
-                label={g.label}
+                label={t(g.key)}
                 active={genero === g.value}
                 onClick={() => setGenero(prev => prev === g.value ? '' : g.value)}
               />
@@ -346,12 +357,14 @@ export function CheckIn() {
 
         {/* ── Acessibilidade ── */}
         <div style={sectionStyle}>
-          <FieldLabel optional>Necessidades de acessibilidade</FieldLabel>
+          <FieldLabel optional={t('checkin.form.acc.optional')}>
+            {t('checkin.form.acc.label')}
+          </FieldLabel>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             {ACESSIBILIDADES.map(a => (
               <Chip
                 key={a.value}
-                label={a.label}
+                label={t(a.key)}
                 active={acessibilidades.includes(a.value)}
                 onClick={() => toggleAcess(a.value)}
               />
@@ -369,7 +382,7 @@ export function CheckIn() {
                   id="field-outra-acc"
                   value={outraDetalhe}
                   onChange={e => setOutraDetalhe(e.target.value)}
-                  placeholder="Descreva sua necessidade"
+                  placeholder={t('checkin.form.acc.outra_placeholder')}
                 />
               </motion.div>
             )}
@@ -378,12 +391,12 @@ export function CheckIn() {
 
         {/* ── Origem ── */}
         <div style={sectionStyle}>
-          <FieldLabel>De onde você vem?</FieldLabel>
+          <FieldLabel>{t('checkin.form.origem.label')}</FieldLabel>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             {ORIGENS.map(o => (
               <Chip
                 key={o.value}
-                label={o.label}
+                label={t(o.key)}
                 active={origem === o.value}
                 onClick={() => { setOrigem(prev => prev === o.value ? '' : o.value); setOrigemDetalhe(''); }}
               />
@@ -398,7 +411,7 @@ export function CheckIn() {
                 style={{ marginTop: 12 }}
               >
                 <FieldLabel>
-                  {origem === 'INTERNACIONAL' ? 'Qual país?' : 'Qual cidade / estado?'}
+                  {getOriginDetailLabel()}
                 </FieldLabel>
                 <TextInput
                   id="field-origem-detalhe"
@@ -464,7 +477,7 @@ export function CheckIn() {
                   onClick={() => navigate('/')}
                   style={{ alignSelf: 'flex-start', marginTop: 8, fontSize: 13, color: '#E8554E', background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontWeight: 600 }}
                 >
-                  → Ir para a tela de entrada
+                  {t('checkin.form.go_to_login')}
                 </button>
               )}
             </motion.div>
@@ -478,7 +491,7 @@ export function CheckIn() {
           disabled={!isFormValid || loading}
           style={{ opacity: (!isFormValid || loading) ? 0.38 : 1 }}
         >
-          {loading ? 'Criando perfil...' : 'Criar meu perfil →'}
+          {loading ? t('checkin.form.creating') : t('checkin.form.create_profile')}
         </button>
       </div>
 
