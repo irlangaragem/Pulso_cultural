@@ -190,53 +190,7 @@
   50% { opacity: 0.6; box-shadow: 0 0 14px rgba(72,187,120,0.9); }
 }
 
-/* ── PulseSymbol Animation ── */
-
-/* Container — centers all layers */
-.ps-wrap {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-/* L2/L3 — Expanding ripple rings */
-@keyframes ps-ripple-out {
-  0%   { transform: scale(0.35); opacity: 0.7; }
-  100% { transform: scale(1.15); opacity: 0; }
-}
-.ps-ripple {
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  border: 1px solid rgba(255, 45, 85, 0.55);
-  background: transparent;
-  animation: ps-ripple-out 2.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-  pointer-events: none;
-}
-
-/* L1 — Static inner ring (always visible, subtle) */
-.ps-inner-ring {
-  position: absolute;
-  border-radius: 50%;
-  border: 1px solid rgba(255, 59, 48, 0.25);
-  background: transparent;
-  pointer-events: none;
-}
-
-/* Core — Bright glowing dot */
-@keyframes ps-breathe {
-  0%, 100% { transform: scale(1);    opacity: 1; }
-  50%       { transform: scale(1.15); opacity: 0.9; }
-}
-.ps-dot {
-  position: relative;
-  border-radius: 50%;
-  background: radial-gradient(circle at 40% 38%, #FF6B7A 0%, #FF2D55 50%, #CC1133 100%);
-  animation: ps-breathe 2.6s ease-in-out infinite;
-  z-index: 1;
-}
+/* ── PulseSymbol — SVG-native, no CSS classes needed (animation is injected inline) ── */
 
 .v-venue-status {
   font-weight: 400;

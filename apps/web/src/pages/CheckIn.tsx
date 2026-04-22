@@ -504,7 +504,7 @@ export function CheckIn() {
             exit={{ opacity: 0 }}
             className="v-success-overlay"
           >
-            <PulseSymbol size={120} />
+            <PulseSymbol size={80} animated={true} />
             <p className="v-cta-text" style={{ marginTop: 24, fontSize: 18 }}>{t('success.granted')}</p>
             <p className="v-footer-note" style={{ marginTop: 8 }}>{t('success.redirecting')}</p>
           </motion.div>
