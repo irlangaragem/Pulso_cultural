@@ -201,7 +201,6 @@ export function CheckIn() {
           const check = await api.post('/api/v1/users/identify', { cpf: rawCpf });
           if (check.data?.success) {
             // Store hash for return-visit recognition (never raw CPF)
-            const visitors = localDb.getVisitors();
             const existing = await localDb.getVisitorByCPF(rawCpf);
             if (existing?.cpfHash) localStorage.setItem(CPF_STORAGE_KEY, existing.cpfHash);
             setError(t('checkin.form.already_registered'));

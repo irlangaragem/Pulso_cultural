@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { toPng } from 'html-to-image';
 import { Share2, Download } from 'lucide-react';
 import { VisitorLayout } from '../components/VisitorLayout';
@@ -12,12 +12,15 @@ const MUSEUM_SLUG = 'mam-salvador';
 
 export function CardShare() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { t, language } = useLanguage();
   const shareRef = useRef<HTMLDivElement>(null);
   const [isSharing, setIsSharing] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
-  const dateStr = new Date().toLocaleDateString(language === 'pt' ? 'pt-BR' : 'en-US', { 
-    day: '2-digit', month: 'short', year: 'numeric' 
+  // Actual rating passed from Guide via navigate state — fallback to 5 only when absent
+  const visitorRating: number = (location.state as any)?.rating ?? 5;
+  const dateStr = new Date().toLocaleDateString(language === 'pt' ? 'pt-BR' : 'en-US', {
+    day: '2-digit', month: 'short', year: 'numeric'
   }).toUpperCase().replace(/ DE /g, ' DE ');
 
   const generateImage = async () => {
@@ -41,15 +44,15 @@ export function CardShare() {
     analytics.track('share_completed', {
       exhibitionId: EXHIBITION_ID,
       museumSlug: MUSEUM_SLUG,
-      properties: { channel }
+      properties: { channel, rating: visitorRating }
     });
 
-    // Update evaluation record with share channel (non-blocking)
+    // Update evaluation record with share channel and actual rating (non-blocking)
     if (cpfHash) {
       api.post('/evaluations', {
         cpfHash,
         exhibitionId: EXHIBITION_ID,
-        rating: 5, // If they share, we assume satisfaction
+        rating: visitorRating, // Use actual visitor rating, not assumed 5
         shareChannel: channel
       }).catch(() => {});
     }

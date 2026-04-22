@@ -1,29 +1,34 @@
 import { useEffect } from 'react';
-import { localDb } from './localDb';
+import { localDb, checkSchemaVersion } from './localDb';
 import { api } from './api';
 
 export function useSyncQueue() {
   useEffect(() => {
+    // ── Schema guard: flush stale localStorage if schema version changed ──
+    checkSchemaVersion();
+
     const sync = async () => {
-      const queue = localDb.getSyncQueue();
+      // Prune entries older than 48h before syncing
+      const queue = localDb.pruneStaleQueue();
       if (queue.length === 0) return;
 
       console.log(`[Sync] Attempting to sync ${queue.length} items via batch...`);
 
       try {
         await api.post('/checkins/batch', queue);
-        console.log(`[Sync] Successfully synced batch of ${queue.length} items.`);
+        console.log(`[Sync] Successfully synced ${queue.length} items.`);
         localDb.clearSyncQueue();
       } catch (err) {
-        console.warn(`[Sync] Batch sync failed. Will retry later.`, err);
+        console.warn('[Sync] Batch sync failed. Will retry later.', err);
+        // Queue is preserved — entries will retry on next interval or reconnect
       }
     };
 
-    // Sync on mount and every 30 seconds
+    // Sync on mount and every 60s (reduced from 30s to ease server pressure)
     sync();
-    const interval = setInterval(sync, 30000);
+    const interval = setInterval(sync, 60_000);
 
-    // Also sync when coming back online
+    // Sync when coming back online
     window.addEventListener('online', sync);
 
     return () => {

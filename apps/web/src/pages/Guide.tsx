@@ -41,7 +41,7 @@ export function Guide() {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const [_exhibition, setExhibition] = useState<any>(null);
-  const [works] = useState<Work[]>(FALLBACK_WORKS.slice(0, 6));
+  const [works, setWorks] = useState<Work[]>(FALLBACK_WORKS.slice(0, 6));
   const [activeWork, setActiveWork] = useState<string | null>('6'); // default: Núcleo open
   const [playingId, setPlayingId] = useState<string | null>(null);
   const soundRef = useRef<Howl | null>(null);
@@ -103,11 +103,19 @@ export function Guide() {
   }, []);
 
   useEffect(() => {
-    api.get('/exhibitions/default-exhibition').then(res => {
-      setExhibition(res.data);
-    }).catch(() => {
-      // Use fallback data
-    });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 3000);
+
+    api.get('/exhibitions/default-exhibition', { signal: controller.signal })
+      .then(res => {
+        clearTimeout(timeout);
+        setExhibition(res.data);
+        // If the API returns works, use them; otherwise keep fallback
+        if (Array.isArray(res.data?.works) && res.data.works.length > 0) {
+          setWorks(res.data.works);
+        }
+      })
+      .catch(() => clearTimeout(timeout)); // Silently use fallback on error/timeout
   }, []);
 
 
@@ -159,14 +167,16 @@ export function Guide() {
   }, []);
 
   const togglePlay = (work: Work) => {
+    // Only play if a real audioUrl is provided — never use placeholder audio
+    if (!work.audioUrl) return;
+
     if (playingId === work.id) {
       soundRef.current?.pause();
       setPlayingId(null);
     } else {
       soundRef.current?.stop();
-      const url = work.audioUrl || 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
       const newSound = new Howl({
-        src: [url],
+        src: [work.audioUrl],
         html5: true,
         onend: () => { setPlayingId(null); setProgress(0); },
       });
@@ -232,7 +242,8 @@ export function Guide() {
                     </p>
                     <p className="v-work-artist">{w.artist}{w.year ? ` · ${w.year}` : ''}</p>
                   </div>
-                  {(w.hasAudio || w.audioUrl) && (
+                  {w.audioUrl ? (
+                    // Real audio available — show play/pause control
                     <button
                       className="v-audio-btn"
                       onClick={(e) => { e.stopPropagation(); togglePlay(w); }}
@@ -244,7 +255,20 @@ export function Guide() {
                         <Play size={16} fill="#E8554E" stroke="none" />
                       )}
                     </button>
-                  )}
+                  ) : w.hasAudio ? (
+                    // Flagged as having audio but URL not yet available
+                    <div style={{
+                      fontFamily: "'Space Mono', monospace",
+                      fontSize: 8,
+                      color: '#6B5A60',
+                      letterSpacing: 1,
+                      padding: '4px 8px',
+                      border: '1px solid rgba(107,90,96,0.3)',
+                      borderRadius: 6,
+                    }}>
+                      EM BREVE
+                    </div>
+                  ) : null}
                 </div>
 
                 {/* Audio progress bar */}
@@ -349,7 +373,7 @@ export function Guide() {
             <button
               className="v-btn-primary"
               style={{ marginTop: 16 }}
-              onClick={() => navigate('/card')}
+              onClick={() => navigate('/card', { state: { rating } })}
             >
               {t('feedback.button.share')}
             </button>
