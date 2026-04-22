@@ -73,7 +73,7 @@ export function Feedback() {
           </div>
 
           <div style={{ display: 'flex', gap: 12, width: '100%', maxWidth: 280 }}>
-            <button className="v-btn-primary" style={{ flex: 1 }} onClick={() => alert('Compartilhar via sistema nativo')}>
+            <button className="v-btn-primary" style={{ flex: 1 }} onClick={() => navigate('/card')}>
               Compartilhar
             </button>
           </div>

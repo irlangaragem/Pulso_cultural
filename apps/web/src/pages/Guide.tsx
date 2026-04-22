@@ -70,11 +70,11 @@ export function Guide() {
     if (rating === 0) return;
     setIsSubmittingFeedback(true);
     try {
-      const cpf = localStorage.getItem('pulso:return_cpf');
+      const cpfHash = localStorage.getItem('pulso:return_hash');
       
-      if (cpf) {
+      if (cpfHash) {
         await api.post('/evaluations', {
-          cpf,
+          cpfHash,
           exhibitionId: EXHIBITION_ID,
           rating,
           comment: feedbackComment || undefined,

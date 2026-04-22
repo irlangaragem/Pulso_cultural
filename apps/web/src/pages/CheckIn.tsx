@@ -9,7 +9,7 @@ import { PulseSymbol } from '../components/PulseSymbol';
 import { useLanguage } from '../contexts/LanguageContext';
 import type { Gender, Origin, AccessibilityNeed, RegisterVisitorPayload } from '../types/visitor';
 
-const CPF_STORAGE_KEY = 'pulso:return_cpf';
+const CPF_STORAGE_KEY = 'pulso:return_hash';
 
 // Gender options — translation keys mapped to enum values
 const GENEROS: { key: string; value: Gender }[] = [
@@ -200,7 +200,10 @@ export function CheckIn() {
         try {
           const check = await api.post('/api/v1/users/identify', { cpf: rawCpf });
           if (check.data?.success) {
-            localStorage.setItem(CPF_STORAGE_KEY, rawCpf);
+            // Store hash for return-visit recognition (never raw CPF)
+            const visitors = localDb.getVisitors();
+            const existing = await localDb.getVisitorByCPF(rawCpf);
+            if (existing?.cpfHash) localStorage.setItem(CPF_STORAGE_KEY, existing.cpfHash);
             setError(t('checkin.form.already_registered'));
             setShowRedirect(true);
             setLoading(false);
@@ -224,11 +227,12 @@ export function CheckIn() {
       };
 
       if (identityMode === 'cpf' && !isMasterKey) {
-        await localDb.saveVisitor({
+        const saved = await localDb.saveVisitor({
           cpf: rawCpf, name: payload.name, birthYear: birthNum,
           gender: payload.gender, origin: payload.origin, accessibilityNeeds: acessibilidades,
         });
-        localStorage.setItem(CPF_STORAGE_KEY, rawCpf);
+        // Store hash only — never raw CPF (LGPD compliance)
+        if (saved?.cpfHash) localStorage.setItem(CPF_STORAGE_KEY, saved.cpfHash);
       } else if (identityMode === 'email') {
         localStorage.setItem('pulso:return_email', email);
       }

@@ -59,18 +59,18 @@ export function VisitorLogin() {
 
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // ── Pre-fill returning visitor ──
+  // ── Recognize returning visitor (hash-only, no raw PII) ──
   useEffect(() => {
-    const stored = localStorage.getItem('pulso:return_cpf');
-    if (stored) {
-      setCpf(formatCPF(stored));
+    const storedHash = localStorage.getItem('pulso:return_hash');
+    if (storedHash) {
       setIdentityMode('cpf');
-      localDb.getVisitorByCPF(stored).then(visitor => {
-        if (visitor) setReturningUser(visitor.name.split(' ')[0]);
-      });
+      // Look up by hash directly — no raw CPF stored
+      const visitors = localDb.getVisitors();
+      const visitor = visitors.find(v => v.cpfHash === storedHash);
+      if (visitor) setReturningUser(visitor.name.split(' ')[0]);
     }
     const storedEmail = localStorage.getItem('pulso:return_email');
-    if (storedEmail && !stored) {
+    if (storedEmail && !storedHash) {
       setEmail(storedEmail);
       setIdentityMode('email');
     }
@@ -173,6 +173,8 @@ export function VisitorLogin() {
             const { cpf: _, ...safe } = checkinData;
             localDb.addToSyncQueue({ ...safe, cpfHash: visitor.cpfHash, name: visitor.name });
           }
+          // Store hash for returning-user recognition (never raw CPF)
+          if (visitor.cpfHash) localStorage.setItem('pulso:return_hash', visitor.cpfHash);
           currentSuccess = true;
           setSuccess(true);
           setTimeout(() => navigate('/guide'), 1500);

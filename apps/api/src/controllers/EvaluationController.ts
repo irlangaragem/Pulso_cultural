@@ -12,10 +12,13 @@ export class EvaluationController {
    * Experience Score = (rating * 0.7) + (sentiment * 0.3)
    */
   async submit(req: Request, res: Response) {
-    const { cpf, exhibitionId, rating, comment, shareChannel, sessionId } = req.body;
+    const { cpf, cpfHash: directHash, exhibitionId, rating, comment, shareChannel, sessionId } = req.body;
 
-    if (!cpf || !exhibitionId || !rating) {
-      return res.status(400).json({ error: 'cpf, exhibitionId e rating são obrigatórios' });
+    if (!exhibitionId || !rating) {
+      return res.status(400).json({ error: 'exhibitionId e rating são obrigatórios' });
+    }
+    if (!cpf && !directHash) {
+      return res.status(400).json({ error: 'cpf ou cpfHash é obrigatório' });
     }
 
     if (rating < 1 || rating > 5) {
@@ -23,7 +26,8 @@ export class EvaluationController {
     }
 
     try {
-      const cpfHash = await HashService.hashCPF(cpf);
+      // Accept either raw CPF (hash it) or pre-computed hash
+      const cpfHash = directHash || await HashService.hashCPF(cpf);
       const visitor = await prisma.visitor.findUnique({ where: { cpfHash } });
 
       if (!visitor) {

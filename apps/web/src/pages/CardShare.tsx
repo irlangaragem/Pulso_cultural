@@ -37,7 +37,7 @@ export function CardShare() {
   };
 
   const recordShareChannel = (channel: string) => {
-    const cpf = localStorage.getItem('pulso:return_cpf');
+    const cpfHash = localStorage.getItem('pulso:return_hash');
     analytics.track('share_completed', {
       exhibitionId: EXHIBITION_ID,
       museumSlug: MUSEUM_SLUG,
@@ -45,9 +45,9 @@ export function CardShare() {
     });
 
     // Update evaluation record with share channel (non-blocking)
-    if (cpf) {
+    if (cpfHash) {
       api.post('/evaluations', {
-        cpf,
+        cpfHash,
         exhibitionId: EXHIBITION_ID,
         rating: 5, // If they share, we assume satisfaction
         shareChannel: channel

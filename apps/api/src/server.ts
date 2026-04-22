@@ -33,7 +33,12 @@ const io = new Server(server, {
 app.use(helmet());
 app.use(limiter);
 app.use(cors({
-  origin: '*' // Allow all origins for the MVP deployment to prevent CORS failures
+  origin: [
+    process.env.WEB_URL || 'http://localhost:5173',
+    'https://pulsocultural.art',
+    'http://localhost:5173',
+  ],
+  credentials: true,
 }));
 app.use(express.json());
 app.use(routes);
@@ -78,7 +83,7 @@ async function ensureAdmin() {
         museumId: museum.id
       }
     });
-    console.log('✅ Default admin ensured and password reset to PUL_$0=CL');
+    console.log('✅ Default admin ensured');
   } catch (err) {
     console.error('❌ Failed to ensure default admin:', err);
   }
