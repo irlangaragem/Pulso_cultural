@@ -1,9 +1,24 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/*
+ * index.css — Pulso Cultural
+ * Tokens carregados em main.tsx via styles/tokens.css (antes deste arquivo).
+ * Este arquivo apenas garante o reset base; evite adicionar regras aqui.
+ */
 
-@layer base {
-  body {
-    @apply bg-slate-50 text-slate-900;
-  }
+/* ── Reset ───────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { font-size: 16px; }
+
+body {
+  background: var(--pc-bg-deep);
+  color: var(--pc-text-primary);
+  font-family: var(--pc-font-body);
+  font-size: var(--pc-text-body);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
+
+img, svg { display: block; max-width: 100%; }
+button { font-family: inherit; }
+a { color: inherit; text-decoration: none; }

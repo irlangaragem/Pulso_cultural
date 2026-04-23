@@ -1,332 +1,350 @@
 // ============================================================
-// PulseSymbol — Canonical implementation
-// Spec: viewBox 0 0 100 100 | rings 1:1.6:2.2 from core
+// PulseSymbol — implementação canônica
+// Geometria exata: Brand Guide Pulso Cultural, Seção 08
 //
-// Geometry (all in viewBox units, cx=cy=50):
-//   core  r=8   fill radialGradient cx=42% cy=38%
-//   inner r=20  stroke #E8554E  sw=2.2  opacity=0.55
-//   mid   r=32  stroke #D4267E  sw=1.5  opacity=0.35
-//   outer r=44  stroke #F28C38  sw=0.8  opacity=0.25
+// SÍMBOLO COMPLETO — viewBox 0 0 100 100
+//   outer  r=44  stroke=#F28C38  sw=0.8  op=0.25
+//   mid    r=32  stroke=#D4267E  sw=1.5  op=0.35
+//   inner  r=20  stroke=#E8554E  sw=2.2  op=0.55
+//   core   r=8   fill radialGradient cx=42% cy=38%
 //
-// Ripple animation drives SVG `r` attribute (NOT CSS transform).
-// Three waves: stagger 0ms / 800ms / 1600ms, duration 2400ms.
+// SÍMBOLO MÍNIMO — viewBox 0 0 32 32 (favicon / ícone)
+//   inner  r=12  stroke=#E8554E  sw=2.5  op=0.50
+//   core   r=5   fill radialGradient cx=42% cy=38%
 //
-// Exports:
-//   PulseSymbol        — full 3-ring symbol (min 32px)
-//   PulseSymbolMinimal — 1-ring + core       (min 16px, favicon)
-//   PulseLockupH       — horizontal lockup   (min 120px wide)
-//   PulseLockupV       — stacked lockup      (min 64px wide)
+// LOCKUP H — viewBox 0 0 240 56 (texto SVG nativo)
+//   símbolo em cx=28,cy=28 com rings escalados
+//   texto "PULSO" + "CULTURAL" em Sora
+//
+// ÁREA DE PROTEÇÃO: padding mínimo = 1× diâmetro do core
+//   100x100: core diam = 16 viewBox units ≈ 16% do tamanho renderizado
+//   32x32:   core diam = 10 viewBox units ≈ 31% do tamanho renderizado
+//
+// TAMANHO MÍNIMO:
+//   PulseSymbol        → min 32px
+//   PulseSymbolMinimal → min 16px
+//   PulseLockupH       → min 120px largura
+//   PulseLockupV       → min 64px largura
 // ============================================================
 
-// ── Gradient ID must be unique per instance to avoid SVG collisions ────────
+import { useRef } from 'react';
+
+// ── Unique ID per instance (avoids gradient collision em múltiplas instâncias) ──
 let _uid = 0;
-function uid() { return ++_uid; }
+function useUid() {
+  const ref = useRef<number | null>(null);
+  if (ref.current === null) ref.current = ++_uid;
+  return ref.current;
+}
 
-// ── Geometry constants (viewBox 0 0 100 100) ──────────────────────────────
-const CX = 50;
-const CY = 50;
-
-const OUTER_R  = 44;  // 8 × 5.5  — outer ring
-const MID_R    = 32;  // 8 × 4.0  — mid ring
-const INNER_R  = 20;  // 8 × 2.5  — inner ring
-const CORE_R   =  8;  // base unit
-
-const OUTER_SW = 0.8;
-const MID_SW   = 1.5;
-const INNER_SW = 2.2;
-
-const OUTER_OP = 0.25;
-const MID_OP   = 0.35;
-const INNER_OP = 0.55;
-
-const OUTER_COLOR  = '#F28C38';
-const MID_COLOR    = '#D4267E';
-const INNER_COLOR  = '#E8554E';
-const CORE_START   = '#F28C38';
-const CORE_END     = '#E8554E';
-
-// Ripple: starts at core edge, expands to outer ring edge
-const RIPPLE_R0 = CORE_R;
-const RIPPLE_R1 = OUTER_R;
-
-// ── Types ─────────────────────────────────────────────────────────────────
+// ── Types ─────────────────────────────────────────────────────────────────────
 export interface PulseSymbolProps {
-  /** Rendered pixel size. Minimum enforced: 32px for full, 16px for minimal. */
+  /** Tamanho renderizado em px. Mínimo aplicado automaticamente. */
   size?: number;
-  /** Enables pulsing ripple animation. */
+  /** Ativa a animação de ripple. */
   animated?: boolean;
-  /** Accessible label. Defaults to aria-hidden. */
+  /** Rótulo acessível. Sem rótulo → aria-hidden. */
   label?: string;
+  className?: string;
+  style?: React.CSSProperties;
 }
 
-// ── Core SVG layers ───────────────────────────────────────────────────────
-interface RingsProps {
-  gradId: string;
-  variant: 'full' | 'minimal';
-}
-function Rings({ gradId, variant }: RingsProps) {
-  return (
-    <>
-      {/* Outer ring — only in full variant */}
-      {variant === 'full' && (
-        <circle
-          cx={CX} cy={CY} r={OUTER_R}
-          fill="none"
-          stroke={OUTER_COLOR}
-          strokeWidth={OUTER_SW}
-          opacity={OUTER_OP}
-        />
-      )}
-
-      {/* Mid ring — only in full variant */}
-      {variant === 'full' && (
-        <circle
-          cx={CX} cy={CY} r={MID_R}
-          fill="none"
-          stroke={MID_COLOR}
-          strokeWidth={MID_SW}
-          opacity={MID_OP}
-        />
-      )}
-
-      {/* Inner ring — present in both variants */}
-      <circle
-        cx={CX} cy={CY} r={INNER_R}
-        fill="none"
-        stroke={INNER_COLOR}
-        strokeWidth={INNER_SW}
-        opacity={INNER_OP}
-      />
-
-      {/* Core — topmost */}
-      <circle
-        cx={CX} cy={CY} r={CORE_R}
-        fill={`url(#${gradId})`}
-      />
-    </>
-  );
+export interface PulseLockupProps {
+  /** Largura total em px. Mínimo: 120px (H) / 64px (V). */
+  width?: number;
+  animated?: boolean;
+  /** Cor do wordmark. Padrão: #F5ECE4 */
+  color?: string;
+  className?: string;
+  style?: React.CSSProperties;
 }
 
-// ── Ripple layers (animated only) ─────────────────────────────────────────
-interface RipplesProps {
-  kfName: string;
-  cls: [string, string, string];
-}
-function Ripples({ kfName, cls }: RipplesProps) {
-  return (
-    <>
-      {/* Wave A — coral, no delay */}
-      <circle
-        cx={CX} cy={CY} r={RIPPLE_R0}
-        fill="none"
-        stroke={INNER_COLOR}
-        strokeWidth={2.0}
-        className={cls[0]}
-      />
-      {/* Wave B — magenta, +800ms */}
-      <circle
-        cx={CX} cy={CY} r={RIPPLE_R0}
-        fill="none"
-        stroke={MID_COLOR}
-        strokeWidth={1.5}
-        className={cls[1]}
-      />
-      {/* Wave C — amber, +1600ms */}
-      <circle
-        cx={CX} cy={CY} r={RIPPLE_R0}
-        fill="none"
-        stroke={OUTER_COLOR}
-        strokeWidth={1.0}
-        className={cls[2]}
-      />
-    </>
-  );
-}
+// ══════════════════════════════════════════════════════════════════════════════
+// PulseSymbol — símbolo completo 3 anéis (min 32px)
+// viewBox 0 0 100 100 | geometria spec seção 08
+// ══════════════════════════════════════════════════════════════════════════════
+export function PulseSymbol({
+  size = 48,
+  animated = false,
+  label,
+  className,
+  style,
+}: PulseSymbolProps) {
+  const id = useUid();
+  const px  = Math.max(32, size);
 
-// ── Shared <defs> ─────────────────────────────────────────────────────────
-interface DefsProps {
-  gradId: string;
-  animated: boolean;
-  kfName: string;
-  cls: [string, string, string];
-}
-function Defs({ gradId, animated, kfName, cls }: DefsProps) {
-  const css = animated ? `
+  const gradId  = `pc-core-${id}`;
+  const kfName  = `pc-pulse-${id}`;
+  const clsA    = `pc-rw-${id}-a`;
+  const clsB    = `pc-rw-${id}-b`;
+  const clsC    = `pc-rw-${id}-c`;
+
+  // Ripple: r=8 (core edge) → r=44 (outer ring edge)
+  const rippleCSS = animated ? `
     @keyframes ${kfName} {
-      0%   { opacity: 0.65; r: ${RIPPLE_R0}px; }
-      100% { opacity: 0;    r: ${RIPPLE_R1}px; }
+      0%   { opacity: 0.65; r: 8px;  }
+      100% { opacity: 0;    r: 44px; }
     }
-    .${cls[0]} { animation: ${kfName} 2400ms ease-out infinite    0ms; }
-    .${cls[1]} { animation: ${kfName} 2400ms ease-out infinite  800ms; }
-    .${cls[2]} { animation: ${kfName} 2400ms ease-out infinite 1600ms; }
+    .${clsA} { animation: ${kfName} 2400ms ease-out infinite    0ms; }
+    .${clsB} { animation: ${kfName} 2400ms ease-out infinite  800ms; }
+    .${clsC} { animation: ${kfName} 2400ms ease-out infinite 1600ms; }
   ` : '';
 
   return (
-    <defs>
-      <radialGradient id={gradId} cx="42%" cy="38%">
-        <stop offset="0%"   stopColor={CORE_START} />
-        <stop offset="100%" stopColor={CORE_END}   />
-      </radialGradient>
-      {animated && <style>{css}</style>}
-    </defs>
-  );
-}
-
-// ── PulseSymbol — full 3-ring (min 32px) ─────────────────────────────────
-import { useRef } from 'react';
-
-export function PulseSymbol({ size = 48, animated = false, label }: PulseSymbolProps) {
-  const idRef = useRef<number | null>(null);
-  if (idRef.current === null) idRef.current = uid();
-  const id = idRef.current;
-
-  const px = Math.max(32, size); // enforce minimum
-  const gradId = `coreGrad-${id}`;
-  const kfName = `pulse-${id}`;
-  const cls: [string, string, string] = [`pw-${id}-a`, `pw-${id}-b`, `pw-${id}-c`];
-
-  return (
     <svg
-      width={px}
-      height={px}
+      width={px} height={px}
       viewBox="0 0 100 100"
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden={label ? undefined : true}
       aria-label={label}
       role={label ? 'img' : undefined}
+      className={className}
+      style={style}
     >
-      <Defs gradId={gradId} animated={animated} kfName={kfName} cls={cls} />
-      {/* Ripples render below static rings so rings stay visible on top */}
-      {animated && <Ripples kfName={kfName} cls={cls} />}
-      <Rings gradId={gradId} variant="full" />
+      <defs>
+        <radialGradient id={gradId} cx="42%" cy="38%">
+          <stop offset="0%"   stopColor="#F28C38" />
+          <stop offset="100%" stopColor="#E8554E" />
+        </radialGradient>
+        {animated && <style>{rippleCSS}</style>}
+      </defs>
+
+      {/* Ripples — abaixo dos anéis estáticos */}
+      {animated && <>
+        <circle cx={50} cy={50} r={8} fill="none" stroke="#E8554E" strokeWidth={2.0} className={clsA} />
+        <circle cx={50} cy={50} r={8} fill="none" stroke="#D4267E" strokeWidth={1.5} className={clsB} />
+        <circle cx={50} cy={50} r={8} fill="none" stroke="#F28C38" strokeWidth={1.0} className={clsC} />
+      </>}
+
+      {/* Anel externo */}
+      <circle cx={50} cy={50} r={44} fill="none" stroke="#F28C38" strokeWidth={0.8} opacity={0.25} />
+      {/* Anel médio */}
+      <circle cx={50} cy={50} r={32} fill="none" stroke="#D4267E" strokeWidth={1.5} opacity={0.35} />
+      {/* Anel interno */}
+      <circle cx={50} cy={50} r={20} fill="none" stroke="#E8554E" strokeWidth={2.2} opacity={0.55} />
+      {/* Core */}
+      <circle cx={50} cy={50} r={8}  fill={`url(#${gradId})`} />
     </svg>
   );
 }
 
-// ── PulseSymbolMinimal — 1-ring + core (min 16px, use for favicon) ────────
+// ══════════════════════════════════════════════════════════════════════════════
+// PulseSymbolMinimal — 1 anel + core (min 16px) — favicon / ícone app
+// viewBox 0 0 32 32 | geometria spec seção 08
+// ══════════════════════════════════════════════════════════════════════════════
 export function PulseSymbolMinimal({
-  size = 16,
+  size = 32,
   animated = false,
   label,
+  className,
+  style,
 }: PulseSymbolProps) {
-  const idRef = useRef<number | null>(null);
-  if (idRef.current === null) idRef.current = uid();
-  const id = idRef.current;
-
+  const id = useUid();
   const px = Math.max(16, size);
-  const gradId = `coreGrad-min-${id}`;
-  const kfName = `pulse-min-${id}`;
-  const cls: [string, string, string] = [`pw-min-${id}-a`, `pw-min-${id}-b`, `pw-min-${id}-c`];
+
+  const gradId = `pc-core-min-${id}`;
+  const kfName = `pc-pulse-min-${id}`;
+  const clsA   = `pc-rmw-${id}-a`;
+
+  const rippleCSS = animated ? `
+    @keyframes ${kfName} {
+      0%   { opacity: 0.65; r: 5px;  }
+      100% { opacity: 0;    r: 12px; }
+    }
+    .${clsA} { animation: ${kfName} 2400ms ease-out infinite 0ms; }
+  ` : '';
 
   return (
     <svg
-      width={px}
-      height={px}
-      viewBox="0 0 100 100"
+      width={px} height={px}
+      viewBox="0 0 32 32"
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden={label ? undefined : true}
       aria-label={label}
       role={label ? 'img' : undefined}
+      className={className}
+      style={style}
     >
-      <Defs gradId={gradId} animated={animated} kfName={kfName} cls={cls} />
-      {animated && <Ripples kfName={kfName} cls={cls} />}
-      <Rings gradId={gradId} variant="minimal" />
+      <defs>
+        <radialGradient id={gradId} cx="42%" cy="38%">
+          <stop offset="0%"   stopColor="#F28C38" />
+          <stop offset="100%" stopColor="#E8554E" />
+        </radialGradient>
+        {animated && <style>{rippleCSS}</style>}
+      </defs>
+
+      {/* Ripple */}
+      {animated && (
+        <circle cx={16} cy={16} r={5} fill="none" stroke="#E8554E" strokeWidth={2.5} className={clsA} />
+      )}
+
+      {/* Anel interno */}
+      <circle cx={16} cy={16} r={12} fill="none" stroke="#E8554E" strokeWidth={2.5} opacity={0.5} />
+      {/* Core */}
+      <circle cx={16} cy={16} r={5}  fill={`url(#${gradId})`} />
     </svg>
   );
 }
 
-// ── PulseLockupH — horizontal: symbol + wordmark (min 120px wide) ─────────
-export interface PulseLockupProps {
-  /** Total width. Min 120px for H, min 64px for V. */
-  width?: number;
-  animated?: boolean;
-  /** Text color for wordmark. Defaults to #F5ECE4 */
-  color?: string;
-}
+// ══════════════════════════════════════════════════════════════════════════════
+// PulseLockupH — lockup horizontal em SVG puro (min 120px)
+// viewBox 0 0 240 56 | geometria spec seção 08
+// ══════════════════════════════════════════════════════════════════════════════
+export function PulseLockupH({
+  width = 240,
+  animated = false,
+  className,
+  style,
+}: PulseLockupProps) {
+  const id    = useUid();
+  const scale = Math.max(120, width) / 240; // escala proporcional
+  const px    = Math.round(240 * scale);
+  const py    = Math.round(56  * scale);
 
-export function PulseLockupH({ width = 120, animated = false, color = '#F5ECE4' }: PulseLockupProps) {
-  const w = Math.max(120, width);
-  // Symbol occupies ~25% of total width, min 32px
-  const symbolSize = Math.max(32, Math.round(w * 0.25));
-  const gap = Math.round(symbolSize * 0.3);
-  const textH = symbolSize;
+  const gradId = `pc-core-lk-${id}`;
+  const kfName = `pc-pulse-lk-${id}`;
+  const clsA   = `pc-lkw-${id}-a`;
+  const clsB   = `pc-lkw-${id}-b`;
+
+  const rippleCSS = animated ? `
+    @keyframes ${kfName} {
+      0%   { opacity: 0.6; r: 4.5px; }
+      100% { opacity: 0;   r: 22px;  }
+    }
+    .${clsA} { animation: ${kfName} 2400ms ease-out infinite    0ms; }
+    .${clsB} { animation: ${kfName} 2400ms ease-out infinite  800ms; }
+  ` : '';
 
   return (
-    <div
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap,
-        width: w,
-        minWidth: 120,
-        userSelect: 'none',
-      }}
+    <svg
+      width={px} height={py}
+      viewBox="0 0 240 56"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-label="Pulso Cultural"
+      role="img"
+      className={className}
+      style={style}
     >
-      <PulseSymbol size={symbolSize} animated={animated} />
-      <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', lineHeight: 1 }}>
-        <span style={{
-          fontFamily: "'Sora', sans-serif",
-          fontWeight: 700,
-          fontSize: Math.round(textH * 0.35),
-          color,
-          letterSpacing: 1,
-        }}>
-          PULSO
-        </span>
-        <span style={{
-          fontFamily: "'Sora', sans-serif",
-          fontWeight: 300,
-          fontSize: Math.round(textH * 0.18),
-          color: 'rgba(168,150,154,0.7)',
-          letterSpacing: 3,
-          marginTop: 2,
-        }}>
-          CULTURAL
-        </span>
-      </div>
-    </div>
+      <defs>
+        <radialGradient id={gradId} cx="42%" cy="38%">
+          <stop offset="0%"   stopColor="#F28C38" />
+          <stop offset="100%" stopColor="#E8554E" />
+        </radialGradient>
+        {animated && <style>{rippleCSS}</style>}
+      </defs>
+
+      {/* Ripples */}
+      {animated && <>
+        <circle cx={28} cy={28} r={4.5} fill="none" stroke="#E8554E" strokeWidth={1.7} className={clsA} />
+        <circle cx={28} cy={28} r={4.5} fill="none" stroke="#D4267E" strokeWidth={1.1} className={clsB} />
+      </>}
+
+      {/* Símbolo — cx=28, cy=28, rings escalados */}
+      <circle cx={28} cy={28} r={22}  fill="none" stroke="#F28C38" strokeWidth={0.7} opacity={0.20} />
+      <circle cx={28} cy={28} r={16}  fill="none" stroke="#D4267E" strokeWidth={1.1} opacity={0.30} />
+      <circle cx={28} cy={28} r={10}  fill="none" stroke="#E8554E" strokeWidth={1.7} opacity={0.50} />
+      <circle cx={28} cy={28} r={4.5} fill={`url(#${gradId})`} />
+
+      {/* Wordmark */}
+      <text x={62} y={26}
+        fontFamily="Sora, sans-serif"
+        fontWeight={700}
+        fontSize={19}
+        fill="#F5ECE4"
+        letterSpacing={0.5}
+      >
+        PULSO
+      </text>
+      <text x={62} y={42}
+        fontFamily="Sora, sans-serif"
+        fontWeight={300}
+        fontSize={9.5}
+        fill="#A8969A"
+        letterSpacing={3.5}
+      >
+        CULTURAL
+      </text>
+    </svg>
   );
 }
 
-// ── PulseLockupV — stacked: symbol above wordmark (min 64px wide) ─────────
-export function PulseLockupV({ width = 64, animated = false, color = '#F5ECE4' }: PulseLockupProps) {
-  const w = Math.max(64, width);
-  const symbolSize = Math.max(32, Math.round(w * 0.55));
+// ══════════════════════════════════════════════════════════════════════════════
+// PulseLockupV — lockup empilhado (min 64px)
+// Usa SVG puro para garantir fontes do brand guide
+// ══════════════════════════════════════════════════════════════════════════════
+export function PulseLockupV({
+  width = 100,
+  animated = false,
+  className,
+  style,
+}: PulseLockupProps) {
+  const id    = useUid();
+  const scale = Math.max(64, width) / 100;
+  const px    = Math.round(100 * scale);
+  const py    = Math.round(120 * scale);
+
+  const gradId = `pc-core-lkv-${id}`;
+  const kfName = `pc-pulse-lkv-${id}`;
+  const clsA   = `pc-lkvw-${id}-a`;
+
+  const rippleCSS = animated ? `
+    @keyframes ${kfName} {
+      0%   { opacity: 0.6; r: 8px;  }
+      100% { opacity: 0;   r: 44px; }
+    }
+    .${clsA} { animation: ${kfName} 2400ms ease-out infinite 0ms; }
+  ` : '';
 
   return (
-    <div
-      style={{
-        display: 'inline-flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: Math.round(symbolSize * 0.18),
-        width: w,
-        minWidth: 64,
-        userSelect: 'none',
-      }}
+    <svg
+      width={px} height={py}
+      viewBox="0 0 100 120"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-label="Pulso Cultural"
+      role="img"
+      className={className}
+      style={style}
     >
-      <PulseSymbol size={symbolSize} animated={animated} />
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: 1 }}>
-        <span style={{
-          fontFamily: "'Sora', sans-serif",
-          fontWeight: 700,
-          fontSize: Math.round(symbolSize * 0.24),
-          color,
-          letterSpacing: 1,
-        }}>
-          PULSO
-        </span>
-        <span style={{
-          fontFamily: "'Sora', sans-serif",
-          fontWeight: 300,
-          fontSize: Math.round(symbolSize * 0.13),
-          color: 'rgba(168,150,154,0.7)',
-          letterSpacing: 3,
-          marginTop: 2,
-        }}>
-          CULTURAL
-        </span>
-      </div>
-    </div>
+      <defs>
+        <radialGradient id={gradId} cx="42%" cy="38%">
+          <stop offset="0%"   stopColor="#F28C38" />
+          <stop offset="100%" stopColor="#E8554E" />
+        </radialGradient>
+        {animated && <style>{rippleCSS}</style>}
+      </defs>
+
+      {/* Ripple */}
+      {animated && (
+        <circle cx={50} cy={50} r={8} fill="none" stroke="#E8554E" strokeWidth={2.0} className={clsA} />
+      )}
+
+      {/* Símbolo completo centrado em cy=50 */}
+      <circle cx={50} cy={50} r={44} fill="none" stroke="#F28C38" strokeWidth={0.8} opacity={0.25} />
+      <circle cx={50} cy={50} r={32} fill="none" stroke="#D4267E" strokeWidth={1.5} opacity={0.35} />
+      <circle cx={50} cy={50} r={20} fill="none" stroke="#E8554E" strokeWidth={2.2} opacity={0.55} />
+      <circle cx={50} cy={50} r={8}  fill={`url(#${gradId})`} />
+
+      {/* Wordmark — abaixo do símbolo */}
+      <text x={50} y={104}
+        fontFamily="Sora, sans-serif"
+        fontWeight={700}
+        fontSize={14}
+        fill="#F5ECE4"
+        letterSpacing={0.5}
+        textAnchor="middle"
+      >
+        PULSO
+      </text>
+      <text x={50} y={116}
+        fontFamily="Sora, sans-serif"
+        fontWeight={300}
+        fontSize={7}
+        fill="#A8969A"
+        letterSpacing={3}
+        textAnchor="middle"
+      >
+        CULTURAL
+      </text>
+    </svg>
   );
 }

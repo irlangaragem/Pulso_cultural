@@ -1,0 +1,339 @@
+/*
+ * ============================================================
+ * PULSO CULTURAL — Design System Tokens
+ * Seção 03–07 do Brand Guide
+ * Importado em: main.tsx (raiz do app)
+ * ============================================================
+ */
+
+/* ── Google Fonts ─────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Sora:wght@300;400;500;600;700;800&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap');
+
+/* ── Tokens ───────────────────────────────────────────────── */
+:root {
+  /* ── Cores primárias ─────────────────────────────────── */
+  --pc-coral:    #E8554E;
+  --pc-magenta:  #D4267E;
+  --pc-laranja:  #F28C38;
+  --pc-amber:    #F2B63C;
+  --pc-green:    #48BB78; /* sucesso — complementar */
+
+  /* ── Fundos — Modo escuro (principal) ──────────────── */
+  --pc-bg-deep:     #110D10;
+  --pc-bg-surface:  #1C1620;
+  --pc-bg-elevated: #231C28;
+  --pc-bg-input:    rgba(255, 255, 255, 0.04);
+
+  /* ── Fundos — Modo claro (alternativo) ─────────────── */
+  --pc-light-bg:       #F5ECE4;
+  --pc-light-surface:  #FFFFFF;
+  --pc-light-elevated: #FAF7F3;
+
+  /* ── Texto ──────────────────────────────────────────── */
+  --pc-text-primary:   #F5ECE4;
+  --pc-text-secondary: #A8969A;
+  --pc-text-muted:     #6B5A60;
+  --pc-text-on-accent: #FFFFFF;
+
+  /* ── Bordas ─────────────────────────────────────────── */
+  --pc-border-subtle: rgba(255, 255, 255, 0.06);
+  --pc-border-mid:    rgba(255, 255, 255, 0.10);
+  --pc-border-accent: rgba(232, 85, 78, 0.40);
+
+  /* ── Gradientes ─────────────────────────────────────── */
+  --pc-grad-primary: linear-gradient(135deg, #E8554E, #D4267E);
+  --pc-grad-warm:    linear-gradient(135deg, #E8554E, #D4267E, #F28C38);
+  --pc-grad-surface: linear-gradient(160deg, #1C1620 0%, #110D10 100%);
+
+  /* ── Sombras ────────────────────────────────────────── */
+  --pc-shadow-glow:   0 0 24px rgba(232, 85, 78, 0.25);
+  --pc-shadow-card:   0 4px 24px rgba(0, 0, 0, 0.40);
+  --pc-shadow-modal:  0 20px 60px rgba(0, 0, 0, 0.60);
+
+  /* ── Tipografia — famílias ──────────────────────────── */
+  --pc-font-display: 'Sora', sans-serif;
+  --pc-font-body:    'DM Sans', sans-serif;
+  --pc-font-mono:    'Space Mono', monospace;
+
+  /* ── Tipografia — tamanhos (Seção 04) ───────────────── */
+  --pc-text-hero: 48px;  /* Sora 800 — hero */
+  --pc-text-h1:   32px;  /* Sora 700 */
+  --pc-text-h2:   24px;  /* Sora 700 */
+  --pc-text-h3:   18px;  /* Sora 600 */
+  --pc-text-h4:   15px;  /* Sora 600 */
+  --pc-text-body: 14px;  /* DM Sans 400 — line-height 1.6 */
+  --pc-text-sm:   12px;  /* DM Sans 400 — captions */
+  --pc-text-xs:   10px;  /* Space Mono 400 — labels, badges */
+  --pc-text-micro: 8px;  /* Space Mono 400 — metadata */
+
+  /* ── Tipografia — pesos ─────────────────────────────── */
+  --pc-weight-light:  300;
+  --pc-weight-normal: 400;
+  --pc-weight-medium: 500;
+  --pc-weight-semi:   600;
+  --pc-weight-bold:   700;
+  --pc-weight-black:  800;
+
+  /* ── Espaçamento — escala 4px (Seção 05) ───────────── */
+  --pc-space-2xs:  4px;
+  --pc-space-xs:   8px;
+  --pc-space-sm:  12px;
+  --pc-space-md:  16px;
+  --pc-space-lg:  24px;
+  --pc-space-xl:  32px;
+  --pc-space-2xl: 48px;
+  --pc-space-3xl: 64px;
+  --pc-space-4xl: 96px;
+
+  /* ── Border radius ──────────────────────────────────── */
+  --pc-radius-sm:   8px;
+  --pc-radius-md:  12px;
+  --pc-radius-lg:  16px;
+  --pc-radius-xl:  20px;
+  --pc-radius-full: 100px;
+
+  /* ── Motion — timing ────────────────────────────────── */
+  --pc-ease-out:     cubic-bezier(0.16, 1, 0.3, 1);
+  --pc-ease-in-out:  cubic-bezier(0.65, 0, 0.35, 1);
+  --pc-duration-fast: 150ms;
+  --pc-duration-base: 250ms;
+  --pc-duration-slow: 400ms;
+}
+
+/* ══════════════════════════════════════════════════════════
+   KEYFRAMES — Seção 07
+   ══════════════════════════════════════════════════════════ */
+
+/* Pulso expandindo — símbolo animado, feedback de check-in */
+@keyframes pc-pulse-expand {
+  0%   { opacity: 0.7; transform: scale(1); }
+  100% { opacity: 0;   transform: scale(2.2); }
+}
+
+/* Blink — indicador "ao vivo", cursor */
+@keyframes pc-blink {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0; }
+}
+
+/* Fade in — entrada de elementos */
+@keyframes pc-fade-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Glow pulse — botão CTA */
+@keyframes pc-glow-pulse {
+  0%, 100% { box-shadow: 0 0 16px rgba(232, 85, 78, 0.15); }
+  50%      { box-shadow: 0 0 28px rgba(232, 85, 78, 0.30); }
+}
+
+/* ══════════════════════════════════════════════════════════
+   COMPONENTES BASE — Seção 06
+   ══════════════════════════════════════════════════════════ */
+
+/* ── Reset mínimo ─────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--pc-bg-deep);
+  color: var(--pc-text-primary);
+  font-family: var(--pc-font-body);
+  font-size: var(--pc-text-body);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Botão primário (CTA) ─────────────────────────────── */
+.pc-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--pc-space-xs);
+  background: var(--pc-grad-primary);
+  color: var(--pc-text-on-accent);
+  font-family: var(--pc-font-display);
+  font-size: var(--pc-text-body);
+  font-weight: var(--pc-weight-semi);
+  padding: var(--pc-space-sm) var(--pc-space-lg);
+  border-radius: var(--pc-radius-md);
+  border: none;
+  cursor: pointer;
+  transition:
+    transform var(--pc-duration-fast) var(--pc-ease-out),
+    box-shadow var(--pc-duration-base) var(--pc-ease-out);
+  animation: pc-glow-pulse 3s ease-in-out infinite;
+}
+.pc-btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--pc-shadow-glow);
+}
+.pc-btn-primary:active {
+  transform: translateY(0);
+}
+.pc-btn-primary:disabled {
+  opacity: 0.38;
+  pointer-events: none;
+  animation: none;
+}
+
+/* ── Botão secundário ─────────────────────────────────── */
+.pc-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--pc-space-xs);
+  background: transparent;
+  color: var(--pc-coral);
+  border: 1.5px solid var(--pc-coral);
+  font-family: var(--pc-font-display);
+  font-size: var(--pc-text-body);
+  font-weight: var(--pc-weight-semi);
+  padding: var(--pc-space-sm) var(--pc-space-lg);
+  border-radius: var(--pc-radius-md);
+  cursor: pointer;
+  transition:
+    background var(--pc-duration-fast) ease,
+    transform var(--pc-duration-fast) var(--pc-ease-out);
+}
+.pc-btn-secondary:hover {
+  background: rgba(232, 85, 78, 0.08);
+  transform: translateY(-1px);
+}
+
+/* ── Input ────────────────────────────────────────────── */
+.pc-input {
+  width: 100%;
+  background: var(--pc-bg-input);
+  border: 1px solid var(--pc-border-subtle);
+  border-radius: var(--pc-radius-md);
+  padding: var(--pc-space-sm) var(--pc-space-md);
+  font-family: var(--pc-font-body);
+  font-size: var(--pc-text-body);
+  color: var(--pc-text-primary);
+  outline: none;
+  transition: border-color var(--pc-duration-fast) ease;
+}
+.pc-input::placeholder {
+  color: var(--pc-text-muted);
+}
+.pc-input:focus {
+  border-color: var(--pc-border-accent);
+}
+
+/* ── Badge ao vivo ────────────────────────────────────── */
+.pc-badge-live {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--pc-space-2xs);
+  padding: var(--pc-space-2xs) var(--pc-space-xs);
+  border-radius: var(--pc-radius-full);
+  background: rgba(232, 85, 78, 0.12);
+  font-family: var(--pc-font-mono);
+  font-size: var(--pc-text-xs);
+  font-weight: var(--pc-weight-bold);
+  color: var(--pc-coral);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+/* Dot piscante dentro do badge */
+.pc-badge-live::before {
+  content: '';
+  display: block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--pc-coral);
+  animation: pc-blink 1.2s ease-in-out infinite;
+}
+
+/* ── Badge genérico ───────────────────────────────────── */
+.pc-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--pc-space-2xs) var(--pc-space-xs);
+  border-radius: var(--pc-radius-full);
+  background: rgba(232, 85, 78, 0.10);
+  font-family: var(--pc-font-mono);
+  font-size: var(--pc-text-xs);
+  color: var(--pc-coral);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+/* ── Card de métrica ──────────────────────────────────── */
+.pc-metric-card {
+  background: var(--pc-bg-deep);
+  border: 1px solid var(--pc-border-subtle);
+  border-radius: var(--pc-radius-md);
+  padding: var(--pc-space-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--pc-space-xs);
+}
+.pc-metric-card__value {
+  font-family: var(--pc-font-display);
+  font-size: var(--pc-text-h1);
+  font-weight: var(--pc-weight-bold);
+  color: var(--pc-coral);
+  line-height: 1;
+}
+.pc-metric-card__label {
+  font-family: var(--pc-font-body);
+  font-size: var(--pc-text-sm);
+  color: var(--pc-text-secondary);
+}
+.pc-metric-card__sub {
+  font-family: var(--pc-font-mono);
+  font-size: var(--pc-text-xs);
+  color: var(--pc-green);
+}
+
+/* ── Área de proteção do logo ─────────────────────────── */
+/*
+   REGRA: padding mínimo ao redor do PulseSymbol =
+   1× diâmetro do core em proporção ao tamanho renderizado.
+   Para um símbolo de 48px: core = 48 × (8/100) × 2 ≈ 7.7px
+   Na prática: usar gap/padding mínimo de 8px (--pc-space-xs)
+   em qualquer container que exiba o símbolo.
+*/
+.pc-symbol-safe-zone {
+  padding: var(--pc-space-xs); /* ≥ diâmetro do core */
+}
+
+/* ── Utilitários de tipografia ────────────────────────── */
+.pc-hero  { font-family: var(--pc-font-display); font-size: var(--pc-text-hero); font-weight: var(--pc-weight-black); }
+.pc-h1    { font-family: var(--pc-font-display); font-size: var(--pc-text-h1);   font-weight: var(--pc-weight-bold); }
+.pc-h2    { font-family: var(--pc-font-display); font-size: var(--pc-text-h2);   font-weight: var(--pc-weight-bold); }
+.pc-h3    { font-family: var(--pc-font-display); font-size: var(--pc-text-h3);   font-weight: var(--pc-weight-semi); }
+.pc-h4    { font-family: var(--pc-font-display); font-size: var(--pc-text-h4);   font-weight: var(--pc-weight-semi); }
+.pc-body  { font-family: var(--pc-font-body);    font-size: var(--pc-text-body); font-weight: var(--pc-weight-normal); line-height: 1.6; }
+.pc-small { font-family: var(--pc-font-body);    font-size: var(--pc-text-sm);   color: var(--pc-text-secondary); }
+.pc-xs    { font-family: var(--pc-font-mono);    font-size: var(--pc-text-xs);   letter-spacing: 1px; }
+.pc-micro { font-family: var(--pc-font-mono);    font-size: var(--pc-text-micro); letter-spacing: 1px; color: var(--pc-text-muted); }
+
+/* ── Wordmark (Seção 10) ──────────────────────────────── */
+/* PULSO em Sora Bold, CULTURAL em Sora Light, sempre maiúsculas */
+.pc-wordmark-pulso {
+  font-family: var(--pc-font-display);
+  font-weight: var(--pc-weight-bold);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--pc-text-primary);
+}
+.pc-wordmark-cultural {
+  font-family: var(--pc-font-display);
+  font-weight: var(--pc-weight-light);
+  letter-spacing: 3.5px;
+  text-transform: uppercase;
+  color: var(--pc-text-secondary);
+}
+
+/* ── Entrada animada ──────────────────────────────────── */
+.pc-fade-in {
+  animation: pc-fade-in var(--pc-duration-slow) var(--pc-ease-out) both;
+}
+.pc-fade-in-delay-1 { animation-delay: 100ms; }
+.pc-fade-in-delay-2 { animation-delay: 200ms; }
+.pc-fade-in-delay-3 { animation-delay: 300ms; }

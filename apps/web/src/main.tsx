@@ -1,5 +1,6 @@
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
+import './styles/tokens.css'  // Design system tokens — must be first
 import './index.css'
 import App from './App.tsx'
 
