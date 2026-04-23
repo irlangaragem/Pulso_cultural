@@ -34,7 +34,7 @@ export function LanguageSelector() {
         pointerEvents: 'auto',
       }}
     >
-      {(['pt', 'en'] as const).map((code) => {
+      {(['pt', 'en', 'es', 'fr'] as const).map((code) => {
         const active = language === code;
         return (
           <button
