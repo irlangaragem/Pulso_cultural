@@ -115,9 +115,13 @@ export function VisitorLogin() {
   const handleSubmit = async () => {
     if (!isComplete) return;
 
-    // Master key shortcut
+    // Master key shortcut: always go to registration tab, but keep the CPF
     if (isMasterKey) {
-      navigate('/checkin');
+      const qp = new URLSearchParams();
+      qp.set('cpf', cpf);
+      if (como) qp.set('como', como);
+      if (como === 'Outro' && comoOutroText) qp.set('comoOutroText', comoOutroText);
+      navigate(`/checkin?${qp.toString()}`);
       return;
     }
 
