@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { CheckinController } from '../controllers/CheckinController';
 import { authMiddleware } from '../middlewares/auth.middleware';
-import { checkinLimiter } from '../server';
+import { checkinLimiter } from '../middlewares/limiters';
 
 const checkinRoutes = Router();
 const checkinController = new CheckinController();

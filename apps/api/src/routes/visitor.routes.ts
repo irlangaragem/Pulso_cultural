@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { VisitorController } from '../controllers/VisitorController';
-import { visitorLimiter } from '../server';
+import { visitorLimiter } from '../middlewares/limiters';
 
 const visitorRoutes = Router();
 const visitorController = new VisitorController();

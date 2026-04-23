@@ -1,11 +1,16 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { HashService } from '../services/HashService';
-import { io } from '../server';
+import { getIO } from '../lib/socket';
 import { AnalyticsService } from '../services/AnalyticsService';
 import { SentimentAnalyzer } from '../services/SentimentAnalyzer';
 
 export class EvaluationController {
+  constructor() {
+    this.submit = this.submit.bind(this);
+    this.getSummary = this.getSummary.bind(this);
+  }
+
   /**
    * POST /evaluations
    * Submit a visitor evaluation for an exhibition.
@@ -77,7 +82,7 @@ export class EvaluationController {
       });
 
       // Emit real-time update for dashboard
-      io.emit('evaluation_update', {
+      getIO().emit('evaluation_update', {
         type: 'evaluation',
         exhibitionId,
         rating,

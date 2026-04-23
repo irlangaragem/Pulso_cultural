@@ -1,9 +1,18 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { HashService } from '../services/HashService';
-import { io } from '../server';
+import { getIO } from '../lib/socket';
 
 export class CheckinController {
+  constructor() {
+    this.create = this.create.bind(this);
+    this.batchCreate = this.batchCreate.bind(this);
+    this.verify = this.verify.bind(this);
+    this.ingestCameraData = this.ingestCameraData.bind(this);
+    this.getStats = this.getStats.bind(this);
+    this.simulateCount = this.simulateCount.bind(this);
+  }
+
   async create(req: Request, res: Response) {
     const { 
       cpf, 
@@ -56,7 +65,7 @@ export class CheckinController {
       });
 
       // Emit event for real-time dashboard
-      io.emit('occupancy_update', {
+      getIO().emit('occupancy_update', {
         type: 'checkin',
         exhibitionId,
         timestamp: new Date()
@@ -187,7 +196,7 @@ export class CheckinController {
         }
       });
 
-      io.emit('occupancy_update', {
+      getIO().emit('occupancy_update', {
         type: 'camera_count',
         countType: count.type,
         exhibitionId,
@@ -249,7 +258,7 @@ export class CheckinController {
         }
       });
 
-      io.emit('occupancy_update', {
+      getIO().emit('occupancy_update', {
         type: 'camera_count',
         countType: type,
         exhibitionId,

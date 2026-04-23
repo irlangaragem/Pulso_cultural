@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { HashService } from '../services/HashService';
-import { io } from '../server';
+import { getIO } from '../lib/socket';
 import { MLServiceClient } from '../services/MLServiceClient';
 
 // RFC-5321-aligned email validator (mirrors frontend isValidEmail)
@@ -11,6 +11,11 @@ function isValidEmail(email: unknown): email is string {
 }
 
 export class VisitorController {
+  constructor() {
+    this.register = this.register.bind(this);
+    this.identify = this.identify.bind(this);
+  }
+
   /**
    * Dedicated registration endpoint for new visitors.
    * Handles the complete "Primeiro Pulso" payload.
@@ -99,7 +104,7 @@ export class VisitorController {
 
       // Emit real-time event
       if (exhibitionId) {
-        io.emit('occupancy_update', {
+        getIO().emit('occupancy_update', {
           type: 'checkin',
           exhibitionId,
           timestamp: new Date()

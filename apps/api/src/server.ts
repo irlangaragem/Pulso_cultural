@@ -2,13 +2,13 @@ import 'dotenv/config'; // Must be first — loads .env before any other module 
 import express from 'express';
 import cors from 'cors';
 import { createServer } from 'http';
-import { Server } from 'socket.io';
 import { routes } from './routes';
 import bcrypt from 'bcryptjs';
 import { prisma } from './lib/prisma';
-
+import { initSocket } from './lib/socket';
 import helmet from 'helmet';
 import { rateLimit } from 'express-rate-limit';
+import './middlewares/limiters'; // ensure limiters module is loaded
 
 const app = express();
 // Trust proxy is required for express-rate-limit on cloud platforms like Railway
@@ -25,31 +25,7 @@ const globalLimiter = rateLimit({
   message: { error: 'Too many requests. Please wait and try again.' },
 });
 
-// ── Visitor identity/registration — strict (prevents enumeration & abuse) ─
-export const visitorLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 120, // ~8 visitors/min per IP — realistic for a museum tablet
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: 'Too many registration attempts. Please wait.' },
-});
-
-// ── Checkin batch sync — generous (kiosk syncing queue) ──────────────────
-export const checkinLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 600,
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
-// ── Auth — tight (brute-force prevention) ─────────────────────────────────
-export const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 20,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: 'Too many login attempts. Please wait 15 minutes.' },
-});
+// Limiters are defined in middlewares/limiters.ts to avoid circular imports.
 
 // Shared origin list — HTTP CORS and Socket.IO must be identical
 const ALLOWED_ORIGINS = [
@@ -58,13 +34,7 @@ const ALLOWED_ORIGINS = [
   'http://localhost:5173',
 ];
 
-const io = new Server(server, {
-  cors: {
-    origin: ALLOWED_ORIGINS,
-    methods: ['GET', 'POST'],
-    credentials: true,
-  }
-});
+const io = initSocket(server, ALLOWED_ORIGINS);
 
 app.use(helmet());
 app.use(globalLimiter);
@@ -126,4 +96,4 @@ server.listen(PORT, async () => {
   await ensureAdmin();
 });
 
-export { io };
+// io is exported from lib/socket.ts — import it from there to avoid circular deps.
