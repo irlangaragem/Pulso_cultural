@@ -47,12 +47,17 @@ export class VisitorController {
         return res.status(400).json({ error: 'Missing required visitor fields' });
       }
 
-      const cpfHash = await HashService.hashCPF(cpf);
+      let cpfHash: string | undefined;
+      let emailHash: string | undefined;
+      let visitor: any = null;
 
-      // Check for existing visitor
-      let visitor = await prisma.visitor.findUnique({
-        where: { cpfHash }
-      });
+      if (cpf) {
+        cpfHash = await HashService.hashCPF(cpf);
+        visitor = await prisma.visitor.findUnique({ where: { cpfHash } });
+      } else if (req.body.email) {
+        emailHash = await HashService.hashEmail(req.body.email);
+        visitor = await prisma.visitor.findUnique({ where: { emailHash } });
+      }
 
       if (visitor) {
         return res.status(409).json({ 
@@ -69,7 +74,8 @@ export class VisitorController {
       // Create visitor with new fields
       visitor = await prisma.visitor.create({
         data: {
-          cpfHash,
+          cpfHash: cpfHash || null,
+          emailHash: emailHash || null,
           name,
           birthYear,
           gender: gender || 'PREFIRO_NAO_DIZER',
@@ -82,7 +88,7 @@ export class VisitorController {
       // Ingest into ML Engine Feature Store (Intelligence Layer)
       // This is non-blocking to ensure fast check-in
       MLServiceClient.ingestVisitorFeatures({
-        visitorHash: cpfHash,
+        visitorHash: cpfHash || emailHash || 'unknown',
         birthYear: visitor.birthYear,
         gender: visitor.gender,
         origin: visitor.origin,
@@ -136,22 +142,26 @@ export class VisitorController {
     if (email && !isValidEmail(email)) {
       return res.status(400).json({ error: 'Invalid email format' });
     }
-    if (!cpf) {
-      // Email-only identify — placeholder until email visitor table is added
-      return res.status(404).json({ error: 'Visitor not found' });
-    }
-
     try {
-      const cpfHash = await HashService.hashCPF(cpf);
-      const visitor = await prisma.visitor.findUnique({
-        where: { cpfHash },
-        include: {
-          checkins: {
-            orderBy: { createdAt: 'desc' },
-            take: 1
+      let visitor: any = null;
+
+      if (cpf) {
+        const cpfHash = await HashService.hashCPF(cpf);
+        visitor = await prisma.visitor.findUnique({
+          where: { cpfHash },
+          include: {
+            checkins: { orderBy: { createdAt: 'desc' }, take: 1 }
           }
-        }
-      });
+        });
+      } else if (email) {
+        const emailHash = await HashService.hashEmail(email);
+        visitor = await prisma.visitor.findUnique({
+          where: { emailHash },
+          include: {
+            checkins: { orderBy: { createdAt: 'desc' }, take: 1 }
+          }
+        });
+      }
 
       if (!visitor) {
         return res.status(404).json({ error: 'Visitor not found' });

@@ -23,4 +23,20 @@ export class HashService {
       timeCost: 3
     });
   }
+
+  static async hashEmail(email: string): Promise<string> {
+    if (typeof email !== 'string') {
+      throw new Error('Invalid email parameter: must be a string');
+    }
+    const cleanEmail = email.trim().toLowerCase();
+    const salt = Buffer.from(this.SALT.padEnd(16, '0')).slice(0, 16);
+
+    return argon2.hash(cleanEmail, {
+      type: argon2.argon2id,
+      salt,
+      parallelism: 1,
+      memoryCost: 65536, // 64MB
+      timeCost: 3
+    });
+  }
 }

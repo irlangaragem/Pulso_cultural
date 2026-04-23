@@ -18,4 +18,4 @@ COPY --from=base /app/package.json ./package.json
 COPY --from=base /app/dist ./dist
 COPY --from=base /app/prisma ./prisma
 EXPOSE 3333
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/server.js"]
+CMD ["sh", "-c", "npx prisma db push --accept-data-loss && node dist/server.js"]

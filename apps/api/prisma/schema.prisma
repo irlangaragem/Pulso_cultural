@@ -81,7 +81,8 @@ model Work {
 
 model Visitor {
   id                 String        @id @default(cuid())
-  cpfHash            String        @unique // CPF criptografado
+  cpfHash            String?       @unique // CPF criptografado
+  emailHash          String?       @unique // Email criptografado
   name               String
   birthYear          Int
   gender             Gender
@@ -94,6 +95,7 @@ model Visitor {
   updatedAt          DateTime      @updatedAt
   
   @@index([cpfHash])
+  @@index([emailHash])
 }
 
 model Checkin {
