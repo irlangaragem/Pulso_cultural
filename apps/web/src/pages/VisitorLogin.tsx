@@ -98,9 +98,8 @@ export function VisitorLogin() {
   };
 
   // ── Computed ──
-  const rawCpf     = cpf.replace(/\D/g, '');
+    const rawCpf     = cpf.replace(/\D/g, '');
   const isMasterKey = rawCpf === '00000000000';
-  const showNonPT   = language !== 'pt';
 
   const identifierReady = identityMode === 'cpf'
     ? rawCpf.length === 11
