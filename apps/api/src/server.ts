@@ -57,7 +57,9 @@ io.on('connection', (socket) => {
 });
 
 async function ensureAdmin() {
+  console.log('[ensureAdmin] Starting...');
   try {
+    // Step 1: Museum
     const museum = await prisma.museum.upsert({
       where: { slug: 'mam-bahia' },
       update: {},
@@ -70,13 +72,17 @@ async function ensureAdmin() {
         openingHours: { tue_sun: '10:00-18:00', mon: 'Closed' }
       }
     });
+    console.log('[ensureAdmin] Museum OK — id:', museum.id);
 
+    // Step 2: Admin user — always reset password hash on every startup
     const email = 'admin@mam.ba.gov.br';
-    const passwordHash = await bcrypt.hash('PUL_$0=CL', 12);
-    
-    await prisma.user.upsert({
+    const rawPassword = process.env.ADMIN_PASSWORD || 'PUL_$0=CL';
+    const passwordHash = await bcrypt.hash(rawPassword, 12);
+    console.log('[ensureAdmin] Hash generated — length:', passwordHash.length);
+
+    const admin = await prisma.user.upsert({
       where: { email },
-      update: { passwordHash },
+      update: { passwordHash, active: true },
       create: {
         email,
         passwordHash,
@@ -85,15 +91,28 @@ async function ensureAdmin() {
         museumId: museum.id
       }
     });
-    console.log('✅ Default admin ensured');
+    console.log('[ensureAdmin] ✅ Admin ensured — id:', admin.id, '| email:', admin.email);
   } catch (err) {
-    console.error('❌ Failed to ensure default admin:', err);
+    console.error('[ensureAdmin] ❌ FAILED:', err);
   }
 }
 
 server.listen(PORT, async () => {
   console.log(`HTTP and WebSocket server running on port ${PORT}`);
   await ensureAdmin();
+});
+
+// ── Emergency re-seed endpoint (protected by SEED_SECRET env var) ──────────
+// POST /admin/reseed  { secret: process.env.SEED_SECRET }
+// Use this if ensureAdmin failed silently and you need to reset the admin
+// without access to Railway shell.
+app.post('/admin/reseed', async (req: any, res: any) => {
+  const expectedSecret = process.env.SEED_SECRET;
+  if (!expectedSecret || req.body?.secret !== expectedSecret) {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+  await ensureAdmin();
+  return res.json({ ok: true, message: 'Admin re-seeded. Check server logs.' });
 });
 
 // io is exported from lib/socket.ts — import it from there to avoid circular deps.
