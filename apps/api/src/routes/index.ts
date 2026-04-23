@@ -29,25 +29,53 @@ routes.use('/evaluations', evaluationRoutes);
 routes.use('/events', eventRoutes);
 routes.use('/recommendations', recommendationRoutes);
 
-// ── Emergency admin reseed (public but SEED_SECRET protected) ───────────
-// POST /admin/reseed { secret: "<SEED_SECRET env var>" }
-// Resets admin@mam.ba.gov.br password to ADMIN_PASSWORD (or default).
-// Remove SEED_SECRET from Railway env vars after use to disable.
+// ── Emergency admin reseed (public but secret-protected) ─────────────────
+// POST /admin/reseed { secret: "..." }  OR  GET /admin/reseed?secret=...
+// Accepts SEED_SECRET env var OR hardcoded fallback (commit-specific).
 routes.post('/admin/reseed', async (req, res) => {
-  const expectedSecret = process.env.SEED_SECRET;
-  if (!expectedSecret || (req.body as any)?.secret !== expectedSecret) {
-    return res.status(403).json({ error: 'Forbidden' });
+  const provided = (req.body as any)?.secret || req.query.secret;
+  const expected = process.env.SEED_SECRET || 'pulso-reseed-4ba021cd';
+
+  if (!provided || provided !== expected) {
+    return res.status(403).json({
+      error: 'Forbidden',
+      env: process.env.SEED_SECRET ? 'SEED_SECRET set' : 'using fallback'
+    });
   }
+
   try {
     const bcrypt = (await import('bcryptjs')).default;
     const rawPassword = process.env.ADMIN_PASSWORD || 'PUL_$0=CL';
     const passwordHash = await bcrypt.hash(rawPassword, 12);
-    const user = await prisma.user.update({
-      where: { email: 'admin@mam.ba.gov.br' },
-      data: { passwordHash, active: true }
-    });
-    console.log('[reseed] ✅ Admin password reset —', user.email);
-    return res.json({ ok: true, email: user.email, message: 'Password reset successfully.' });
+
+    // Try update first (user exists)
+    let user;
+    try {
+      user = await prisma.user.update({
+        where: { email: 'admin@mam.ba.gov.br' },
+        data: { passwordHash, active: true }
+      });
+    } catch {
+      // User doesn't exist — upsert with museum
+      const museum = await prisma.museum.upsert({
+        where: { slug: 'mam-bahia' },
+        update: {},
+        create: {
+          name: 'Museu de Arte Moderna da Bahia', slug: 'mam-bahia',
+          address: 'Av. Lafayete Coutinho, s/n', city: 'Salvador', state: 'BA',
+          openingHours: { tue_sun: '10:00-18:00', mon: 'Closed' }
+        }
+      });
+      user = await prisma.user.create({
+        data: {
+          email: 'admin@mam.ba.gov.br', passwordHash,
+          name: 'Administrador MAM', role: 'GESTOR', museumId: museum.id
+        }
+      });
+    }
+
+    console.log('[reseed] ✅', user.email);
+    return res.json({ ok: true, email: user.email });
   } catch (err: any) {
     console.error('[reseed] ❌', err.message);
     return res.status(500).json({ error: err.message });
