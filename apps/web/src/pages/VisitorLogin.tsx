@@ -277,10 +277,13 @@ export function VisitorLogin() {
         <div style={{ width: '100%', height: 1, background: 'rgba(255,255,255,0.08)', margin: '4px 0 20px', zIndex: 1 }} />
 
         {/* ════════════════════════════════════════
-            IDENTITY SELECTOR — non-PT only
+            IDENTITY SELECTOR — always visible
+            CPF is default for PT; Email is default
+            for EN/ES/FR. Both options are ALWAYS
+            clickable in every language.
         ════════════════════════════════════════ */}
         <AnimatePresence>
-          {(showNonPT || userChoseIdentity) && (
+          {(true || userChoseIdentity) && (
             <motion.div
               key="identity-selector"
               initial={{ opacity: 0, height: 0 }}
@@ -293,10 +296,12 @@ export function VisitorLogin() {
                 {t('identity.question')}
               </span>
               <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-                {/* CPF option */}
+
+                {/* ── CPF option ── */}
                 <button
                   type="button"
                   onClick={() => handleIdentitySwitch('cpf')}
+                  aria-pressed={identityMode === 'cpf'}
                   style={{
                     flex: 1,
                     padding: '10px 12px',
@@ -319,45 +324,38 @@ export function VisitorLogin() {
                   </span>
                 </button>
 
-                {/* Email option — disabled until backend email identity is ready */}
-                <div
+                {/* ── Email option — NOW FULLY ENABLED ── */}
+                <button
+                  type="button"
+                  onClick={() => handleIdentitySwitch('email')}
+                  aria-pressed={identityMode === 'email'}
                   style={{
                     flex: 1,
                     padding: '10px 12px',
                     borderRadius: 10,
-                    border: '1px solid rgba(255,255,255,0.04)',
-                    background: 'rgba(255,255,255,0.01)',
-                    cursor: 'not-allowed',
+                    border: `1px solid ${identityMode === 'email' ? 'rgba(232,85,78,0.45)' : 'rgba(255,255,255,0.08)'}`,
+                    background: identityMode === 'email' ? 'rgba(232,85,78,0.1)' : 'rgba(255,255,255,0.02)',
+                    cursor: 'pointer',
                     textAlign: 'left',
-                    opacity: 0.45,
-                    position: 'relative',
+                    transition: 'all 0.18s ease',
                   }}
-                  aria-disabled="true"
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
-                    <Mail size={13} color="#6B5A60" />
-                    <span style={{ fontSize: 12, fontWeight: 700, color: '#6B5A60', fontFamily: 'Sora, sans-serif' }}>
+                    <Mail size={13} color={identityMode === 'email' ? '#F07070' : '#6B5A60'} />
+                    <span style={{ fontSize: 12, fontWeight: 700, color: identityMode === 'email' ? '#F07070' : '#D4C6C9', fontFamily: 'Sora, sans-serif' }}>
                       {t('identity.email')}
                     </span>
-                    <span style={{
-                      fontFamily: "'Space Mono', monospace",
-                      fontSize: 7,
-                      letterSpacing: 1,
-                      color: '#6B5A60',
-                      border: '1px solid rgba(107,90,96,0.4)',
-                      borderRadius: 4,
-                      padding: '1px 5px',
-                      marginLeft: 4,
-                    }}>EM BREVE</span>
                   </div>
-                  <span style={{ fontSize: 10, color: '#4A3F44', lineHeight: 1.4, display: 'block', fontFamily: 'DM Sans, sans-serif' }}>
+                  <span style={{ fontSize: 10, color: '#6B5A60', lineHeight: 1.4, display: 'block', fontFamily: 'DM Sans, sans-serif' }}>
                     {t('identity.email_hint')}
                   </span>
-                </div>
+                </button>
+
               </div>
             </motion.div>
           )}
         </AnimatePresence>
+
 
         {/* ════════════════════════════════════════
             IDENTITY INPUT (animated swap)
