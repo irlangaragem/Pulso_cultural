@@ -1,0 +1,11 @@
+# Pulso Cultural — Vision Counter
+# Módulo de contagem de pessoas por câmera
+# LGPD: processa localmente, nunca salva frames
+
+ultralytics>=8.0.0       # YOLOv8
+supervision>=0.18.0      # ByteTracker + LineZone
+opencv-python>=4.9.0     # captura de vídeo
+numpy>=1.24.0
+requests>=2.31.0         # envio para API
+sqlite3                  # incluso no Python stdlib
+python-dotenv>=1.0.0     # .env local

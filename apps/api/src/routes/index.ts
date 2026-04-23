@@ -12,6 +12,7 @@ import { visitorRoutes } from './visitor.routes';
 import { evaluationRoutes } from './evaluation.routes';
 import { eventRoutes } from './events.routes';
 import { recommendationRoutes } from './recommendation.routes';
+import { cameraRoutes } from './camera.routes';
 
 import { authMiddleware } from '../middlewares/auth.middleware';
 
@@ -28,6 +29,7 @@ routes.use('/api/v1/users', visitorRoutes);
 routes.use('/evaluations', evaluationRoutes);
 routes.use('/events', eventRoutes);
 routes.use('/recommendations', recommendationRoutes);
+routes.use('/camera', cameraRoutes);  // contagens de visão computacional
 
 // ── Emergency admin reseed (public but secret-protected) ─────────────────
 // POST /admin/reseed { secret: "..." }  OR  GET /admin/reseed?secret=...

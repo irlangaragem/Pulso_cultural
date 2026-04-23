@@ -157,6 +157,7 @@ model Camera {
   name          String
   location      String
   ipAddress     String
+  apiKey        String      @unique @default(cuid()) // X-Camera-Key para autenticação
   active        Boolean     @default(true)
   counts        CameraCount[]
   createdAt     DateTime    @default(now())
@@ -170,8 +171,9 @@ model CameraCount {
   exhibitionId  String?
   exhibition    Exhibition? @relation(fields: [exhibitionId], references: [id])
   type          CountType   // ENTRADA ou SAIDA
+  count         Int         @default(1) // quantidade neste lote
   timestamp     DateTime    @default(now())
-  
+
   @@index([cameraId, timestamp])
   @@index([exhibitionId, timestamp])
 }
