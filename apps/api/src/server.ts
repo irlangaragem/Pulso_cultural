@@ -31,7 +31,9 @@ const globalLimiter = rateLimit({
 const ALLOWED_ORIGINS = [
   process.env.WEB_URL || 'http://localhost:5173',
   'https://pulsocultural.art',
+  'https://pulso-web-production.up.railway.app',  // Railway production frontend
   'http://localhost:5173',
+  'http://localhost:4173',
 ];
 
 const io = initSocket(server, ALLOWED_ORIGINS);
