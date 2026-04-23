@@ -13,20 +13,25 @@ const CardShare = lazy(() => import('./pages/CardShare').then(m => ({ default: m
 const Feedback = lazy(() => import('./pages/Feedback').then(m => ({ default: m.Feedback })));
 
 // Non-lazy PulseSymbol for Suspense fallback and 404 — must be available before chunks load
+// Static fallback — canonical spec geometry (viewBox 0 0 100 100)
+// r: outer=44 mid=32 inner=20 core=8 | sw: 0.8 / 1.5 / 2.2
 function PulseSymbolStatic() {
-  const size = 48, cx = 24, cy = 24;
   return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <svg width={48} height={48} viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
       <defs>
         <radialGradient id="core-fb" cx="42%" cy="38%">
           <stop offset="0%" stopColor="#F28C38" />
           <stop offset="100%" stopColor="#E8554E" />
         </radialGradient>
       </defs>
-      <circle cx={cx} cy={cy} r={21.12} fill="none" stroke="#F28C38" strokeWidth={0.384} opacity={0.25} />
-      <circle cx={cx} cy={cy} r={15.36} fill="none" stroke="#D4267E" strokeWidth={0.72} opacity={0.35} />
-      <circle cx={cx} cy={cy} r={9.6} fill="none" stroke="#E8554E" strokeWidth={1.056} opacity={0.55} />
-      <circle cx={cx} cy={cy} r={3.84} fill="url(#core-fb)" />
+      {/* Outer ring */}
+      <circle cx={50} cy={50} r={44} fill="none" stroke="#F28C38" strokeWidth={0.8} opacity={0.25} />
+      {/* Mid ring */}
+      <circle cx={50} cy={50} r={32} fill="none" stroke="#D4267E" strokeWidth={1.5} opacity={0.35} />
+      {/* Inner ring */}
+      <circle cx={50} cy={50} r={20} fill="none" stroke="#E8554E" strokeWidth={2.2} opacity={0.55} />
+      {/* Core */}
+      <circle cx={50} cy={50} r={8}  fill="url(#core-fb)" />
     </svg>
   );
 }
