@@ -20,6 +20,7 @@ model User {
   active        Boolean   @default(true)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+  qrcodes       QRCode[]
 }
 
 model Museum {
@@ -33,6 +34,7 @@ model Museum {
   users           User[]
   exhibitions     Exhibition[]
   cameras         Camera[]
+  qrcodes         QRCode[]
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
 }
@@ -57,6 +59,7 @@ model Exhibition {
   otherExhibitions Json?           // [{ name: "", room: "" }]
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
+  qrcodes         QRCode[]
   
   @@index([museumId, status])
 }
@@ -218,3 +221,49 @@ enum CountType {
   SAIDA
 }
 
+// ───────────────────────────────────────────────
+// QR CODE MODULE
+// ───────────────────────────────────────────────
+model QRCode {
+  id             String    @id @default(cuid())
+  museumId       String
+  exhibitionId   String?
+  destinationUrl String
+  label          String?   // "Entrada Principal", "Sala 3", etc.
+  isActive       Boolean   @default(true)
+  isDraft        Boolean   @default(false)
+  generatedBy    String
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  expiresAt      DateTime?
+  revokedAt      DateTime?
+
+  museum      Museum      @relation(fields: [museumId], references: [id])
+  exhibition  Exhibition? @relation(fields: [exhibitionId], references: [id])
+  user        User        @relation(fields: [generatedBy], references: [id])
+  events      QRCodeEvent[]
+
+  @@index([museumId, isActive])
+  @@index([exhibitionId, isActive])
+}
+
+model QRCodeEvent {
+  id        String       @id @default(cuid())
+  qrcodeId  String
+  type      QREventType
+  metadata  Json?
+  createdAt DateTime     @default(now())
+
+  qrcode    QRCode       @relation(fields: [qrcodeId], references: [id])
+
+  @@index([qrcodeId, createdAt])
+}
+
+enum QREventType {
+  GENERATED
+  DOWNLOADED
+  PRINTED
+  REVOKED
+  EXPIRED
+  REACTIVATED
+}

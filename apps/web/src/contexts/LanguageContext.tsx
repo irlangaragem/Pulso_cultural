@@ -76,6 +76,7 @@ const translations: Translations = {
     'checkin.form.cpf.placeholder': '000.000.000-00',
     'checkin.form.nome.label': 'Nome',
     'checkin.form.nome.placeholder': 'Como quer ser chamado?',
+    'checkin.form.nome.hint': 'Pode ser apelido ou apenas o primeiro nome.',
     'checkin.form.nascimento.label': 'Ano de nascimento',
     'checkin.form.nascimento.placeholder': 'Ex: 1992',
     'checkin.form.genero.label': 'Identidade de gênero',
@@ -110,7 +111,11 @@ const translations: Translations = {
     'checkin.form.go_to_login': '→ Ir para a tela de entrada',
     'checkin.form.unexpected_error': 'Erro inesperado. Tente novamente.',
     'checkin.form.origem.detail_city': 'Qual cidade / estado?',
-    'checkin.form.origem.detail_country': 'Qual país?'
+    'checkin.form.origem.detail_country': 'Qual país?',
+    'guide.highlights': 'Destaques',
+    'guide.highlights.count': '{count} em destaque',
+    'guide.also_showing': 'Também em cartaz',
+    'guide.also_showing.count': '{count} simultâneas',
   },
   en: {
     'venue.name': 'MAM Salvador',
@@ -183,6 +188,7 @@ const translations: Translations = {
     'checkin.form.cpf.placeholder': '000.000.000-00',
     'checkin.form.nome.label': 'Name',
     'checkin.form.nome.placeholder': 'How would you like to be called?',
+    'checkin.form.nome.hint': 'You may use a nickname or just your first name.',
     'checkin.form.nascimento.label': 'Birth Year',
     'checkin.form.nascimento.placeholder': 'E.g: 1992',
     'checkin.form.genero.label': 'Gender Identity',
@@ -217,7 +223,11 @@ const translations: Translations = {
     'checkin.form.go_to_login': '→ Go to login screen',
     'checkin.form.unexpected_error': 'Unexpected error. Please try again.',
     'checkin.form.origem.detail_city': 'Which city / state?',
-    'checkin.form.origem.detail_country': 'Which country?'
+    'checkin.form.origem.detail_country': 'Which country?',
+    'guide.highlights': 'Highlights',
+    'guide.highlights.count': '{count} featured',
+    'guide.also_showing': 'Also Showing',
+    'guide.also_showing.count': '{count} simultaneous',
   },
   es: {
     'venue.name': 'MAM Salvador',
@@ -290,6 +300,7 @@ const translations: Translations = {
     'checkin.form.cpf.placeholder': '000.000.000-00',
     'checkin.form.nome.label': 'Nombre',
     'checkin.form.nome.placeholder': '¿Cómo quieres que te llamemos?',
+    'checkin.form.nome.hint': 'Puedes usar un apodo o solo tu nombre.',
     'checkin.form.nascimento.label': 'Año de nacimiento',
     'checkin.form.nascimento.placeholder': 'Ej: 1992',
     'checkin.form.genero.label': 'Identidad de género',
@@ -324,7 +335,11 @@ const translations: Translations = {
     'checkin.form.go_to_login': '→ Ir a la pantalla de entrada',
     'checkin.form.unexpected_error': 'Error inesperado. Intenta de nuevo.',
     'checkin.form.origem.detail_city': '¿Qué ciudad / estado?',
-    'checkin.form.origem.detail_country': '¿Qué país?'
+    'checkin.form.origem.detail_country': '¿Qué país?',
+    'guide.highlights': 'Destacados',
+    'guide.highlights.count': '{count} en destaque',
+    'guide.also_showing': 'También en cartelera',
+    'guide.also_showing.count': '{count} simultáneas',
   },
   fr: {
     'venue.name': 'MAM Salvador',
@@ -397,6 +412,7 @@ const translations: Translations = {
     'checkin.form.cpf.placeholder': '000.000.000-00',
     'checkin.form.nome.label': 'Nom',
     'checkin.form.nome.placeholder': 'Comment souhaitez-vous être appelé(e) ?',
+    'checkin.form.nome.hint': 'Vous pouvez utiliser un surnom ou simplement votre prénom.',
     'checkin.form.nascimento.label': 'Année de naissance',
     'checkin.form.nascimento.placeholder': 'Ex : 1992',
     'checkin.form.genero.label': 'Identité de genre',
@@ -432,6 +448,10 @@ const translations: Translations = {
     'checkin.form.unexpected_error': 'Erreur inattendue. Veuillez réessayer.',
     'checkin.form.origem.detail_city': 'Quelle ville / quel état ?',
     'checkin.form.origem.detail_country': 'Quel pays ?',
+    'guide.highlights': 'En vedette',
+    'guide.highlights.count': '{count} en vedette',
+    'guide.also_showing': 'Également à l\'affiche',
+    'guide.also_showing.count': '{count} simultanées',
   }
 };
 

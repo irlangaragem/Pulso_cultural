@@ -242,8 +242,8 @@ export function VisitorLogin() {
           width: '100%',
           display: 'flex',
           justifyContent: 'center',
-          marginTop: 20,
-          marginBottom: 10,
+          marginTop: 68,
+          marginBottom: 42,
           position: 'relative',
           zIndex: 5,
         }}>

@@ -171,8 +171,17 @@ export function CheckIn() {
     return t('checkin.form.origem.detail_city');
   };
 
+  // Name validation: ≥1 word, ≥2 chars, not purely numeric or symbols
+  const isValidName = (() => {
+    const n = nome.trim();
+    if (n.length < 2) return false;                    // too short
+    if (/^\d+$/.test(n)) return false;                 // numeric-only: "12345"
+    if (!/[a-zA-ZÀ-ÿ]/.test(n)) return false;         // no alphabetic chars at all
+    return n.split(/\s+/).length >= 1;                  // at least 1 word
+  })();
+
   const isFormValid =
-    nome.trim().split(/\s+/).length >= 2 &&
+    isValidName &&
     nascimento.length === 4 && birthNum >= 1904 && birthNum <= new Date().getFullYear() &&
     origem !== '' &&
     (!needsOriginDetail || origemDetalhe.trim().length > 0) &&
@@ -274,6 +283,19 @@ export function CheckIn() {
   return (
     <VisitorLayout>
       <div style={{ padding: '28px 20px 48px', minHeight: '100%' }}>
+        {/* ── PulseSymbol — mesmo componente/posição da tela de Login ── */}
+        <div style={{
+          width: '100%',
+          display: 'flex',
+          justifyContent: 'center',
+          marginTop: 68,
+          marginBottom: 42,
+          position: 'relative',
+          zIndex: 5,
+        }}>
+          <PulseSymbol size={48} />
+        </div>
+
         <div style={{ marginBottom: 28 }}>
           <h1 style={{
             fontFamily: "'Sora', sans-serif",
@@ -329,9 +351,22 @@ export function CheckIn() {
           <TextInput
             id="field-nome"
             value={nome}
-            onChange={e => setNome(e.target.value.replace(/[^a-zA-ZÀ-ÿ\s]/g, ''))}
+            onChange={e => setNome(e.target.value.replace(/[^a-zA-ZÀ-ÿ\s-]/g, ''))}
             placeholder={t('checkin.form.nome.placeholder')}
           />
+          {/* C6: Nickname helper text — aria-describedby linkage */}
+          <p
+            id="field-nome-hint"
+            style={{
+              fontFamily: "'DM Sans', sans-serif",
+              fontSize: 11,
+              color: '#6B5A60',
+              marginTop: 6,
+              marginBottom: 0,
+            }}
+          >
+            {t('checkin.form.nome.hint')}
+          </p>
         </div>
 
         {/* ── Nascimento ── */}
