@@ -13,7 +13,6 @@ import { evaluationRoutes } from './evaluation.routes';
 import { eventRoutes } from './events.routes';
 import { recommendationRoutes } from './recommendation.routes';
 import { cameraRoutes } from './camera.routes';
-import { qrcodeRoutes } from './qrcode.routes';
 
 import { authMiddleware } from '../middlewares/auth.middleware';
 
@@ -90,10 +89,6 @@ routes.use('/analytics', authMiddleware, analyticsRoutes);
 routes.use('/museums', authMiddleware, museumRoutes);
 routes.use('/exhibitions', authMiddleware, exhibitionRoutes);
 routes.use('/', authMiddleware, dashboardRoutes);
-
-// QR Code — management routes protected, image download semi-public (token-based)
-routes.use('/qrcode', authMiddleware, qrcodeRoutes);
-routes.get('/qrcode/:id/image.png', qrcodeRoutes); // Bypass auth for image (token in query)
 
 // Public / Visitor routes
 routes.use('/checkins', checkinRoutes);

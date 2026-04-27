@@ -49,7 +49,7 @@ export function Login() {
           position: 'relative',
           zIndex: 1
         }}>
-          <PulseSymbol size={96} animated />
+          <PulseSymbol size={80} />
         </div>
 
         {/* Identity Alignment */}
@@ -165,8 +165,12 @@ export function Login() {
           </form>
         </motion.div>
 
-        {/* Support Section — password recovery handled via IT support channel, not self-service */}
-        <div style={{ height: 40 }} />
+        {/* Support Section */}
+        <div className="mt-10 text-center" style={{ position: 'relative', zIndex: 1, paddingBottom: 40 }}>
+           <p className="v-footer-note" style={{ fontSize: 11, color: '#4A3F44' }}>
+             Esqueceu sua senha? <span style={{ color: '#E8554E', cursor: 'pointer', fontWeight: 700 }}>Contate o suporte TI.</span>
+           </p>
+        </div>
       </div>
     </VisitorLayout>
   );

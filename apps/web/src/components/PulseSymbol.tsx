@@ -65,7 +65,7 @@ export interface PulseLockupProps {
 // ══════════════════════════════════════════════════════════════════════════════
 export function PulseSymbol({
   size = 48,
-  animated = true,  // C5A: continuous pulse active by default
+  animated = false,
   label,
   className,
   style,
@@ -88,9 +88,6 @@ export function PulseSymbol({
     .${clsA} { animation: ${kfName} 2400ms ease-out infinite    0ms; }
     .${clsB} { animation: ${kfName} 2400ms ease-out infinite  800ms; }
     .${clsC} { animation: ${kfName} 2400ms ease-out infinite 1600ms; }
-    @media (prefers-reduced-motion: reduce) {
-      .${clsA}, .${clsB}, .${clsC} { animation: none; }
-    }
   ` : '';
 
   return (
