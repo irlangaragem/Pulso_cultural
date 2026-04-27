@@ -37,7 +37,13 @@ routes.use('/camera', cameraRoutes);  // contagens de visão computacional
 // Accepts SEED_SECRET env var OR hardcoded fallback (commit-specific).
 routes.post('/admin/reseed', async (req, res) => {
   const provided = (req.body as any)?.secret || req.query.secret;
-  const expected = process.env.SEED_SECRET || 'pulso-reseed-4ba021cd';
+  const expected = process.env.SEED_SECRET;
+
+  if (!expected) {
+    return res.status(403).json({
+      error: 'SEED_SECRET not configured. Reseed is disabled.'
+    });
+  }
 
   if (!provided || provided !== expected) {
     return res.status(403).json({
@@ -85,6 +91,9 @@ routes.post('/admin/reseed', async (req, res) => {
   }
 });
 
+// Public / Visitor routes (MUST be before the catch-all '/' route)
+routes.use('/checkins', checkinRoutes);
+
 // Protected routes
 routes.use('/analytics', authMiddleware, analyticsRoutes);
 routes.use('/museums', authMiddleware, museumRoutes);
@@ -95,13 +104,10 @@ routes.use('/', authMiddleware, dashboardRoutes);
 routes.use('/qrcode', authMiddleware, qrcodeRoutes);
 routes.get('/qrcode/:id/image.png', qrcodeRoutes); // Bypass auth for image (token in query)
 
-// Public / Visitor routes
-routes.use('/checkins', checkinRoutes);
-
 // TEMP: one-time DB setup — creates pg_stat_statements extension
 routes.get('/admin/setup-db', authMiddleware, async (req, res) => {
   try {
-    await prisma.$executeRawUnsafe('CREATE EXTENSION IF NOT EXISTS pg_stat_statements;');
+    await prisma.$executeRaw`CREATE EXTENSION IF NOT EXISTS pg_stat_statements;`;
     res.json({ ok: true, message: 'Extension pg_stat_statements created (or already exists).' });
   } catch (err: any) {
     res.status(500).json({ ok: false, error: err.message });
