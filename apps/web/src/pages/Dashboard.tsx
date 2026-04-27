@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { SystemHealth } from "../components/SystemHealth";
 import { api } from "../services/api";
@@ -12,7 +12,7 @@ function sendTelemetry(event: string, data?: Record<string, unknown>) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ type: 'info', event, data, timestamp: new Date().toISOString() }),
-  }).catch(() => { /* silent fail ÔÇö telemetry is best-effort */ });
+  }).catch(() => { /* silent fail ã telemetry is best-effort */ });
 }
 
 function sendTelemetryError(event: string, error: unknown) {
@@ -28,13 +28,13 @@ function sendTelemetryError(event: string, error: unknown) {
   }).catch(() => {});
 }
 // ============================================================
-// PULSO CULTURAL ÔÇö Dashboard do Gestor
-// MAM Bahia ┬À Prot├│tipo
+// PULSO CULTURAL ã Dashboard do Gestor
+// MAM Bahia ?? Protítipo
 // ============================================================
 
 // ============================================================
-// PULSO CULTURAL ÔÇö Dashboard do Gestor
-// MAM Bahia ┬À Prot├│tipo
+// PULSO CULTURAL ã Dashboard do Gestor
+// MAM Bahia ?? Protítipo
 // ============================================================
 
 // --- COLORS ---
@@ -238,20 +238,20 @@ function TabRealTime() {
   return (
     <>
       <div style={s.metricsRow}>
-        <MetricCard value={metric1} label="Ocupa├º├úo atual" color={C.coral} large />
+        <MetricCard value={metric1} label="Ocupação atual" color={C.coral} large />
         <MetricCard value={metric2} label="Entradas hoje" color={C.text1} large />
-        <MetricCard value={metric3} label="Sa├¡das hoje" color={C.laranja} large />
-        <MetricCard value={metric4 || "-"} label="Ocupa├º├úo pico" color={C.text2} large />
+        <MetricCard value={metric3} label="Saídas hoje" color={C.laranja} large />
+        <MetricCard value={metric4 || "-"} label="Ocupação pico" color={C.text2} large />
       </div>
 
-      <ChartCard title="Fluxo de visitantes por hora" tag="C├éMERA VS CHECK-IN (PULSO)" minH={260}>
+      <ChartCard title="Fluxo de visitantes por hora" tag="CíMERA VS CHECK-IN (PULSO)" minH={260}>
         <ResponsiveContainer width="100%" height={200}>
           <AreaChart data={trends}>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
             <XAxis dataKey="h" tick={{ fontSize: 10, fill: C.text3, fontFamily: "'Space Mono', monospace" }} axisLine={false} tickLine={false} />
             <YAxis tick={{ fontSize: 10, fill: C.text3, fontFamily: "'Space Mono', monospace" }} axisLine={false} tickLine={false} width={35} />
             <Tooltip content={<CustomTooltip />} />
-            <Area type="monotone" dataKey="sensor" name="Fluxo C├ómera" stroke={C.text3} fill="rgba(107, 90, 96, 0.1)" strokeDasharray="5 5" />
+            <Area type="monotone" dataKey="sensor" name="Fluxo Câmera" stroke={C.text3} fill="rgba(107, 90, 96, 0.1)" strokeDasharray="5 5" />
             <Area type="monotone" dataKey="v" name="Pulsos (Check-in)" stroke={C.coral} fill="url(#barGrad)" fillOpacity={0.4} strokeWidth={3} />
             <defs>
               <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
@@ -262,7 +262,7 @@ function TabRealTime() {
           </AreaChart>
         </ResponsiveContainer>
         <p style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, color: C.text3, textAlign: 'center', marginTop: 12 }}>
-          Ôû▓ TAXA DE ADES├âO M├ëDIA: {trends.length > 0 ? Math.round((trends.reduce((a: number, b: TrendData) => a + b.v, 0) / trends.reduce((a: number, b: TrendData) => a + b.sensor, 0)) * 100) : 0}%
+          ã TAXA DE ADESÃO MÉDIA: {trends.length > 0 ? Math.round((trends.reduce((a: number, b: TrendData) => a + b.v, 0) / trends.reduce((a: number, b: TrendData) => a + b.sensor, 0)) * 100) : 0}%
         </p>
       </ChartCard>
     </>
@@ -270,7 +270,7 @@ function TabRealTime() {
 }
 
 // ============================================================
-// TAB: PERFIL DO P├ÜBLICO
+// TAB: PERFIL DO PíBLICO
 // ============================================================
 interface DemoData {
   gender: { name: string; value: number }[];
@@ -298,7 +298,7 @@ function TabProfile() {
   }, []);
 
   if (loading) {
-    return <div className="text-slate-400 py-12 text-center">Carregando dados demogr├íficos...</div>;
+    return <div className="text-slate-400 py-12 text-center">Carregando dados demográficos...</div>;
   }
 
   const GENDER_COLORS = ["#D4267E", "#E8554E", "#F28C38", "#3D3240"];
@@ -318,12 +318,12 @@ function TabProfile() {
     <>
       <div style={{ ...s.metricsRow, gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))" }}>
         <MetricCard value={demoData.total || 0} label="Visitantes cadastrados" color={C.text1} />
-        <MetricCard value="46%" label="Taxa de ades├úo ao check-in" sub="Meta: >30% Ô£ô" color={C.green} />
+        <MetricCard value="46%" label="Taxa de adesão ao check-in" sub="Meta: >30% ã" color={C.green} />
         <MetricCard value="29 anos" label="Idade mediana" color={C.laranja} />
       </div>
 
       <div style={s.twoCol}>
-        <ChartCard title="Identidade de g├¬nero" minH={200}>
+        <ChartCard title="Identidade de gênero" minH={200}>
           <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
             <div style={{ width: 120, height: 120, flexShrink: 0 }}>
               <ResponsiveContainer width="100%" height="100%">
@@ -354,7 +354,7 @@ function TabProfile() {
         </ChartCard>
       </div>
 
-      <ChartCard title="Distribui├º├úo por idade" tag="ANO DE NASCIMENTO AGRUPADO">
+      <ChartCard title="Distribuição por idade" tag="ANO DE NASCIMENTO AGRUPADO">
         <ResponsiveContainer width="100%" height={180}>
           <BarChart data={demoData.ages || []} barCategoryGap="30%">
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
@@ -366,7 +366,7 @@ function TabProfile() {
         </ResponsiveContainer>
       </ChartCard>
 
-      <ChartCard title="Como soube da exposi├º├úo" tag="PERGUNTA NA ENTRADA">
+      <ChartCard title="Como soube da exposição" tag="PERGUNTA NA ENTRADA">
         <ResponsiveContainer width="100%" height={180}>
           <BarChart data={originWithColors.map((o: { name: string; value: number }) => ({ canal: o.name, v: o.value }))} layout="vertical" barCategoryGap="20%">
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" horizontal={false} />
@@ -382,7 +382,7 @@ function TabProfile() {
 }
 
 // ============================================================
-// TAB: HIST├ôRICO & RECORR├èNCIA
+// TAB: HISTíRICO & RECORRíNCIA
 // ============================================================
 interface StatusResumo {
   camera: number;
@@ -432,21 +432,21 @@ function TabHistory() {
   }, []);
 
   const recurrenceData = [
-    { label: "1┬¬ visita", value: 100 - (resumo?.retorno || 0), color: "#E8554E" },
+    { label: "1ª visita", value: 100 - (resumo?.retorno || 0), color: "#E8554E" },
     { label: "Retorno", value: resumo?.retorno || 0, color: "#48BB78" },
   ];
 
   return (
     <>
       <div style={s.metricsRow}>
-        <MetricCard value={resumo?.camera || 0} label="Total de pulsos hist├│ricos" sub="Pelo sensor de entrada" color={C.text1} large />
+        <MetricCard value={resumo?.camera || 0} label="Total de pulsos histíricos" sub="Pelo sensor de entrada" color={C.text1} large />
         <MetricCard value={resumo?.checkins || 0} label="Check-ins realizados" color={C.laranja} large />
-        <MetricCard value={`${resumo?.retorno || 0}%`} label="Taxa de recorr├¬ncia" sub="Visitantes que retornaram" color={C.green} large />
-        <MetricCard value={`${resumo?.multiplicador || 0}├ù`} label="C├ómera vs. Check-in" sub="Fator de amostragem" color={C.coral} />
+        <MetricCard value={`${resumo?.retorno || 0}%`} label="Taxa de recorrência" sub="Visitantes que retornaram" color={C.green} large />
+        <MetricCard value={`${resumo?.multiplicador || 0}í`} label="Câmera vs. Check-in" sub="Fator de amostragem" color={C.coral} />
       </div>
 
       <div style={s.twoCol}>
-        <ChartCard title="Recorr├¬ncia" minH={200}>
+        <ChartCard title="Recorrência" minH={200}>
           <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
             <div style={{ width: 120, height: 120, flexShrink: 0 }}>
               <ResponsiveContainer width="100%" height="100%">
@@ -467,7 +467,7 @@ function TabHistory() {
         </ChartCard>
       </div>
 
-      <ChartCard title="Fluxo por per├¡odo" tag="ENTRADAS VS SA├ìDAS" minH={260}>
+      <ChartCard title="Fluxo por período" tag="ENTRADAS VS SAíDAS" minH={260}>
         <ResponsiveContainer width="100%" height={200}>
           <AreaChart data={historicoDiario}>
             <defs>
@@ -485,7 +485,7 @@ function TabHistory() {
             <YAxis tick={{ fontSize: 10, fill: C.text3 }} axisLine={false} tickLine={false} width={40} />
             <Tooltip content={<CustomTooltip />} />
             <Area type="monotone" dataKey="entradas" name="Entradas" stroke={C.coral} strokeLinecap={"round"} strokeWidth={2} fill="url(#areaGrad)" />
-            <Area type="monotone" dataKey="saidas" name="Sa├¡das" stroke={C.laranja} strokeLinecap={"round"} strokeWidth={1.5} fill="url(#areaGrad2)" />
+            <Area type="monotone" dataKey="saidas" name="Saídas" stroke={C.laranja} strokeLinecap={"round"} strokeWidth={1.5} fill="url(#areaGrad2)" />
           </AreaChart>
         </ResponsiveContainer>
       </ChartCard>
@@ -494,7 +494,7 @@ function TabHistory() {
 }
 
 // ============================================================
-// TAB: CADASTRO DE EXPOSI├ç├âO
+// TAB: CADASTRO DE EXPOSIã?O
 // ============================================================
 function TabExposition() {
   const [loading, setLoading] = useState(true);
@@ -529,7 +529,7 @@ function TabExposition() {
         setLoading(false);
       })
       .catch(err => {
-        console.error("Erro ao carregar exposi├º├úo:", err);
+        console.error("Erro ao carregar exposição:", err);
         setLoading(false);
       });
   }, []);
@@ -547,13 +547,13 @@ function TabExposition() {
       });
 
       if (response.status === 200) {
-        alert("Exposi├º├úo salva com sucesso!");
+        alert("Exposição salva com sucesso!");
       } else {
-        alert("Erro ao salvar exposi├º├úo.");
+        alert("Erro ao salvar exposição.");
       }
     } catch (err) {
       console.error(err);
-      alert("Erro de conex├úo.");
+      alert("Erro de conexío.");
     } finally {
       setSaving(false);
     }
@@ -562,7 +562,7 @@ function TabExposition() {
 
   // const [outras, setOutras] = useState([
   //   { id: 1, nome: "Walter Smetak", sala: "Galeria 2" },
-  //   { id: 2, nome: "Xil├│", sala: "Espa├ºo Educativo" },
+  //   { id: 2, nome: "Xilí", sala: "Espaío Educativo" },
   // ]);
 
   const [editingObra, setEditingObra] = useState<number | null>(null);
@@ -576,13 +576,13 @@ function TabExposition() {
       <>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 20, marginBottom: 16 }}>
           <h3 style={{ fontFamily: "Sora, sans-serif", fontSize: 16, fontWeight: 700, color: C.text1, margin: 0 }}>Preview do guia</h3>
-          <button style={s.btnSecondary} onClick={() => setShowPreview(false)}>ÔåÉ Voltar ao cadastro</button>
+          <button style={s.btnSecondary} onClick={() => setShowPreview(false)}>ã Voltar ao cadastro</button>
         </div>
         <div style={{ display: "flex", justifyContent: "center" }}>
           <div style={{ width: 375, background: "#110D10", borderRadius: 36, border: "2px solid rgba(255,255,255,0.06)", overflow: "hidden", boxShadow: "0 20px 60px rgba(0,0,0,0.5)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", padding: "14px 28px 8px", color: C.text1, fontSize: 11, fontWeight: 600 }}>
               <span>14:32</span>
-              <span style={{ fontSize: 10, color: C.text3 }}>ÔùÅÔùÅÔùÅÔùÅÔùï</span>
+              <span style={{ fontSize: 10, color: C.text3 }}>ããããã</span>
             </div>
             <div style={{ padding: "0 20px 20px", borderBottom: `1px solid ${C.border}` }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
@@ -615,8 +615,8 @@ function TabExposition() {
     return (
       <>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 20, marginBottom: 16 }}>
-          <h3 style={{ fontFamily: "Sora, sans-serif", fontSize: 16, fontWeight: 700, color: C.text1, margin: 0 }}>Cartaz para impress├úo</h3>
-          <button style={s.btnSecondary} onClick={() => setShowPoster(false)}>ÔåÉ Voltar</button>
+          <h3 style={{ fontFamily: "Sora, sans-serif", fontSize: 16, fontWeight: 700, color: C.text1, margin: 0 }}>Cartaz para impressío</h3>
+          <button style={s.btnSecondary} onClick={() => setShowPoster(false)}>ã Voltar</button>
         </div>
         <div style={{ display: "flex", justifyContent: "center" }}>
           <div style={{ width: 400, height: 560, background: "#110D10", borderRadius: 12, padding: 40, border: "1px solid rgba(255,255,255,0.06)", textAlign: "center" }}>
@@ -633,12 +633,12 @@ function TabExposition() {
   }
 
   if (loading) {
-    return <div style={{ color: C.text3, padding: "40px 0", textAlign: 'center' }}>Carregando dados da exposi├º├úo...</div>;
+    return <div style={{ color: C.text3, padding: "40px 0", textAlign: 'center' }}>Carregando dados da exposição...</div>;
   }
 
   return (
     <>
-      <SectionTitle right="DADOS GERAIS">Exposi├º├úo principal</SectionTitle>
+      <SectionTitle right="DADOS GERAIS">Exposição principal</SectionTitle>
       <div style={s.card}>
         <div style={s.formGrid}>
           <div style={s.formGroup}>
@@ -646,17 +646,17 @@ function TabExposition() {
             <input style={s.formInput} value={expo.nome} onChange={e => setExpo({...expo, nome: e.target.value})} />
           </div>
           <div style={s.formGroup}>
-            <label style={s.formLabel}>Data In├¡cio</label>
+            <label style={s.formLabel}>Data Início</label>
             <input style={s.formInput} type="date" value={expo.inicio} onChange={e => setExpo({...expo, inicio: e.target.value})} />
           </div>
         </div>
         <div style={{ marginTop: 16 }}>
-          <label style={s.formLabel}>Descri├º├úo</label>
+          <label style={s.formLabel}>Descrição</label>
           <textarea style={{ ...s.formInput, minHeight: 60 }} value={expo.descricao} onChange={e => setExpo({...expo, descricao: e.target.value})} />
         </div>
         <div style={{ marginTop: 16, display: 'flex', justifyContent: 'flex-end' }}>
           <button style={s.btnPrimary} onClick={handleSave} disabled={saving}>
-            {saving ? "Salvando..." : "Salvar Altera├º├Áes"}
+            {saving ? "Salvando..." : "Salvar Alteraã?es"}
           </button>
         </div>
       </div>
@@ -668,7 +668,7 @@ function TabExposition() {
             <div>
               <div style={s.formGrid}>
                 <div style={s.formGroup}>
-                  <label style={s.formLabel}>T├¡tulo</label>
+                  <label style={s.formLabel}>Título</label>
                   <input style={s.formInput} value={w.titulo} onChange={e => { const n = [...obras]; n[idx] = {...w, titulo: e.target.value}; setObras(n); }} />
                 </div>
                 <div style={s.formGroup}>
@@ -687,7 +687,7 @@ function TabExposition() {
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <div>
                 <span style={{ color: C.text1, fontSize: 14, fontWeight: 600 }}>{w.titulo}</span>
-                <span style={{ color: C.text3, fontSize: 12, marginLeft: 8 }}>ÔÇö {w.artista}</span>
+                <span style={{ color: C.text3, fontSize: 12, marginLeft: 8 }}>ã {w.artista}</span>
               </div>
               <button onClick={() => setEditingObra(w.id)} style={{ background: "none", border: "none", cursor: "pointer", color: C.coral, fontWeight: 600, fontSize: 12 }}>Editar</button>
             </div>
@@ -707,35 +707,35 @@ function TabExposition() {
       </button>
 
       <div style={{ display: "flex", gap: 12, marginTop: 24 }}>
-        <button style={s.btnPrimary} onClick={() => setShowPreview(true)}>­ƒæü Ver Guia</button>
-        <button style={s.btnSecondary} onClick={() => setShowPoster(true)}>­ƒû¿ Ver Cartaz</button>
+        <button style={s.btnPrimary} onClick={() => setShowPreview(true)}>ã? Ver Guia</button>
+        <button style={s.btnSecondary} onClick={() => setShowPoster(true)}>ã? Ver Cartaz</button>
       </div>
     </>
   );
 }
 
 // ============================================================
-// TAB: RELAT├ôRIO DE IMPACTO
+// TAB: RELATíRIO DE IMPACTO
 // ============================================================
 function TabReport() {
   const highlights = [
-    { label: "Taxa de Ades├úo", value: "48%", sub: "Meta: 30%", color: C.green },
-    { label: "Visitantes ├Ünicos", value: "1,240", sub: "M├¬s atual", color: C.coral },
-    { label: "Tempo M├®dio", value: "42 min", sub: "+12 min vs. papel", color: C.amber },
+    { label: "Taxa de Adesío", value: "48%", sub: "Meta: 30%", color: C.green },
+    { label: "Visitantes únicos", value: "1,240", sub: "Mís atual", color: C.coral },
+    { label: "Tempo Mídio", value: "42 min", sub: "+12 min vs. papel", color: C.amber },
     { label: "Taxa Retorno", value: "32%", sub: "Pessoas que voltaram", color: C.magenta },
   ];
 
   return (
     <>
       <div style={{ ...s.card, background: "linear-gradient(135deg, rgba(232,85,78,0.1), rgba(212,38,126,0.1))", textAlign: "center", padding: 40, border: `1px solid ${C.coral}33` }}>
-        <p style={{ color: C.coral, fontWeight: 800, fontSize: 48, margin: 0, letterSpacing: -1 }}>2.4├ù</p>
+        <p style={{ color: C.coral, fontWeight: 800, fontSize: 48, margin: 0, letterSpacing: -1 }}>2.4í</p>
         <p style={{ fontSize: 16, fontWeight: 600, color: C.text1 }}>Mais engajamento que no livro de papel</p>
         <p style={{ fontSize: 12, color: C.text2, marginTop: 8, maxWidth: 400, margin: '8px auto 0' }}>
-          O sistema digital capturou {highlights[0].value} do fluxo total de visitantes, gerando dados valiosos para presta├º├úo de contas.
+          O sistema digital capturou {highlights[0].value} do fluxo total de visitantes, gerando dados valiosos para prestaã?o de contas.
         </p>
       </div>
       
-      <SectionTitle right="RESUMO DE IMPACTO">Destaques do Per├¡odo</SectionTitle>
+      <SectionTitle right="RESUMO DE IMPACTO">Destaques do Período</SectionTitle>
       <div style={s.metricsRow}>
         {highlights.map((h, i) => (
           <div key={i} style={s.metricCard}>
@@ -747,11 +747,11 @@ function TabReport() {
       </div>
 
       <div style={{ ...s.card, marginTop: 24, padding: 24 }}>
-        <h4 style={{ fontFamily: 'Sora', fontSize: 14, fontWeight: 700, color: C.text1, marginBottom: 16 }}>Pr├│ximos Passos Sugeridos</h4>
+        <h4 style={{ fontFamily: 'Sora', fontSize: 14, fontWeight: 700, color: C.text1, marginBottom: 16 }}>Próximos Passos Sugeridos</h4>
         <ul style={{ paddingLeft: 20, margin: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <li style={{ fontSize: 13, color: C.text2 }}>Expandir o conte├║do da <strong>Sala 3</strong>, que concentra o maior tempo de perman├¬ncia.</li>
-          <li style={{ fontSize: 13, color: C.text2 }}>Implementar notifica├º├úo de retorno para visitantes do ├║ltimo semestre.</li>
-          <li style={{ fontSize: 13, color: C.text2 }}>Gerar relat├│rio para prestadores de servi├ºos de acessibilidade.</li>
+          <li style={{ fontSize: 13, color: C.text2 }}>Expandir o conteído da <strong>Sala 3</strong>, que concentra o maior tempo de permanência.</li>
+          <li style={{ fontSize: 13, color: C.text2 }}>Implementar notificaã?o de retorno para visitantes do último semestre.</li>
+          <li style={{ fontSize: 13, color: C.text2 }}>Gerar relatírio para prestadores de serviíos de acessibilidade.</li>
         </ul>
       </div>
     </>
@@ -764,11 +764,11 @@ function TabReport() {
 export function Dashboard() {
   const [tab, setTab] = useState("realtime");
   const tabs = [
-    { id: "realtime", label: "Tempo real", icon: "ÔÜí" },
-    { id: "profile", label: "P├║blico", icon: "­ƒæÑ" },
-    { id: "history", label: "Hist├│rico", icon: "­ƒôè" },
-    { id: "expo", label: "Exposi├º├úo", icon: "­ƒû╝" },
-    { id: "report", label: "Impacto", icon: "­ƒôï" },
+    { id: "realtime", label: "Tempo real", icon: "ã" },
+    { id: "profile", label: "Público", icon: "ã?" },
+    { id: "history", label: "Histórico", icon: "ã?" },
+    { id: "expo", label: "Exposição", icon: "ã?" },
+    { id: "report", label: "Impacto", icon: "ã?" },
   ];
 
   return (
