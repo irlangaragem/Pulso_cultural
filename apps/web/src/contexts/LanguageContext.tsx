@@ -110,7 +110,10 @@ const translations: Translations = {
     'checkin.form.go_to_login': '→ Ir para a tela de entrada',
     'checkin.form.unexpected_error': 'Erro inesperado. Tente novamente.',
     'checkin.form.origem.detail_city': 'Qual cidade / estado?',
-    'checkin.form.origem.detail_country': 'Qual país?'
+    'checkin.form.origem.detail_country': 'Qual país?',
+    'checkin.form.nome.hint': 'Pode ser seu primeiro nome ou apelido',
+    'guide.highlights': 'Destaques da exposição',
+    'guide.also_showing': 'Também em exibição'
   },
   en: {
     'venue.name': 'MAM Salvador',
@@ -217,7 +220,10 @@ const translations: Translations = {
     'checkin.form.go_to_login': '→ Go to login screen',
     'checkin.form.unexpected_error': 'Unexpected error. Please try again.',
     'checkin.form.origem.detail_city': 'Which city / state?',
-    'checkin.form.origem.detail_country': 'Which country?'
+    'checkin.form.origem.detail_country': 'Which country?',
+    'checkin.form.nome.hint': 'Can be your first name or nickname',
+    'guide.highlights': 'Exhibition highlights',
+    'guide.also_showing': 'Also showing'
   },
   es: {
     'venue.name': 'MAM Salvador',
@@ -324,7 +330,10 @@ const translations: Translations = {
     'checkin.form.go_to_login': '→ Ir a la pantalla de entrada',
     'checkin.form.unexpected_error': 'Error inesperado. Intenta de nuevo.',
     'checkin.form.origem.detail_city': '¿Qué ciudad / estado?',
-    'checkin.form.origem.detail_country': '¿Qué país?'
+    'checkin.form.origem.detail_country': '¿Qué país?',
+    'checkin.form.nome.hint': 'Puede ser tu primer nombre o apodo',
+    'guide.highlights': 'Destacados de la exposición',
+    'guide.also_showing': 'También en exhibición'
   },
   fr: {
     'venue.name': 'MAM Salvador',
@@ -432,6 +441,9 @@ const translations: Translations = {
     'checkin.form.unexpected_error': 'Erreur inattendue. Veuillez réessayer.',
     'checkin.form.origem.detail_city': 'Quelle ville / quel état ?',
     'checkin.form.origem.detail_country': 'Quel pays ?',
+    'checkin.form.nome.hint': 'Peut être votre prénom ou surnom',
+    'guide.highlights': 'Points forts de l\'exposition',
+    'guide.also_showing': 'Également à l\'affiche'
   }
 };
 

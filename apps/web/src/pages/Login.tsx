@@ -49,7 +49,7 @@ export function Login() {
           position: 'relative',
           zIndex: 1
         }}>
-          <PulseSymbol size={80} />
+          <PulseSymbol size={96} />
         </div>
 
         {/* Identity Alignment */}
@@ -168,7 +168,7 @@ export function Login() {
         {/* Support Section */}
         <div className="mt-10 text-center" style={{ position: 'relative', zIndex: 1, paddingBottom: 40 }}>
            <p className="v-footer-note" style={{ fontSize: 11, color: '#4A3F44' }}>
-             Esqueceu sua senha? <span style={{ color: '#E8554E', cursor: 'pointer', fontWeight: 700 }}>Contate o suporte TI.</span>
+             Suporte: <span style={{ color: '#E8554E', fontWeight: 700 }}>ti@mam.ba.gov.br</span>
            </p>
         </div>
       </div>
