@@ -104,16 +104,7 @@ function App() {
           <Route path="/card" element={<CardShare />} />
           <Route path="/feedback" element={<Feedback />} />
 
-          {/* Protected routes — must be before catch-all */}
-          <Route element={<ProtectedRoute />}>
-            <Route path="/dashboard" element={
-              <DashErrorBoundary>
-                <Dashboard />
-              </DashErrorBoundary>
-            } />
-          </Route>
-
-          {/* 404 — branded recovery (must be last) */}
+          {/* 404 — branded recovery */}
           <Route path="*" element={
             <div style={{
               background: '#0E0B0D',
@@ -138,6 +129,14 @@ function App() {
               </button>
             </div>
           } />
+
+          <Route element={<ProtectedRoute />}>
+            <Route path="/dashboard" element={
+              <DashErrorBoundary>
+                <Dashboard />
+              </DashErrorBoundary>
+            } />
+          </Route>
         </Routes>
       </Suspense>
     </ErrorBoundary>
