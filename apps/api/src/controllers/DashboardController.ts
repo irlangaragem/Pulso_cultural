@@ -79,7 +79,8 @@ export const DashboardController = {
         having: { visitorId: { _count: { gt: 1 } } }
       });
 
-      const returnRate = totalCheckins > 0 ? Math.round((returns.length / totalCheckins) * 100) : 0;
+      const totalVisitors = await prisma.visitor.count();
+      const returnRate = totalVisitors > 0 ? Math.round((returns.length / totalVisitors) * 100) : 0;
 
       return res.json({
         camera: totalCamera,
@@ -88,6 +89,7 @@ export const DashboardController = {
         multiplicador: totalCheckins > 0 ? (totalCamera / totalCheckins).toFixed(1) : 0
       });
     } catch (error) {
+       console.error('Dashboard /historico error:', error);
        return res.status(500).json({ error: 'Internal server error' });
     }
   },

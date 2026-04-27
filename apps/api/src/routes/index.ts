@@ -32,16 +32,15 @@ routes.use('/recommendations', recommendationRoutes);
 routes.use('/camera', cameraRoutes);  // contagens de visão computacional
 
 // ── Emergency admin reseed (public but secret-protected) ─────────────────
-// POST /admin/reseed { secret: "..." }  OR  GET /admin/reseed?secret=...
-// Accepts SEED_SECRET env var OR hardcoded fallback (commit-specific).
+// POST /admin/reseed { secret: "..." }
+// Requires SEED_SECRET env var — no hardcoded fallback for security.
 routes.post('/admin/reseed', async (req, res) => {
   const provided = (req.body as any)?.secret || req.query.secret;
-  const expected = process.env.SEED_SECRET || 'pulso-reseed-4ba021cd';
+  const expected = process.env.SEED_SECRET;
 
-  if (!provided || provided !== expected) {
+  if (!expected || !provided || provided !== expected) {
     return res.status(403).json({
-      error: 'Forbidden',
-      env: process.env.SEED_SECRET ? 'SEED_SECRET set' : 'using fallback'
+      error: 'Forbidden'
     });
   }
 
@@ -57,8 +56,9 @@ routes.post('/admin/reseed', async (req, res) => {
         where: { email: 'admin@mam.ba.gov.br' },
         data: { passwordHash, active: true }
       });
-    } catch {
+    } catch (updateErr) {
       // User doesn't exist — upsert with museum
+      console.warn('[reseed] User update failed, creating new:', (updateErr as Error).message);
       const museum = await prisma.museum.upsert({
         where: { slug: 'mam-bahia' },
         update: {},
@@ -84,19 +84,20 @@ routes.post('/admin/reseed', async (req, res) => {
   }
 });
 
-// Protected routes
+// Public / Visitor routes — MUST be registered BEFORE the catch-all '/' route
+routes.use('/checkins', checkinRoutes);
+
+// Protected routes (require auth)
 routes.use('/analytics', authMiddleware, analyticsRoutes);
 routes.use('/museums', authMiddleware, museumRoutes);
 routes.use('/exhibitions', authMiddleware, exhibitionRoutes);
+// IMPORTANT: '/' catch-all MUST be the LAST route — it matches everything
 routes.use('/', authMiddleware, dashboardRoutes);
-
-// Public / Visitor routes
-routes.use('/checkins', checkinRoutes);
 
 // TEMP: one-time DB setup — creates pg_stat_statements extension
 routes.get('/admin/setup-db', authMiddleware, async (req, res) => {
   try {
-    await prisma.$executeRawUnsafe('CREATE EXTENSION IF NOT EXISTS pg_stat_statements;');
+    await prisma.$executeRaw`CREATE EXTENSION IF NOT EXISTS pg_stat_statements`;
     res.json({ ok: true, message: 'Extension pg_stat_statements created (or already exists).' });
   } catch (err: any) {
     res.status(500).json({ ok: false, error: err.message });

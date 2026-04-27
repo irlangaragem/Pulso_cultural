@@ -28,6 +28,9 @@ export class CheckinController {
       if (!cpf) {
         return res.status(400).json({ error: 'CPF is required' });
       }
+      if (!exhibitionId) {
+        return res.status(400).json({ error: 'exhibitionId is required' });
+      }
       const cpfHash = await HashService.hashCPF(cpf);
 
       // Find or create visitor
@@ -87,42 +90,52 @@ export class CheckinController {
 
     try {
       const results = [];
+      const skipped = [];
       const validChannels = ['REDES_SOCIAIS', 'INDICACAO', 'PASSOU_NA_FRENTE', 'JORNAL_TV', 'ESCOLA_FACULDADE', 'OUTRO'];
       const validOrigins = ['SALVADOR', 'INTERIOR_BA', 'OUTRO_ESTADO', 'INTERNACIONAL'];
 
-      for (const item of checkins) {
-        if (!item.cpf && !item.cpfHash) continue; // Skip invalid entries
-        
-        const cpfHash = item.cpfHash || await HashService.hashCPF(item.cpf);
-        
-        const safeOrigin = validOrigins.includes(item.origin) ? item.origin : 'SALVADOR';
-        const safeChannel = validChannels.includes(item.channel) ? item.channel : 'OUTRO';
+      await prisma.$transaction(async (tx) => {
+        for (const item of checkins) {
+          if (!item.cpf && !item.cpfHash) {
+            skipped.push({ reason: 'missing cpf', name: item.name });
+            continue;
+          }
+          if (!item.exhibitionId) {
+            skipped.push({ reason: 'missing exhibitionId', name: item.name });
+            continue;
+          }
+          
+          const cpfHash = item.cpfHash || await HashService.hashCPF(item.cpf);
+          
+          const safeOrigin = validOrigins.includes(item.origin) ? item.origin : 'SALVADOR';
+          const safeChannel = validChannels.includes(item.channel) ? item.channel : 'OUTRO';
 
-        let visitor = await prisma.visitor.findUnique({ where: { cpfHash } });
-        if (!visitor) {
-          visitor = await prisma.visitor.create({
+          let visitor = await tx.visitor.findUnique({ where: { cpfHash } });
+          if (!visitor) {
+            visitor = await tx.visitor.create({
+              data: {
+                cpfHash,
+                name: item.name || 'Visitante',
+                birthYear: item.birthYear || new Date().getFullYear(),
+                gender: item.gender || 'PREFIRO_NAO_DIZER',
+                origin: safeOrigin
+              }
+            });
+          }
+
+          const checkin = await tx.checkin.create({
             data: {
-              cpfHash,
-              name: item.name || 'Visitante',
-              birthYear: item.birthYear || new Date().getFullYear(),
-              gender: item.gender || 'PREFIRO_NAO_DIZER',
-              origin: safeOrigin
+              visitorId: visitor.id,
+              exhibitionId: item.exhibitionId,
+              channel: safeChannel,
+              createdAt: item.timestamp ? new Date(item.timestamp) : new Date()
             }
           });
+          results.push(checkin);
         }
+      });
 
-        const checkin = await prisma.checkin.create({
-          data: {
-            visitorId: visitor.id,
-            exhibitionId: item.exhibitionId || 'default-exhibition',
-            channel: safeChannel,
-            createdAt: item.timestamp ? new Date(item.timestamp) : new Date()
-          }
-        });
-        results.push(checkin);
-      }
-
-      return res.status(201).json({ success: true, count: results.length });
+      return res.status(201).json({ success: true, count: results.length, skipped: skipped.length });
     } catch (error) {
       console.error('Batch checkin error:', error);
       return res.status(500).json({ error: 'Internal server error' });
@@ -147,8 +160,7 @@ export class CheckinController {
       }
 
       // Privacy: Only return the first name and minimal info
-      // Complying with "Dashboard Aggregates Only" and minimizing PII return.
-      const firstName = visitor.name.split(' ')[0];
+      const firstName = (visitor.name || 'Visitante').split(' ')[0];
 
       return res.status(200).json({
         success: true,
@@ -234,7 +246,8 @@ export class CheckinController {
         entries,
         exits
       });
-    } catch {
+    } catch (error) {
+      console.error('getStats error:', error);
       return res.status(500).json({ error: 'Internal server error' });
     }
   }
@@ -266,7 +279,8 @@ export class CheckinController {
       });
 
       return res.status(201).json(count);
-    } catch {
+    } catch (error) {
+      console.error('simulateCount error:', error);
       return res.status(500).json({ error: 'Internal server error' });
     }
   }

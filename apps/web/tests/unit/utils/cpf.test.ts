@@ -1,39 +1,38 @@
 import { describe, it, expect } from 'vitest';
-import { formatCPF, isValidCPF } from './cpf';
+import { formatCPF, isValidCPF } from '../../../src/utils/cpf';
 
-describe('CPF Utilities', () => {
+describe('Utilitários de CPF', () => {
   describe('formatCPF', () => {
-    it('should format numeric strings', () => {
+    it('deve formatar strings numéricas', () => {
       expect(formatCPF('12345678901')).toBe('123.456.789-01');
     });
 
-    it('should not format strings with less than 11 digits', () => {
+    it('não deve formatar strings com menos de 11 dígitos', () => {
       expect(formatCPF('123')).toBe('123');
     });
 
-    it('should strip non-numeric characters before formatting', () => {
+    it('deve remover caracteres não-numéricos antes de formatar', () => {
       expect(formatCPF('123.456.789-01')).toBe('123.456.789-01');
       expect(formatCPF('abc123def')).toBe('123');
     });
   });
 
   describe('isValidCPF', () => {
-    it('should return true for a valid CPF', () => {
-      // Valid CPF for test
+    it('deve retornar true para CPF válido', () => {
       expect(isValidCPF('523.513.910-04')).toBe(true);
     });
 
-    it('should return false for an invalid CPF', () => {
+    it('deve retornar false para CPF inválido', () => {
       expect(isValidCPF('111.111.111-11')).toBe(false);
       expect(isValidCPF('123.456.789-00')).toBe(false);
     });
 
-    it('should return false for empty or malformed strings', () => {
+    it('deve retornar false para strings vazias ou malformadas', () => {
       expect(isValidCPF('')).toBe(false);
       expect(isValidCPF('123')).toBe(false);
     });
 
-    it('should return true for the master key (000.000.000-00)', () => {
+    it('deve retornar true para a chave mestra (000.000.000-00)', () => {
       expect(isValidCPF('000.000.000-00')).toBe(true);
       expect(isValidCPF('00000000000')).toBe(true);
     });

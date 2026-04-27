@@ -172,7 +172,8 @@ export function CheckIn() {
   };
 
   const isFormValid =
-    nome.trim().split(/\s+/).length >= 2 &&
+    nome.trim().length >= 2 &&
+    /[a-zA-ZÀ-ÿ]/.test(nome.trim()) &&
     nascimento.length === 4 && birthNum >= 1904 && birthNum <= new Date().getFullYear() &&
     origem !== '' &&
     (!needsOriginDetail || origemDetalhe.trim().length > 0) &&
@@ -332,7 +333,16 @@ export function CheckIn() {
             onChange={e => setNome(e.target.value.replace(/[^a-zA-ZÀ-ÿ\s]/g, ''))}
             placeholder={t('checkin.form.nome.placeholder')}
           />
-        </div>
+          <p style={{
+            fontFamily: "'DM Sans', sans-serif",
+            fontSize: 11,
+            color: '#6B5A60',
+            marginTop: 6,
+            marginBottom: 0,
+            marginLeft: 4,
+          }}>
+            {t('checkin.form.nome.hint') || 'Pode ser seu primeiro nome ou apelido'}
+          </p>
 
         {/* ── Nascimento ── */}
         <div style={sectionStyle}>
