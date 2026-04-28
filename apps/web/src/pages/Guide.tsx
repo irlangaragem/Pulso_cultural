@@ -332,7 +332,7 @@ export function Guide() {
           })}
 
           {/* Other exhibitions */}
-          <h2 className="v-section-title" style={{ marginTop: 32, marginBottom: 14 }}>Também em cartaz</h2>
+          <h2 className="v-section-title" style={{ marginTop: 32, marginBottom: 14 }}>{t('guide.other_exhibitions')}</h2>
           {OTHER_EXPOS.map((ex, i) => (
             <div
               key={i}
