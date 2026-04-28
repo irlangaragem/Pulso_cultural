@@ -37,3 +37,10 @@ push_error.log
 plano_texto.txt
 *.docx
 build_errors*.txt
+tsc_errors*.txt
+web_dev_log.txt
+Captura\ de\ tela*.png
+*.tmp.png
+
+# User-uploaded files (cover images via /uploads endpoint) — runtime data, not source
+apps/api/uploads/

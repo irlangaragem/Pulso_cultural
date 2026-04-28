@@ -32,14 +32,14 @@ describe('API Schemas', () => {
   describe('HistoricoSchema', () => {
     it('should validate an array of history items', () => {
        const data = [
-         { dia: '2023-01-01', entradas: 10, saidas: 8 },
-         { dia: '2023-01-02', entradas: 15, saidas: 12 }
+         { data: '2023-01-01', entradas: 10, saidas: 8 },
+         { data: '2023-01-02', entradas: 15, saidas: 12 }
        ];
        expect(HistoricoSchema.parse(data)).toEqual(data);
     });
 
     it('should fail on invalid data', () => {
-       expect(() => HistoricoSchema.parse([{ dia: 123 }])).toThrow();
+       expect(() => HistoricoSchema.parse([{ data: 123 }])).toThrow();
     });
   });
 });

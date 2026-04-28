@@ -33,9 +33,9 @@ describe('CPF Utilities', () => {
       expect(isValidCPF('123')).toBe(false);
     });
 
-    it('should return true for the master key (000.000.000-00)', () => {
-      expect(isValidCPF('000.000.000-00')).toBe(true);
-      expect(isValidCPF('00000000000')).toBe(true);
+    it('should reject the all-zeros CPF (master key removed, SEC-15)', () => {
+      expect(isValidCPF('000.000.000-00')).toBe(false);
+      expect(isValidCPF('00000000000')).toBe(false);
     });
   });
 });

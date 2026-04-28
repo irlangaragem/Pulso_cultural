@@ -18,12 +18,19 @@ const CANAIS = [
   { id: 'Outro',            key: 'source.other' },
 ];
 
+const CHANNEL_MAP: Record<string, string> = {
+  'Redes sociais': 'REDES_SOCIAIS',
+  'Indicação': 'INDICACAO',
+  'Passei na frente': 'PASSOU_NA_FRENTE',
+  'Jornal / TV': 'JORNAL_TV',
+  'Escola / faculdade': 'ESCOLA_FACULDADE',
+  'Outro': 'OUTRO',
+};
+
 type IdentityMode = 'cpf' | 'email';
 
 function isValidEmail(email: string) {
   const v = email.trim();
-  // Must have exactly one @, non-empty local part,
-  // domain with no leading/trailing/consecutive dots, TLD >= 2 chars.
   return /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*\.[a-zA-Z]{2,}$/.test(v);
 }
 
@@ -31,12 +38,10 @@ export function VisitorLogin() {
   const navigate = useNavigate();
   const { t, language } = useLanguage();
 
-  // ── Identity type: PT defaults to CPF, others to email ──
   const [identityMode, setIdentityMode] = useState<IdentityMode>(
     language === 'pt' ? 'cpf' : 'email'
   );
 
-  // Keep identityMode in sync when language changes (only if user hasn't made a manual choice)
   const [userChoseIdentity, setUserChoseIdentity] = useState(false);
   useEffect(() => {
     if (!userChoseIdentity) {
@@ -44,13 +49,11 @@ export function VisitorLogin() {
     }
   }, [language, userChoseIdentity]);
 
-  // ── Form values ──
   const [cpf,           setCpf]          = useState('');
   const [email,         setEmail]        = useState('');
   const [como,          setComo]         = useState('');
   const [comoOutroText, setComoOutroText] = useState('');
 
-  // ── UI state ──
   const [error,         setError]        = useState<string | null>(null);
   const [loading,       setLoading]      = useState(false);
   const [success,       setSuccess]      = useState(false);
@@ -59,24 +62,22 @@ export function VisitorLogin() {
 
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // ── Recognize returning visitor (hash-only, no raw PII) ──
+  // Returning visitor recognition uses a local-only SHA-256 hash of the CPF
+  // ("this device has seen this person"). The hash is never sent to the API.
   useEffect(() => {
-    const storedHash = localStorage.getItem('pulso:return_hash');
+    const storedHash = localStorage.getItem('pulso:local_dedup_hash');
     if (storedHash) {
       setIdentityMode('cpf');
-      // Look up by hash directly — no raw CPF stored
       const visitors = localDb.getVisitors();
       const visitor = visitors.find(v => v.cpfHash === storedHash);
       if (visitor) setReturningUser(visitor.name.split(' ')[0]);
     }
-    const storedEHash = localStorage.getItem('pulso:return_ehash');
+    const storedEHash = localStorage.getItem('pulso:local_dedup_ehash');
     if (storedEHash && !storedHash) {
-      // Don't pre-fill email — just set the mode so the UI is correct
       setIdentityMode('email');
     }
   }, []);
 
-  // ── Handlers ──
   const handleCPFChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setCpf(formatCPF(e.target.value));
     setError(null);
@@ -91,15 +92,12 @@ export function VisitorLogin() {
     setIdentityMode(mode);
     setUserChoseIdentity(true);
     setError(null);
-    // Clear values when switching
     if (mode === 'cpf') setEmail('');
     if (mode === 'email') setCpf('');
     setTimeout(() => inputRef.current?.focus(), 100);
   };
 
-  // ── Computed ──
-    const rawCpf     = cpf.replace(/\D/g, '');
-  const isMasterKey = rawCpf === '00000000000';
+  const rawCpf = cpf.replace(/\D/g, '');
 
   const identifierReady = identityMode === 'cpf'
     ? rawCpf.length === 11
@@ -108,23 +106,11 @@ export function VisitorLogin() {
   const newVisitorComplete = identifierReady &&
     (como === 'Outro' ? comoOutroText.trim().length > 0 : como !== '');
 
-  const isComplete = isMasterKey || (returningUser ? identifierReady : newVisitorComplete);
+  const isComplete = returningUser ? identifierReady : newVisitorComplete;
 
-  // ── Submit ──
   const handleSubmit = async () => {
     if (!isComplete) return;
 
-    // Master key shortcut: always go to registration tab, but keep the CPF
-    if (isMasterKey) {
-      const qp = new URLSearchParams();
-      qp.set('cpf', cpf);
-      if (como) qp.set('como', como);
-      if (como === 'Outro' && comoOutroText) qp.set('comoOutroText', comoOutroText);
-      navigate(`/checkin?${qp.toString()}`);
-      return;
-    }
-
-    // Validate identity
     if (identityMode === 'cpf' && !isValidCPF(cpf)) {
       if ('vibrate' in navigator) navigator.vibrate([30, 20, 30]);
       setError(t('error.invalid_cpf'));
@@ -142,7 +128,6 @@ export function VisitorLogin() {
     let currentSuccess = false;
 
     try {
-      // ── CPF flow ──
       if (identityMode === 'cpf') {
         let visitor = await localDb.getVisitorByCPF(rawCpf);
 
@@ -164,68 +149,65 @@ export function VisitorLogin() {
         }
 
         if (visitor) {
-          const channelMap: Record<string, string> = {
-            'Redes sociais': 'REDES_SOCIAIS', 'Indicação': 'INDICACAO',
-            'Passei na frente': 'PASSOU_NA_FRENTE', 'Jornal / TV': 'JORNAL_TV',
-            'Escola / faculdade': 'ESCOLA_FACULDADE', 'Outro': 'OUTRO',
-          };
-          const checkinData = { cpf: rawCpf, exhibitionId: 'default-exhibition', channel: channelMap[como] || 'OUTRO' };
+          const channel = CHANNEL_MAP[como] || 'OUTRO';
+          const checkinPayload = { cpf: rawCpf, exhibitionId: 'default-exhibition', channel };
+          let posted = false;
           try {
-            await api.post('/checkins', checkinData);
+            await api.post('/checkins', checkinPayload);
+            posted = true;
           } catch {
-            const { cpf: _, ...safe } = checkinData;
-            localDb.addToSyncQueue({ ...safe, cpfHash: visitor.cpfHash, name: visitor.name });
+            // Offline — enqueue with raw cpf so the backend can hash it on retry.
+            localDb.addToSyncQueue({
+              cpf: rawCpf,
+              name: visitor.name,
+              birthYear: visitor.birthYear,
+              gender: visitor.gender,
+              origin: visitor.origin,
+              exhibitionId: 'default-exhibition',
+              channel,
+            });
           }
-          // Store hash for returning-user recognition (never raw CPF)
-          if (visitor.cpfHash) localStorage.setItem('pulso:return_hash', visitor.cpfHash);
+          if (visitor.cpfHash) localStorage.setItem('pulso:local_dedup_hash', visitor.cpfHash);
           currentSuccess = true;
           setSuccess(true);
-          setTimeout(() => navigate('/guide'), 1500);
+          if (!posted) {
+            // tell the user we will sync later, but still proceed
+            setTimeout(() => navigate('/guide'), 1500);
+          } else {
+            setTimeout(() => navigate('/guide'), 1500);
+          }
         } else {
-          const qp = new URLSearchParams();
-          qp.set('cpf', cpf);
-          if (como) qp.set('como', como);
-          if (como === 'Outro' && comoOutroText) qp.set('comoOutroText', comoOutroText);
-          navigate(`/checkin?${qp.toString()}`);
+          navigate('/checkin', { state: { cpf: rawCpf, como, comoOutroText } });
         }
-      }
-
-      // ── Email flow ──
-      if (identityMode === 'email') {
+      } else {
         let found = false;
         try {
           const res = await api.post('/api/v1/users/identify', { email });
           if (res.data?.success) {
             found = true;
             currentSuccess = true;
-            // Hash email before storing — never raw PII (LGPD compliance)
             crypto.subtle.digest('SHA-256', new TextEncoder().encode(email.trim().toLowerCase()))
               .then(buf => {
                 const hash = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
-                localStorage.setItem('pulso:return_ehash', hash);
+                localStorage.setItem('pulso:local_dedup_ehash', hash);
               }).catch(() => {});
-            // Remove legacy raw-email key if present from old versions
-            localStorage.removeItem('pulso:return_email');
-            const channelMap: Record<string, string> = {
-              'Redes sociais': 'REDES_SOCIAIS', 'Indicação': 'INDICACAO',
-              'Passei na frente': 'PASSOU_NA_FRENTE', 'Jornal / TV': 'JORNAL_TV',
-              'Escola / faculdade': 'ESCOLA_FACULDADE', 'Outro': 'OUTRO',
-            };
-            await api.post('/checkins', { email, exhibitionId: 'default-exhibition', channel: channelMap[como] || 'OUTRO' }).catch(() => {});
+            const channel = CHANNEL_MAP[como] || 'OUTRO';
+            try {
+              await api.post('/checkins', { email, exhibitionId: 'default-exhibition', channel });
+            } catch {
+              localDb.addToSyncQueue({ email, exhibitionId: 'default-exhibition', channel });
+            }
             setSuccess(true);
             setTimeout(() => navigate('/guide'), 1500);
           }
-        } catch { /* 404 – new user — continue to checkin */ }
+        } catch { /* 404 — new user */ }
 
         if (!found) {
-          const qp = new URLSearchParams();
-          qp.set('email', email);
-          if (como) qp.set('como', como);
-          navigate(`/checkin?${qp.toString()}`);
+          navigate('/checkin', { state: { email, como } });
         }
       }
     } catch (err) {
-      console.error('[VisitorLogin] Unexpected submit error:', err);
+      console.error('[VisitorLogin] submit error:', err);
       setError('Ocorreu um erro inesperado. Tente novamente.');
     } finally {
       if (!currentSuccess) setLoading(false);
@@ -237,7 +219,7 @@ export function VisitorLogin() {
       <div className="visitor-screen">
         <div className="visitor-glow" />
 
-        {/* ── Centered PulseSymbol above wordmark ── */}
+        {/* Pulse symbol + wordmark */}
         <div style={{
           width: '100%',
           display: 'flex',
@@ -250,41 +232,42 @@ export function VisitorLogin() {
           <PulseSymbol size={48} />
         </div>
 
-        {/* Wordmark */}
         <h1 className="v-wordmark" style={{ marginTop: 0, marginBottom: -4 }}>PULSO</h1>
         <p className="v-wordmark-sub">CULTURAL</p>
 
-        {/* Venue tag */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, margin: '14px 0 20px', position: 'relative', zIndex: 1, fontFamily: "'Sora', sans-serif", fontSize: 13 }}>
+        {/* Venue line: "MAM Salvador · Aberto agora" */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 8,
+          margin: '14px 0 20px',
+          position: 'relative',
+          zIndex: 1,
+          fontFamily: "'Sora', sans-serif",
+          fontSize: 13,
+        }}>
           <span className="v-venue-dot" />
           <span style={{ color: '#F5ECE4', fontWeight: 700 }}>{t('venue.name')}</span>
           <span style={{ color: '#6B5A60' }}>·</span>
           <span style={{ color: '#48BB78', fontWeight: 400 }}>{t('venue.status')}</span>
         </div>
 
-        {/* Exhibition */}
         <p className="v-expo-label" style={{ marginBottom: 6 }}>{t('exhibition.label')}</p>
         <h2 className="v-expo-title" style={{ marginBottom: 20 }}>{t('exhibition.title')}</h2>
 
-        {/* CTA text */}
         <p className="v-cta-text" style={{ marginTop: 0, marginBottom: 20 }}>
           {returningUser ? (
             <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-              {t('checkin.cta.returning', { name: '' }).replace(/!|👋/g, '').trim()}{' '}
-              <span style={{ color: '#E8554E' }}>{returningUser}</span>! 👋
+              Bem-vindo de volta,{' '}
+              <span style={{ color: '#E8554E' }}>{returningUser}</span>! 👋{' '}
+              Dê seu pulso e acesse o guia.
             </motion.span>
           ) : t('checkin.cta')}
         </p>
 
-        {/* ── Divider ── */}
         <div style={{ width: '100%', height: 1, background: 'rgba(255,255,255,0.08)', margin: '4px 0 20px', zIndex: 1 }} />
 
-        {/* ════════════════════════════════════════
-            IDENTITY SELECTOR — always visible
-            CPF is default for PT; Email is default
-            for EN/ES/FR. Both options are ALWAYS
-            clickable in every language.
-        ════════════════════════════════════════ */}
         <AnimatePresence>
           {(true || userChoseIdentity) && (
             <motion.div
@@ -299,8 +282,6 @@ export function VisitorLogin() {
                 {t('identity.question')}
               </span>
               <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-
-                {/* ── CPF option ── */}
                 <button
                   type="button"
                   onClick={() => handleIdentitySwitch('cpf')}
@@ -327,7 +308,6 @@ export function VisitorLogin() {
                   </span>
                 </button>
 
-                {/* ── Email option — NOW FULLY ENABLED ── */}
                 <button
                   type="button"
                   onClick={() => handleIdentitySwitch('email')}
@@ -353,16 +333,11 @@ export function VisitorLogin() {
                     {t('identity.email_hint')}
                   </span>
                 </button>
-
               </div>
             </motion.div>
           )}
         </AnimatePresence>
 
-
-        {/* ════════════════════════════════════════
-            IDENTITY INPUT (animated swap)
-        ════════════════════════════════════════ */}
         <AnimatePresence mode="wait">
           {identityMode === 'cpf' ? (
             <motion.div
@@ -416,8 +391,7 @@ export function VisitorLogin() {
           )}
         </AnimatePresence>
 
-        {/* ── Source question ── */}
-        {!returningUser && !isMasterKey && (
+        {!returningUser && (
           <>
             <span className="v-label-text">{t('source.question')}</span>
             <div className="v-chip-grid">
@@ -455,7 +429,6 @@ export function VisitorLogin() {
           </>
         )}
 
-        {/* ── Error ── */}
         <AnimatePresence>
           {error && (
             <motion.div
@@ -469,7 +442,6 @@ export function VisitorLogin() {
           )}
         </AnimatePresence>
 
-        {/* ── CTA ── */}
         <button
           className="v-btn-primary"
           onClick={handleSubmit}
@@ -479,7 +451,6 @@ export function VisitorLogin() {
           {loading ? t('button.pulsing') : t('button.pulse')}
         </button>
 
-        {/* ── Footer ── */}
         <div style={{ marginTop: 24, paddingBottom: 24, width: '100%', textAlign: 'center', position: 'relative', zIndex: 10 }}>
           <button className="v-admin-link" onClick={() => navigate('/login')}>
             <Lock size={12} strokeWidth={2} opacity={0.5} />
@@ -494,7 +465,6 @@ export function VisitorLogin() {
         </div>
       </div>
 
-      {/* ── Success overlay ── */}
       <AnimatePresence>
         {success && (
           <motion.div

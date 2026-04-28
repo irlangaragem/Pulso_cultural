@@ -4,11 +4,10 @@ import { toPng } from 'html-to-image';
 import { Share2, Download } from 'lucide-react';
 import { VisitorLayout } from '../components/VisitorLayout';
 import { analytics } from '../services/analytics';
-import { api } from '../services/api';
 import { useLanguage } from '../contexts/LanguageContext';
+import { MUSEUM_SLUG } from '../config/museum';
 
 const EXHIBITION_ID = 'default-exhibition';
-const MUSEUM_SLUG = 'mam-salvador';
 
 export function CardShare() {
   const navigate = useNavigate();
@@ -40,7 +39,6 @@ export function CardShare() {
   };
 
   const recordShareChannel = (channel: string) => {
-    const cpfHash = localStorage.getItem('pulso:return_hash');
     // Only include rating in analytics if it was explicitly set (not default 5)
     const hasRealRating = (location.state as any)?.rating !== undefined;
 
@@ -50,15 +48,9 @@ export function CardShare() {
       properties: { channel, ...(hasRealRating ? { rating: visitorRating } : {}) }
     });
 
-    // Only write evaluation when we have a real rating AND a visitor identity
-    if (cpfHash && hasRealRating) {
-      api.post('/evaluations', {
-        cpfHash,
-        exhibitionId: EXHIBITION_ID,
-        rating: visitorRating,
-        shareChannel: channel
-      }).catch(() => {});
-    }
+    // Persisting an evaluation requires the raw CPF, which is no longer kept
+    // in localStorage (LGPD). Backed by analytics for now; full evaluation
+    // submit returns once visitor tokens are wired up.
   };
 
   const handleShare = async () => {

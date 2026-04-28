@@ -1,11 +1,15 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
+// Roles match the Prisma `UserRole` enum (LOG-12).
+export type UserRole = 'GESTOR' | 'ADMIN';
+
 interface User {
   id?: string;
   name: string;
   email: string;
-  role: 'MANAGER' | 'ADMIN' | 'VISITOR';
+  role: UserRole;
+  museumId?: string;
 }
 
 interface AuthState {

@@ -6,7 +6,8 @@ export const ResumoHojeSchema = z.object({
   entradas_hoje: z.number().optional(),
   saidas_hoje: z.number().optional(),
   ocupacao_atual: z.number().optional(),
-  ocupacao_pico: z.number().optional(),
+  // peak tracking removed pending real implementation (LOG-06).
+  ocupacao_pico: z.number().nullable().optional(),
   atualizado_em: z.string().optional(),
 });
 
@@ -17,7 +18,7 @@ export const ResumoHistoricoSchema = z.object({
 });
 
 export const HistoricoSchema = z.array(z.object({
-  dia: z.string(),
+  data: z.string(), // ISO date (YYYY-MM-DD) — was previously "dia" (LOG-09).
   entradas: z.number(),
   saidas: z.number(),
 }));

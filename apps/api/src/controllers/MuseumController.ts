@@ -56,27 +56,33 @@ export const MuseumController = {
     }
   },
 
-  // PUT /museums/:id
+  // PUT /museums/:id — restricted to the authenticated user's museum.
   async update(req: Request, res: Response) {
     const { id } = req.params;
-    const { name, slug, address, city, state, openingHours } = req.body;
+    const userMuseumId = (req as any).user?.museumId;
+    if (!userMuseumId) return res.status(403).json({ error: 'Sem museu associado' });
+    if (id !== userMuseumId) {
+      return res.status(403).json({ error: 'Você só pode editar o seu próprio museu' });
+    }
+
+    const { name, address, city, state, openingHours } = req.body;
+    // Note: `slug` is intentionally NOT editable — it's the multi-tenant key.
+
+    const data: any = {};
+    if (typeof name === 'string' && name.trim()) data.name = name.trim();
+    if (typeof address === 'string') data.address = address.trim();
+    if (typeof city === 'string') data.city = city.trim();
+    if (typeof state === 'string') data.state = state.trim();
+    if (openingHours && typeof openingHours === 'object') data.openingHours = openingHours;
 
     try {
       const museum = await prisma.museum.update({
         where: { id },
-        data: {
-          name,
-          slug,
-          address,
-          city,
-          state,
-          openingHours,
-        },
+        data,
       });
-
       return res.json(museum);
     } catch (error) {
-      console.error(error);
+      console.error('[MuseumController.update] error:', error);
       return res.status(500).json({ error: 'Internal server error' });
     }
   },

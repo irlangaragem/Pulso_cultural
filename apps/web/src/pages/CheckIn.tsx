@@ -9,9 +9,9 @@ import { PulseSymbol } from '../components/PulseSymbol';
 import { useLanguage } from '../contexts/LanguageContext';
 import type { Gender, Origin, AccessibilityNeed, RegisterVisitorPayload } from '../types/visitor';
 
-const CPF_STORAGE_KEY = 'pulso:return_hash';
+const CPF_LOCAL_HASH_KEY = 'pulso:local_dedup_hash';
+const EMAIL_LOCAL_HASH_KEY = 'pulso:local_dedup_ehash';
 
-// Gender options — translation keys mapped to enum values
 const GENEROS: { key: string; value: Gender }[] = [
   { key: 'checkin.form.genero.f',   value: 'FEMININO' },
   { key: 'checkin.form.genero.m',   value: 'MASCULINO' },
@@ -19,7 +19,6 @@ const GENEROS: { key: string; value: Gender }[] = [
   { key: 'checkin.form.genero.pnd', value: 'PREFIRO_NAO_DIZER' },
 ];
 
-// Origin options
 const ORIGENS: { key: string; value: Origin }[] = [
   { key: 'checkin.form.origem.sal', value: 'SALVADOR' },
   { key: 'checkin.form.origem.int', value: 'INTERIOR_BA' },
@@ -27,7 +26,6 @@ const ORIGENS: { key: string; value: Origin }[] = [
   { key: 'checkin.form.origem.tur', value: 'INTERNACIONAL' },
 ];
 
-// Accessibility options
 const ACESSIBILIDADES: { key: string; value: AccessibilityNeed }[] = [
   { key: 'checkin.form.acc.mob',   value: 'MOBILIDADE_REDUZIDA' },
   { key: 'checkin.form.acc.vis',   value: 'BAIXA_VISAO' },
@@ -36,7 +34,24 @@ const ACESSIBILIDADES: { key: string; value: AccessibilityNeed }[] = [
   { key: 'checkin.form.acc.outra', value: 'OUTRA' },
 ];
 
-// ── Chip component ──
+const CHANNEL_MAP: Record<string, string> = {
+  'Redes sociais': 'REDES_SOCIAIS',
+  'Indicação': 'INDICACAO',
+  'Passei na frente': 'PASSOU_NA_FRENTE',
+  'Jornal / TV': 'JORNAL_TV',
+  'Escola / faculdade': 'ESCOLA_FACULDADE',
+  'Outro': 'OUTRO',
+};
+
+const CANAIS: { id: string; key: string }[] = [
+  { id: 'Redes sociais',      key: 'source.social' },
+  { id: 'Indicação',          key: 'source.referral' },
+  { id: 'Passei na frente',   key: 'source.walked_by' },
+  { id: 'Jornal / TV',        key: 'source.tv' },
+  { id: 'Escola / faculdade', key: 'source.school' },
+  { id: 'Outro',              key: 'source.other' },
+];
+
 function Chip({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
   return (
     <button
@@ -61,7 +76,6 @@ function Chip({ label, active, onClick }: { label: string; active: boolean; onCl
   );
 }
 
-// ── Field group ──
 function FieldLabel({ children, optional }: { children: React.ReactNode; optional?: string }) {
   return (
     <p style={{
@@ -118,19 +132,28 @@ function TextInput({
   );
 }
 
+interface NavState {
+  cpf?: string;
+  email?: string;
+  como?: string;
+  comoOutroText?: string;
+}
+
 export function CheckIn() {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useLanguage();
 
-  // ── Query params ──
+  // Read identity & channel from router state (preferred) — fall back to query
+  // string only for backwards compatibility with old links. CPF is never put
+  // into a URL we generate (SEC-16).
+  const navState = (location.state as NavState | undefined) || {};
   const params = new URLSearchParams(location.search);
-  const cpfParam   = params.get('cpf')   ?? '';
-  const emailParam = params.get('email') ?? '';
-  const comoParam  = params.get('como')  ?? '';
+  const cpfParam   = navState.cpf   ?? params.get('cpf')   ?? '';
+  const emailParam = navState.email ?? params.get('email') ?? '';
+  const comoParam  = navState.como  ?? params.get('como')  ?? '';
   const identityMode: 'cpf' | 'email' = emailParam ? 'email' : 'cpf';
 
-  // ── Form state ──
   const [cpf,            setCpf]           = useState(cpfParam ? formatCPF(cpfParam) : '');
   const [email]                            = useState(emailParam);
   const [nome,           setNome]          = useState('');
@@ -140,9 +163,10 @@ export function CheckIn() {
   const [origemDetalhe,  setOrigemDetalhe] = useState('');
   const [acessibilidades, setAcess]        = useState<AccessibilityNeed[]>([]);
   const [outraDetalhe,   setOutraDetalhe]  = useState('');
+  const [como,           setComo]          = useState<string>(comoParam || '');
+  const [comoOutroText,  setComoOutroText] = useState<string>(navState.comoOutroText || '');
   const [consent,        setConsent]       = useState(false);
 
-  // ── UI state ──
   const [error,        setError]       = useState<string | null>(null);
   const [loading,      setLoading]     = useState(false);
   const [success,      setSuccess]     = useState(false);
@@ -152,9 +176,7 @@ export function CheckIn() {
     if (cpfParam) setCpf(formatCPF(cpfParam));
   }, [cpfParam]);
 
-  // ── Derived ──
   const rawCpf      = cpf.replace(/\D/g, '');
-  const isMasterKey = rawCpf === '00000000000';
   const birthNum    = Number(nascimento);
 
   const needsOriginDetail = origem === 'INTERIOR_BA' || origem === 'OUTRO_ESTADO' || origem === 'INTERNACIONAL';
@@ -176,18 +198,14 @@ export function CheckIn() {
     nascimento.length === 4 && birthNum >= 1904 && birthNum <= new Date().getFullYear() &&
     origem !== '' &&
     (!needsOriginDetail || origemDetalhe.trim().length > 0) &&
-    (identityMode === 'email' || (rawCpf.length === 11 && (isMasterKey || isValidCPF(cpf)))) &&
+    (identityMode === 'email' || (rawCpf.length === 11 && isValidCPF(cpf))) &&
     (identityMode === 'cpf' || email.trim().length > 0) &&
+    como !== '' &&
+    (como !== 'Outro' || comoOutroText.trim().length > 0) &&
     consent;
 
   const toggleAcess = (need: AccessibilityNeed) =>
     setAcess(prev => prev.includes(need) ? prev.filter(n => n !== need) : [...prev, need]);
-
-  const channelMap: Record<string, string> = {
-    'Redes sociais': 'REDES_SOCIAIS', 'Indicação': 'INDICACAO',
-    'Passei na frente': 'PASSOU_NA_FRENTE', 'Jornal / TV': 'JORNAL_TV',
-    'Escola / faculdade': 'ESCOLA_FACULDADE', 'Outro': 'OUTRO',
-  };
 
   const handleSubmit = async () => {
     if (!isFormValid || loading) return;
@@ -196,13 +214,12 @@ export function CheckIn() {
     let currentSuccess = false;
 
     try {
-      if (!isMasterKey && identityMode === 'cpf') {
+      if (identityMode === 'cpf') {
         try {
           const check = await api.post('/api/v1/users/identify', { cpf: rawCpf });
           if (check.data?.success) {
-            // Store hash for return-visit recognition (never raw CPF)
             const existing = await localDb.getVisitorByCPF(rawCpf);
-            if (existing?.cpfHash) localStorage.setItem(CPF_STORAGE_KEY, existing.cpfHash);
+            if (existing?.cpfHash) localStorage.setItem(CPF_LOCAL_HASH_KEY, existing.cpfHash);
             setError(t('checkin.form.already_registered'));
             setShowRedirect(true);
             setLoading(false);
@@ -210,6 +227,8 @@ export function CheckIn() {
           }
         } catch { /* 404 = new user */ }
       }
+
+      const channel = como ? (CHANNEL_MAP[como] || 'OUTRO') : 'OUTRO';
 
       const payload: RegisterVisitorPayload = {
         cpf: identityMode === 'cpf' ? rawCpf : undefined,
@@ -222,40 +241,67 @@ export function CheckIn() {
         accessibilityNeeds: acessibilidades,
         accessibilityDetail: outraDetalhe.trim() || undefined,
         exhibitionId: 'default-exhibition',
-        channel: comoParam ? (channelMap[comoParam] || 'OUTRO') : 'OUTRO',
+        channel,
       };
 
-      if (identityMode === 'cpf' && !isMasterKey) {
-        const saved = await localDb.saveVisitor({
-          cpf: rawCpf, name: payload.name, birthYear: birthNum,
-          gender: payload.gender, origin: payload.origin, accessibilityNeeds: acessibilidades,
-        });
-        // Store hash only — never raw CPF (LGPD compliance)
-        if (saved?.cpfHash) localStorage.setItem(CPF_STORAGE_KEY, saved.cpfHash);
-      } else if (identityMode === 'email') {
-        // Hash email before storing — never raw PII (LGPD compliance)
-        crypto.subtle.digest('SHA-256', new TextEncoder().encode(email.trim().toLowerCase()))
-          .then(buf => {
-            const hash = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
-            localStorage.setItem('pulso:return_ehash', hash);
-          }).catch(() => {});
-        localStorage.removeItem('pulso:return_email'); // evict legacy key
-      }
-
+      let registered = false;
       try {
         await api.post('/api/v1/users/register', payload);
-      } catch {
-        // offline — checkin will sync later
-      }
-
-      try {
-        await api.post('/checkins', {
+        registered = true;
+      } catch (err) {
+        // Offline: enqueue full visitor data so the batch endpoint can create
+        // the visitor on the next sync attempt.
+        localDb.addToSyncQueue({
           cpf: rawCpf || undefined,
           email: email || undefined,
-          exhibitionId: 'default-exhibition',
+          name: payload.name,
+          birthYear: payload.birthYear,
+          gender: payload.gender,
+          origin: payload.origin,
+          exhibitionId: payload.exhibitionId,
           channel: payload.channel,
         });
-      } catch { /* sync queue handled elsewhere */ }
+      }
+
+      if (registered) {
+        try {
+          await api.post('/checkins', {
+            cpf: rawCpf || undefined,
+            email: email || undefined,
+            exhibitionId: payload.exhibitionId,
+            channel: payload.channel,
+          });
+        } catch {
+          // Initial registration succeeded but checkin POST failed — enqueue.
+          localDb.addToSyncQueue({
+            cpf: rawCpf || undefined,
+            email: email || undefined,
+            exhibitionId: payload.exhibitionId,
+            channel: payload.channel,
+          });
+        }
+      }
+
+      if (identityMode === 'cpf') {
+        const saved = await localDb.saveVisitor({
+          cpf: rawCpf,
+          name: payload.name,
+          birthYear: birthNum,
+          gender: payload.gender,
+          origin: payload.origin,
+          accessibilityNeeds: acessibilidades,
+        });
+        if (saved?.cpfHash) localStorage.setItem(CPF_LOCAL_HASH_KEY, saved.cpfHash);
+      } else if (identityMode === 'email') {
+        try {
+          const buf = await crypto.subtle.digest(
+            'SHA-256',
+            new TextEncoder().encode(email.trim().toLowerCase())
+          );
+          const hash = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+          localStorage.setItem(EMAIL_LOCAL_HASH_KEY, hash);
+        } catch { /* hashing for local dedup is best-effort */ }
+      }
 
       currentSuccess = true;
       setSuccess(true);
@@ -268,36 +314,43 @@ export function CheckIn() {
     }
   };
 
-  // ── Section styles ──
   const sectionStyle: React.CSSProperties = { marginBottom: 24 };
 
   return (
     <VisitorLayout>
       <div style={{ padding: '28px 20px 48px', minHeight: '100%' }}>
         <div style={{ marginBottom: 28 }}>
+          <p style={{
+            fontFamily: "'Space Mono', monospace",
+            fontSize: 11,
+            letterSpacing: 3,
+            color: '#E8554E',
+            margin: '0 0 6px',
+            fontWeight: 700,
+          }}>
+            {t('exhibition.label')}
+          </p>
           <h1 style={{
             fontFamily: "'Sora', sans-serif",
-            fontSize: 24,
-            fontWeight: 700,
+            fontSize: 26,
+            fontWeight: 800,
             color: '#F5ECE4',
-            margin: '0 0 8px',
+            margin: '0 0 10px',
+            lineHeight: 1.15,
           }}>
-            {t('checkin.form.header')}
+            {t('exhibition.title')}
           </h1>
           <p style={{
             fontFamily: "'DM Sans', sans-serif",
-            fontSize: 13,
+            fontSize: 14,
             color: '#A8969A',
-            lineHeight: 1.55,
+            lineHeight: 1.5,
             margin: 0,
           }}>
-            {t('checkin.form.header_desc', {
-              identity: identityMode === 'email' ? t('checkin.form.email_label') : t('checkin.form.cpf.label'),
-            })}
+            {t('checkin.cta')}
           </p>
         </div>
 
-        {/* ── CPF or Email (pre-filled, editable) ── */}
         <div style={sectionStyle}>
           <FieldLabel>
             {identityMode === 'email' ? t('checkin.form.email_label') : t('checkin.form.cpf.label')}
@@ -323,7 +376,6 @@ export function CheckIn() {
           )}
         </div>
 
-        {/* ── Nome ── */}
         <div style={sectionStyle}>
           <FieldLabel>{t('checkin.form.nome.label')}</FieldLabel>
           <TextInput
@@ -334,7 +386,6 @@ export function CheckIn() {
           />
         </div>
 
-        {/* ── Nascimento ── */}
         <div style={sectionStyle}>
           <FieldLabel>{t('checkin.form.nascimento.label')}</FieldLabel>
           <TextInput
@@ -349,7 +400,6 @@ export function CheckIn() {
           />
         </div>
 
-        {/* ── Gênero ── */}
         <div style={sectionStyle}>
           <FieldLabel>{t('checkin.form.genero.label')}</FieldLabel>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
@@ -364,7 +414,6 @@ export function CheckIn() {
           </div>
         </div>
 
-        {/* ── Acessibilidade ── */}
         <div style={sectionStyle}>
           <FieldLabel optional={t('checkin.form.acc.optional')}>
             {t('checkin.form.acc.label')}
@@ -398,7 +447,6 @@ export function CheckIn() {
           </AnimatePresence>
         </div>
 
-        {/* ── Origem ── */}
         <div style={sectionStyle}>
           <FieldLabel>{t('checkin.form.origem.label')}</FieldLabel>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
@@ -433,7 +481,38 @@ export function CheckIn() {
           </AnimatePresence>
         </div>
 
-        {/* ── LGPD Consent ── */}
+        {/* ── Como soube da exposição ───────────────────────────────── */}
+        <div style={sectionStyle}>
+          <FieldLabel>{t('source.question')}</FieldLabel>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {CANAIS.map(c => (
+              <Chip
+                key={c.id}
+                label={t(c.key)}
+                active={como === c.id}
+                onClick={() => setComo(prev => prev === c.id ? '' : c.id)}
+              />
+            ))}
+          </div>
+          <AnimatePresence>
+            {como === 'Outro' && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                style={{ marginTop: 12 }}
+              >
+                <TextInput
+                  id="field-como-outro"
+                  value={comoOutroText}
+                  onChange={e => setComoOutroText(e.target.value)}
+                  placeholder={t('source.other_placeholder')}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
         <div style={{
           display: 'flex', gap: 12, alignItems: 'flex-start',
           padding: '14px 16px',
@@ -469,7 +548,6 @@ export function CheckIn() {
           </p>
         </div>
 
-        {/* ── Error ── */}
         <AnimatePresence>
           {error && (
             <motion.div
@@ -493,7 +571,6 @@ export function CheckIn() {
           )}
         </AnimatePresence>
 
-        {/* ── Submit ── */}
         <button
           className="v-btn-primary"
           onClick={handleSubmit}
@@ -504,7 +581,6 @@ export function CheckIn() {
         </button>
       </div>
 
-      {/* ── Success overlay ── */}
       <AnimatePresence>
         {success && (
           <motion.div

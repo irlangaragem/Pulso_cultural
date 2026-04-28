@@ -10,7 +10,9 @@ const Dashboard = lazy(() => import('./pages/Dashboard').then(m => ({ default: m
 const Guide = lazy(() => import('./pages/Guide').then(m => ({ default: m.Guide })));
 const Login = lazy(() => import('./pages/Login').then(m => ({ default: m.Login })));
 const CardShare = lazy(() => import('./pages/CardShare').then(m => ({ default: m.CardShare })));
-const Feedback = lazy(() => import('./pages/Feedback').then(m => ({ default: m.Feedback })));
+const AcceptInvite = lazy(() => import('./pages/AcceptInvite').then(m => ({ default: m.AcceptInvite })));
+// Feedback page deleted (LOG-03): the standalone /feedback route used setTimeout
+// to fake a submit. Real feedback now happens inside Guide.
 
 // Non-lazy PulseSymbol for Suspense fallback and 404 — must be available before chunks load
 // Static fallback — canonical spec geometry (viewBox 0 0 100 100)
@@ -102,7 +104,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/guide" element={<Guide />} />
           <Route path="/card" element={<CardShare />} />
-          <Route path="/feedback" element={<Feedback />} />
+          <Route path="/aceitar-convite" element={<AcceptInvite />} />
 
           {/* 404 — branded recovery */}
           <Route path="*" element={

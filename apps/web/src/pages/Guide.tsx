@@ -40,8 +40,16 @@ const EXHIBITION_ID = 'default-exhibition';
 export function Guide() {
   const navigate = useNavigate();
   const { t } = useLanguage();
-  const [_exhibition, setExhibition] = useState<any>(null);
+  const [exhibition, setExhibition] = useState<any>(null);
   const [works, setWorks] = useState<Work[]>(FALLBACK_WORKS.slice(0, 6));
+
+  // Resolve relative API uploads (/uploads/files/...) to absolute URLs.
+  const apiBase = (import.meta as any).env?.VITE_API_URL || '';
+  const resolveImg = (url: string | null | undefined): string => {
+    if (!url) return '';
+    if (/^(https?:|data:|blob:)/i.test(url)) return url;
+    return `${apiBase}${url}`;
+  };
   const [activeWork, setActiveWork] = useState<string | null>('6'); // default: Núcleo open
   const [playingId, setPlayingId] = useState<string | null>(null);
   const soundRef = useRef<Howl | null>(null);
@@ -70,27 +78,17 @@ export function Guide() {
     if (rating === 0) return;
     setIsSubmittingFeedback(true);
     try {
-      const cpfHash = localStorage.getItem('pulso:return_hash');
-      
-      if (cpfHash) {
-        await api.post('/evaluations', {
-          cpfHash,
-          exhibitionId: EXHIBITION_ID,
-          rating,
-          comment: feedbackComment || undefined,
-        });
-      }
-
-      // Track the event even if cpf is missing
+      // We don't have the raw CPF on the Guide screen (LGPD: do not keep it
+      // around). For now we only persist the analytics event. Authenticated
+      // visitor evaluation is wired up in the next iteration via a short-lived
+      // visitor token issued at checkin (Phase 3 of the rollout).
       analytics.track('rating_submitted', {
         exhibitionId: EXHIBITION_ID,
-        properties: { rating, hasComment: !!feedbackComment }
+        properties: { rating, hasComment: !!feedbackComment },
       });
-
       setFeedbackSubmitted(true);
     } catch (err) {
-      console.error(err);
-      // Still mark as submitted for UX
+      console.error('[Guide] feedback error:', err);
       setFeedbackSubmitted(true);
     } finally {
       setIsSubmittingFeedback(false);
@@ -103,19 +101,25 @@ export function Guide() {
   }, []);
 
   useEffect(() => {
+    // Public route (LOG-11): visitor app does not need a JWT to read the
+    // active exhibition. Falls back to the static FALLBACK_WORKS only when
+    // the API is unreachable — and shows a non-blocking warning so the
+    // operator notices the disconnect.
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 3000);
+    const timeout = setTimeout(() => controller.abort(), 4000);
 
-    api.get('/exhibitions/default-exhibition', { signal: controller.signal })
+    api.get('/api/v1/public/exhibitions/active', { signal: controller.signal })
       .then(res => {
         clearTimeout(timeout);
         setExhibition(res.data);
-        // If the API returns works, use them; otherwise keep fallback
         if (Array.isArray(res.data?.works) && res.data.works.length > 0) {
           setWorks(res.data.works);
         }
       })
-      .catch(() => clearTimeout(timeout)); // Silently use fallback on error/timeout
+      .catch(err => {
+        clearTimeout(timeout);
+        console.warn('[Guide] failed to load active exhibition; showing fallback works:', err?.message);
+      });
   }, []);
 
 
@@ -190,8 +194,33 @@ export function Guide() {
     <VisitorLayout>
       <div style={{ minHeight: '100%' }}>
         {/* Hero header */}
-        <div className="v-guide-hero">
-          <div className="visitor-glow" />
+        <div className="v-guide-hero" style={{ position: 'relative', overflow: 'hidden' }}>
+          {/* Cover image (when uploaded by the manager) — sits behind the hero text */}
+          {exhibition?.coverImage && (
+            <>
+              <img
+                src={resolveImg(exhibition.coverImage)}
+                alt=""
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  opacity: 0.35,
+                  zIndex: 0,
+                }}
+              />
+              <div style={{
+                position: 'absolute',
+                inset: 0,
+                background: 'linear-gradient(180deg, rgba(14,11,13,0.5) 0%, rgba(14,11,13,0.85) 70%, #0E0B0D 100%)',
+                zIndex: 0,
+              }} />
+            </>
+          )}
+          {!exhibition?.coverImage && <div className="visitor-glow" />}
+
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, position: 'relative', zIndex: 1 }}>
             <PulseSymbol size={22} />
             <span style={{ fontFamily: 'Sora, sans-serif', fontWeight: 700, fontSize: 12, color: '#F5ECE4' }}>PULSO</span>
@@ -204,16 +233,20 @@ export function Guide() {
           <p style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, color: '#E8554E', letterSpacing: 3, marginBottom: 6, position: 'relative', zIndex: 1 }}>
             {t('exhibition.label')}
           </p>
-          <h1 className="v-guide-title">{t('exhibition.title')}</h1>
-          <p className="v-guide-subtitle">{t('exhibition.subtitle')}</p>
-          <p className="v-guide-meta">Ter a Dom · 10h às 18h</p>
+          <h1 className="v-guide-title" style={{ position: 'relative', zIndex: 1 }}>
+            {exhibition?.name || t('exhibition.title')}
+          </h1>
+          <p className="v-guide-subtitle" style={{ position: 'relative', zIndex: 1 }}>
+            {exhibition?.subtitle || t('exhibition.subtitle')}
+          </p>
+          <p className="v-guide-meta" style={{ position: 'relative', zIndex: 1 }}>Ter a Dom · 10h às 18h</p>
         </div>
 
 
         {/* Description */}
         <div style={{ padding: '0 20px' }}>
           <p style={{ fontSize: 13, color: '#A8969A', lineHeight: 1.7 }}>
-            {t('exhibition.description')}
+            {exhibition?.description || t('exhibition.description')}
           </p>
 
           {/* Works */}
