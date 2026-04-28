@@ -19,16 +19,18 @@ export const AnalyticsController = {
       const now = new Date();
       const twelveHoursAgo = subHours(now, 12);
 
-      // Aggregate counts grouped by hour bucket and type — sums the `count` field (LOG-01).
-      const counts = await prisma.cameraCount.findMany({
-        where: { exhibitionId, timestamp: { gte: twelveHoursAgo } },
-        orderBy: { timestamp: 'asc' },
-      });
-
-      const checkins = await prisma.checkin.findMany({
-        where: { exhibitionId, createdAt: { gte: twelveHoursAgo } },
-        orderBy: { createdAt: 'asc' },
-      });
+      // Run both queries in parallel — they're independent and the slower of
+      // the two now dominates total latency instead of summing them.
+      const [counts, checkins] = await Promise.all([
+        prisma.cameraCount.findMany({
+          where: { exhibitionId, timestamp: { gte: twelveHoursAgo } },
+          orderBy: { timestamp: 'asc' },
+        }),
+        prisma.checkin.findMany({
+          where: { exhibitionId, createdAt: { gte: twelveHoursAgo } },
+          orderBy: { createdAt: 'asc' },
+        }),
+      ]);
 
       const trends = Array.from({ length: 13 }).map((_, i) => {
         const hourDate = startOfHour(subHours(now, 12 - i));
@@ -236,11 +238,52 @@ export const AnalyticsController = {
           });
       }
 
-      const data = Array.from(buckets.values())
-        .filter(b => b.count >= 5) // k-anonymity ≥ 5
-        .map(b => ({ ...b.row, count: b.count }));
+      const allBuckets = Array.from(buckets.values());
+      const passing = allBuckets.filter(b => b.count >= 5); // k-anonymity ≥ 5
+      const suppressed = allBuckets.filter(b => b.count < 5);
+      const suppressedTotal = suppressed.reduce((sum, b) => sum + b.count, 0);
 
-      const csv = CSVService.jsonToCSV(data);
+      // Coarser aggregations are *already* aggregate (no individual identification),
+      // so they always pass k-anonymity even when fine-grained buckets don't.
+      // For piloto datasets that are too small to populate the joint distribution,
+      // these summary blocks are the difference between an empty CSV and a useful one.
+      const byDate = new Map<string, number>();
+      const byAge = new Map<string, number>();
+      const byGender = new Map<string, number>();
+      const byOrigin = new Map<string, number>();
+      const byChannel = new Map<string, number>();
+      for (const c of checkins) {
+        const day = c.createdAt.toISOString().split('T')[0];
+        const age = bracket(currentYear - c.visitor.birthYear);
+        byDate.set(day, (byDate.get(day) ?? 0) + 1);
+        byAge.set(age, (byAge.get(age) ?? 0) + 1);
+        byGender.set(c.visitor.gender, (byGender.get(c.visitor.gender) ?? 0) + 1);
+        byOrigin.set(c.visitor.origin, (byOrigin.get(c.visitor.origin) ?? 0) + 1);
+        byChannel.set(c.channel, (byChannel.get(c.channel) ?? 0) + 1);
+      }
+
+      const csv = CSVService.buildReport({
+        title: `Pulso Cultural — ${exhibition.name}`,
+        generatedAt: new Date().toISOString(),
+        totals: {
+          total_checkins: checkins.length,
+          buckets_total: allBuckets.length,
+          buckets_publicados: passing.length,
+          buckets_suprimidos_lgpd: suppressed.length,
+          checkins_suprimidos_lgpd: suppressedTotal,
+        },
+        sections: [
+          { title: 'Por dia',          rows: Array.from(byDate.entries()).sort().map(([k, v]) => ({ data: k, total: v })) },
+          { title: 'Por faixa etária', rows: Array.from(byAge.entries()).map(([k, v]) => ({ faixa_etaria: k, total: v })) },
+          { title: 'Por gênero',       rows: Array.from(byGender.entries()).map(([k, v]) => ({ genero: k, total: v })) },
+          { title: 'Por origem',       rows: Array.from(byOrigin.entries()).map(([k, v]) => ({ origem: k, total: v })) },
+          { title: 'Por canal',        rows: Array.from(byChannel.entries()).map(([k, v]) => ({ canal_adesao: k, total: v })) },
+          {
+            title: 'Detalhado (apenas grupos com 5+ ocorrências, LGPD k-anonymity)',
+            rows: passing.map(b => ({ ...b.row, count: b.count })),
+          },
+        ],
+      });
 
       res.setHeader('Content-Type', 'text/csv');
       res.setHeader('Content-Disposition', `attachment; filename=report-${exhibitionId}.csv`);

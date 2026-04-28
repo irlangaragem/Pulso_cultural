@@ -441,11 +441,14 @@
 }
 
 /* ── Guide Hero ── */
+/* Top padding clears the status-bar fade + language-selector chip; bottom
+   padding sits the title comfortably above the description. */
 .v-guide-hero {
-  padding: 0 20px 20px;
+  padding: 56px 20px 24px;
   position: relative;
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);
   margin-bottom: 20px;
+  min-height: 220px;
 }
 
 .v-guide-title {

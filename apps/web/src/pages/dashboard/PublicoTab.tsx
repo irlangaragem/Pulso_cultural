@@ -4,6 +4,7 @@ import {
   PieChart, Pie, Cell,
 } from 'recharts';
 import { api } from '../../services/api';
+import { useRealtimeUpdates } from '../../services/useRealtimeUpdates';
 import { card, COLORS, sectionTitle, sectionMeta } from './styles';
 
 interface Demographics {
@@ -134,8 +135,12 @@ export function PublicoTab({ exhibitionId }: Props) {
   const [channels, setChannels] = useState<ChannelItem[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!exhibitionId) return;
+  const refresh = () => {
+    if (!exhibitionId) {
+      api.get('/historico').then(r => setAcumulado(r.data)).catch(() => {});
+      api.get('/resumo/hoje').then(r => setHoje(r.data)).catch(() => {});
+      return;
+    }
     api.get(`/analytics/demographics/${exhibitionId}`)
       .then(r => setDemo(r.data))
       .catch(err => setError(err?.response?.data?.error || err?.message || 'Falha ao carregar demografia'));
@@ -145,12 +150,12 @@ export function PublicoTab({ exhibitionId }: Props) {
     api.get(`/analytics/channels/${exhibitionId}`)
       .then(r => setChannels(r.data?.items || []))
       .catch(() => {});
-  }, [exhibitionId]);
-
-  useEffect(() => {
     api.get('/historico').then(r => setAcumulado(r.data)).catch(() => {});
     api.get('/resumo/hoje').then(r => setHoje(r.data)).catch(() => {});
-  }, []);
+  };
+
+  useEffect(() => { refresh(); /* eslint-disable-line react-hooks/exhaustive-deps */ }, [exhibitionId]);
+  useRealtimeUpdates(refresh);
 
   // Map raw demographic enum names to friendly labels
   const genderData = (demo?.gender || []).map(g => ({

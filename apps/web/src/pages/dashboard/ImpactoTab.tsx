@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { jsPDF } from 'jspdf';
 import { api } from '../../services/api';
+import { useRealtimeUpdates } from '../../services/useRealtimeUpdates';
 import { card, COLORS, btnPrimary, btnGhost, sectionTitle, sectionMeta } from './styles';
 
 interface Acumulado {
@@ -162,22 +163,21 @@ export function ImpactoTab({ exhibitionId, museumId }: Props) {
   const [recorrencia, setRecorrencia] = useState<Recorrencia | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const refresh = () => {
     api.get('/historico').then(r => setAcc(r.data)).catch(e => setError(e?.message));
     api.get('/resumo/historico?days=30').then(r => setHistorico(r.data || [])).catch(() => {});
     api.get('/resumo/recorrencia').then(r => setRecorrencia(r.data)).catch(() => {});
-  }, []);
+    if (exhibitionId) {
+      api.get(`/analytics/demographics/${exhibitionId}`).then(r => setDemo(r.data)).catch(() => {});
+      api.get(`/analytics/trends/${exhibitionId}`).then(r => setTrends(r.data || [])).catch(() => {});
+    }
+    if (museumId) {
+      api.get(`/recommendations/museum/${museumId}/insights`).then(r => setInsights(r.data?.insights ?? null)).catch(() => {});
+    }
+  };
 
-  useEffect(() => {
-    if (!exhibitionId) return;
-    api.get(`/analytics/demographics/${exhibitionId}`).then(r => setDemo(r.data)).catch(() => {});
-    api.get(`/analytics/trends/${exhibitionId}`).then(r => setTrends(r.data || [])).catch(() => {});
-  }, [exhibitionId]);
-
-  useEffect(() => {
-    if (!museumId) return;
-    api.get(`/recommendations/museum/${museumId}/insights`).then(r => setInsights(r.data?.insights ?? null)).catch(() => {});
-  }, [museumId]);
+  useEffect(() => { refresh(); /* eslint-disable-line react-hooks/exhaustive-deps */ }, [exhibitionId, museumId]);
+  useRealtimeUpdates(refresh);
 
   // ─── Build the findings from REAL data ───────────────────────────────
   const findings: Finding[] = [];
@@ -276,119 +276,205 @@ export function ImpactoTab({ exhibitionId, museumId }: Props) {
     const margin = 44;
     const contentWidth = pageWidth - margin * 2;
 
-    // ── Top header band (red gradient simulated by filled rects) ─────────────
-    doc.setFillColor(232, 85, 78);
-    doc.rect(0, 0, pageWidth, 6, 'F');
+    // Brand palette — matches the dashboard's `COLORS` and gradient.
+    const brand: [number, number, number] = [240, 66, 106];   // pink (primary)
+    const brand2: [number, number, number] = [255, 94, 91];   // coral
+    const brandOrange: [number, number, number] = [245, 158, 66];
+    const ink: [number, number, number] = [25, 18, 28];
+    const inkSoft: [number, number, number] = [80, 75, 90];
+    const inkFaint: [number, number, number] = [140, 135, 150];
+    const surface: [number, number, number] = [250, 248, 246];
+    const ruleSoft: [number, number, number] = [228, 224, 232];
 
+    // Helpers ─────────────────────────────────────────────────────────────────
+    const setFill = (c: [number, number, number]) => doc.setFillColor(c[0], c[1], c[2]);
+    const setStroke = (c: [number, number, number]) => doc.setDrawColor(c[0], c[1], c[2]);
+    const setText = (c: [number, number, number]) => doc.setTextColor(c[0], c[1], c[2]);
+
+    /** Brand gradient strip (3 colored rects, gives a magazine feel without raster). */
+    const drawBrandStrip = (yPos: number, height = 4) => {
+      const w = pageWidth / 3;
+      setFill(brand);       doc.rect(0,         yPos, w, height, 'F');
+      setFill(brand2);      doc.rect(w,         yPos, w, height, 'F');
+      setFill(brandOrange); doc.rect(w * 2,     yPos, w, height, 'F');
+    };
+
+    /** Pulso ring logo — 3 concentric rings + filled core. Drawn in pure jsPDF primitives. */
+    const drawPulseLogo = (cx: number, cy: number, size = 14) => {
+      const r = size / 2;
+      doc.setLineWidth(0.7);
+      setStroke(brand);       doc.circle(cx, cy, r,         'S');
+      setStroke(brand2);      doc.circle(cx, cy, r * 0.72,  'S');
+      setStroke(brandOrange); doc.circle(cx, cy, r * 0.44,  'S');
+      setFill(brand);         doc.circle(cx, cy, r * 0.20,  'F');
+    };
+
+    /** Title block of a content section: pill + title + accent rule. */
+    const drawSectionHeader = (yPos: number, kicker: string, title: string): number => {
+      // Small kicker pill
+      doc.setFontSize(7);
+      const kickerWidth = doc.getTextWidth(kicker) + 14;
+      setFill(brand);
+      doc.roundedRect(margin, yPos - 8, kickerWidth, 12, 6, 6, 'F');
+      doc.setFont('helvetica', 'bold');
+      setText([255, 255, 255]);
+      doc.text(kicker, margin + 7, yPos);
+      // Title
+      setText(ink);
+      doc.setFontSize(15);
+      doc.setFont('helvetica', 'bold');
+      doc.text(title, margin, yPos + 18);
+      // Accent rule
+      setStroke(ruleSoft);
+      doc.setLineWidth(0.5);
+      doc.line(margin, yPos + 26, pageWidth - margin, yPos + 26);
+      return yPos + 38;
+    };
+
+    /** Page-break helper — adds a new page when content would overflow. */
+    const ensureSpace = (need: number, currentY: number): number => {
+      if (currentY + need > pageHeight - margin - 24) {
+        doc.addPage();
+        return margin + 12;
+      }
+      return currentY;
+    };
+
+    // ─── Cover header ─────────────────────────────────────────────────────────
+    drawBrandStrip(0, 6);
     let y = margin + 8;
 
-    // Logo dot + brand line
-    doc.setFillColor(232, 85, 78);
-    doc.circle(margin + 5, y + 4, 5, 'F');
-    doc.setFillColor(242, 140, 56);
-    doc.circle(margin + 4, y + 3, 2.5, 'F');
-    doc.setTextColor(232, 85, 78);
+    // Brand row: logo + wordmark
+    drawPulseLogo(margin + 7, y + 5, 16);
+    setText(ink);
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9);
-    doc.text('PULSO CULTURAL · RELATÓRIO DE IMPACTO', margin + 18, y + 6);
-    y += 28;
-
-    // Title
-    doc.setTextColor(30, 30, 30);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(26);
-    doc.text('Relatório de impacto', margin, y);
-    y += 22;
-
-    // Metadata line
+    doc.setFontSize(11);
+    doc.text('PULSO', margin + 22, y + 4);
+    setText(inkFaint);
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(10);
-    doc.setTextColor(140, 140, 140);
+    doc.setFontSize(8);
+    doc.text('CULTURAL', margin + 22, y + 14);
+
+    // Right-aligned date stamp
+    setText(inkFaint);
+    doc.setFontSize(8);
     const today = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
-    doc.text(`Gerado em ${today}`, margin, y);
-    y += 28;
+    doc.text(today.toUpperCase(), pageWidth - margin, y + 4, { align: 'right' });
+    doc.text('RELATÓRIO DE IMPACTO', pageWidth - margin, y + 14, { align: 'right' });
+    y += 36;
 
-    // ── Hero metric box ───────────────────────────────────────────────────────
+    // Big title block
+    setText(ink);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(34);
+    doc.text('Relatório de impacto', margin, y);
+    y += 18;
+    setText(brand);
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Pilotando a régua real de público num museu cultural', margin, y);
+    y += 26;
+
+    // ─── Hero metric ──────────────────────────────────────────────────────────
     if (acc) {
-      const heroHeight = 100;
-      doc.setFillColor(252, 240, 240);
-      doc.setDrawColor(232, 85, 78);
-      doc.setLineWidth(0.8);
-      doc.roundedRect(margin, y, contentWidth, heroHeight, 12, 12, 'FD');
+      const heroHeight = 130;
+      // Background: soft surface with gradient strip on the left
+      setFill(surface);
+      setStroke(ruleSoft);
+      doc.setLineWidth(0.6);
+      doc.roundedRect(margin, y, contentWidth, heroHeight, 14, 14, 'FD');
+      // Left accent band (the "pulse" gradient, in 3 stacked thin rectangles)
+      const accentW = 6;
+      setFill(brand);       doc.rect(margin, y + 14,                     accentW, (heroHeight - 28) / 3, 'F');
+      setFill(brand2);      doc.rect(margin, y + 14 + (heroHeight - 28) / 3, accentW, (heroHeight - 28) / 3, 'F');
+      setFill(brandOrange); doc.rect(margin, y + 14 + (heroHeight - 28) * 2 / 3, accentW, (heroHeight - 28) / 3, 'F');
 
-      doc.setTextColor(232, 85, 78);
+      // Kicker
+      setText(brand);
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(48);
-      doc.text(`${acc.multiplicador}×`, margin + 24, y + 56);
+      doc.setFontSize(8);
+      doc.text('DADO CENTRAL DO PILOTO', margin + 24, y + 26);
 
+      // Big number
+      setText(ink);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(64);
+      doc.text(`${acc.multiplicador}×`, margin + 24, y + 84);
+
+      // Headline next to the number
+      setText(ink);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(13);
+      doc.text('mais visitantes reais', margin + 200, y + 60);
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(11);
-      doc.setTextColor(60, 60, 60);
-      const heroText = 'mais visitantes reais do que o\nlivro de assinatura registrou';
-      doc.text(heroText, margin + 130, y + 38);
+      setText(inkSoft);
+      doc.text('do que o livro de assinatura registrou', margin + 200, y + 78);
 
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(9);
-      doc.setTextColor(140, 140, 140);
+      // Caption row
       const livro = livroEstimado ?? '—';
+      setText(inkFaint);
+      doc.setFontSize(8);
       doc.text(
-        `Câmera: ${acc.camera.toLocaleString('pt-BR')}  ·  Livro estimado: ~${typeof livro === 'number' ? livro.toLocaleString('pt-BR') : livro}  ·  Período: 30 dias`,
-        margin + 130, y + 80
+        `Câmera: ${acc.camera.toLocaleString('pt-BR')}     Livro estimado: ~${typeof livro === 'number' ? livro.toLocaleString('pt-BR') : livro}     Período: 30 dias`,
+        margin + 24, y + heroHeight - 14
       );
-      y += heroHeight + 24;
+      y += heroHeight + 28;
     }
 
-    // ── Stat boxes (3 per row) ────────────────────────────────────────────────
+    // ─── Métricas consolidadas ────────────────────────────────────────────────
     if (acc) {
-      doc.setTextColor(30, 30, 30);
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(12);
-      doc.text('Métricas consolidadas', margin, y);
-      y += 18;
+      y = ensureSpace(180, y);
+      y = drawSectionHeader(y, '01 · MÉTRICAS', 'Métricas consolidadas');
 
       const adesao = acc.camera > 0 ? Math.round((acc.checkins / acc.camera) * 100) : 0;
-      const stats: { label: string; value: string; color: [number, number, number] }[] = [
-        { label: 'Visitantes (câmera)', value: acc.camera.toLocaleString('pt-BR'),    color: [232, 85, 78] },
-        { label: 'Check-ins',          value: acc.checkins.toLocaleString('pt-BR'), color: [242, 140, 56] },
-        { label: 'Taxa de adesão',     value: `${adesao}%`,                          color: [72, 187, 120] },
-        { label: 'Taxa de retorno',    value: `${acc.retorno}%`,                     color: [72, 187, 120] },
-        { label: 'Multiplicador',      value: `${acc.multiplicador}×`,               color: [232, 85, 78] },
-        { label: 'Recorrentes',        value: (recorrencia?.retorno ?? 0).toLocaleString('pt-BR'), color: [212, 38, 126] },
+      const stats: { label: string; value: string; sub: string; color: [number, number, number] }[] = [
+        { label: 'Visitantes',     value: acc.camera.toLocaleString('pt-BR'),                       sub: 'Detectados pela câmera', color: brand },
+        { label: 'Check-ins',      value: acc.checkins.toLocaleString('pt-BR'),                     sub: 'Cadastros voluntários',   color: brandOrange },
+        { label: 'Adesão',         value: `${adesao}%`,                                              sub: 'Check-ins ÷ visitantes',  color: [72, 187, 120] },
+        { label: 'Taxa de retorno',value: `${acc.retorno}%`,                                         sub: 'Pulsaram ≥ 2 vezes',      color: [72, 187, 120] },
+        { label: 'Multiplicador',  value: `${acc.multiplicador}×`,                                   sub: 'Câmera vs. livro',         color: brand },
+        { label: 'Recorrentes',    value: (recorrencia?.retorno ?? 0).toLocaleString('pt-BR'),       sub: 'Pessoas únicas',           color: [212, 38, 126] },
       ];
 
       const cardW = (contentWidth - 16) / 3;
-      const cardH = 56;
+      const cardH = 70;
       stats.forEach((s, i) => {
         const col = i % 3;
         const row = Math.floor(i / 3);
         const cx = margin + col * (cardW + 8);
-        const cy = y + row * (cardH + 8);
-        doc.setDrawColor(220, 220, 220);
-        doc.setFillColor(252, 252, 252);
-        doc.roundedRect(cx, cy, cardW, cardH, 8, 8, 'FD');
-        doc.setTextColor(s.color[0], s.color[1], s.color[2]);
+        const cy = y + row * (cardH + 10);
+        // Card bg
+        setFill([255, 255, 255]);
+        setStroke(ruleSoft);
+        doc.setLineWidth(0.6);
+        doc.roundedRect(cx, cy, cardW, cardH, 10, 10, 'FD');
+        // Left color bar
+        setFill(s.color);
+        doc.rect(cx, cy + 8, 3, cardH - 16, 'F');
+        // Big value
+        setText(s.color);
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(20);
-        doc.text(s.value, cx + 12, cy + 30);
-        doc.setTextColor(120, 120, 120);
-        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(22);
+        doc.text(s.value, cx + 14, cy + 30);
+        // Label
+        setText(ink);
+        doc.setFont('helvetica', 'bold');
         doc.setFontSize(9);
-        doc.text(s.label, cx + 12, cy + 46);
+        doc.text(s.label, cx + 14, cy + 46);
+        // Sub
+        setText(inkFaint);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7.5);
+        doc.text(s.sub, cx + 14, cy + 58);
       });
-      y += Math.ceil(stats.length / 3) * (cardH + 8) + 24;
+      y += Math.ceil(stats.length / 3) * (cardH + 10) + 24;
     }
 
-    // ── Audience profile (bars) ───────────────────────────────────────────────
+    // ─── Perfil do público ────────────────────────────────────────────────────
     if (demo && (demo.gender.length > 0 || demo.origin.length > 0)) {
-      if (y > pageHeight - margin - 220) {
-        doc.addPage();
-        y = margin;
-      }
-      doc.setTextColor(30, 30, 30);
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(12);
-      doc.text('Perfil do público', margin, y);
-      y += 18;
+      y = ensureSpace(180, y);
+      y = drawSectionHeader(y, '02 · PERFIL', 'Perfil do público');
 
       const drawBars = (
         title: string,
@@ -398,93 +484,97 @@ export function ImpactoTab({ exhibitionId, museumId }: Props) {
         startY: number
       ): number => {
         let by = startY;
-        doc.setTextColor(80, 80, 80);
+        setText(inkSoft);
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(10);
-        doc.text(title, margin, by);
-        by += 12;
-        doc.setFont('helvetica', 'normal');
         doc.setFontSize(9);
-        const labelW = 100;
-        const barMaxW = contentWidth - labelW - 50;
+        doc.text(title.toUpperCase(), margin, by);
+        by += 14;
+
+        const labelW = 110;
+        const barMaxW = contentWidth - labelW - 60;
         for (const d of data) {
-          doc.setTextColor(60, 60, 60);
-          doc.text(labelMap[d.name] || d.name, margin, by + 7);
-          doc.setFillColor(240, 240, 240);
-          doc.roundedRect(margin + labelW, by + 1, barMaxW, 9, 2, 2, 'F');
-          doc.setFillColor(color[0], color[1], color[2]);
-          doc.roundedRect(margin + labelW, by + 1, barMaxW * (d.value / 100), 9, 2, 2, 'F');
-          doc.setTextColor(60, 60, 60);
-          doc.setFont('helvetica', 'bold');
-          doc.text(`${d.value}%`, margin + contentWidth, by + 7, { align: 'right' });
+          setText(ink);
           doc.setFont('helvetica', 'normal');
-          by += 14;
+          doc.setFontSize(9);
+          doc.text(labelMap[d.name] || d.name, margin, by + 8);
+          // Track
+          setFill([244, 240, 246]);
+          doc.roundedRect(margin + labelW, by + 1, barMaxW, 11, 3, 3, 'F');
+          // Fill
+          setFill(color);
+          const fillW = Math.max(2, barMaxW * (d.value / 100));
+          doc.roundedRect(margin + labelW, by + 1, fillW, 11, 3, 3, 'F');
+          // Value
+          setText(ink);
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(9);
+          doc.text(`${d.value}%`, margin + contentWidth, by + 8, { align: 'right' });
+          by += 17;
         }
-        return by + 8;
+        return by + 10;
       };
 
       if (demo.gender.length > 0) {
         y = drawBars('Gênero', demo.gender, GENDER_LABEL, [212, 38, 126], y);
       }
       if (demo.origin.length > 0) {
-        y = drawBars('Origem', demo.origin, ORIGIN_LABEL, [232, 85, 78], y);
+        y = ensureSpace(demo.origin.length * 17 + 20, y);
+        y = drawBars('Origem', demo.origin, ORIGIN_LABEL, brand, y);
       }
-      y += 8;
+      y += 6;
     }
 
-    // ── Findings ──────────────────────────────────────────────────────────────
-    if (y > pageHeight - margin - 80) {
-      doc.addPage();
-      y = margin;
-    }
-    doc.setTextColor(30, 30, 30);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(13);
-    doc.text('Principais achados', margin, y);
-    y += 20;
+    // ─── Principais achados ───────────────────────────────────────────────────
+    y = ensureSpace(80, y);
+    y = drawSectionHeader(y, '03 · INSIGHTS', 'Principais achados');
 
     findings.forEach((f, i) => {
-      if (y > pageHeight - margin - 70) {
-        doc.addPage();
-        y = margin;
-      }
-      doc.setTextColor(232, 85, 78);
+      const cardPadding = 14;
+      const titleLines = doc.splitTextToSize(f.title, contentWidth - cardPadding * 2 - 32);
+      const bodyLines = doc.splitTextToSize(f.body, contentWidth - cardPadding * 2 - 32);
+      const cardH = cardPadding * 2 + titleLines.length * 13 + bodyLines.length * 11 + 8;
+      y = ensureSpace(cardH + 12, y);
+
+      // Card bg
+      setFill([253, 251, 254]);
+      setStroke(ruleSoft);
+      doc.setLineWidth(0.6);
+      doc.roundedRect(margin, y, contentWidth, cardH, 10, 10, 'FD');
+
+      // Big number on the left
+      setText(brand);
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(10);
-      doc.text(String(i + 1).padStart(2, '0'), margin, y);
-      doc.setTextColor(20, 20, 20);
+      doc.setFontSize(20);
+      doc.text(String(i + 1).padStart(2, '0'), margin + cardPadding, y + cardPadding + 14);
+
+      // Title
+      setText(ink);
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(11);
-      const titleLines = doc.splitTextToSize(f.title, contentWidth - 28);
-      doc.text(titleLines, margin + 26, y);
-      y += titleLines.length * 13 + 4;
+      doc.text(titleLines, margin + cardPadding + 32, y + cardPadding + 8);
+
+      // Body
+      setText(inkSoft);
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(9.5);
-      doc.setTextColor(85, 85, 85);
-      const bodyLines = doc.splitTextToSize(f.body, contentWidth - 28);
-      doc.text(bodyLines, margin + 26, y);
-      y += bodyLines.length * 11.5 + 14;
-      if (i < findings.length - 1) {
-        doc.setDrawColor(232, 232, 232);
-        doc.setLineWidth(0.5);
-        doc.line(margin + 26, y - 6, pageWidth - margin, y - 6);
-        y += 4;
-      }
+      doc.text(bodyLines, margin + cardPadding + 32, y + cardPadding + 8 + titleLines.length * 13 + 6);
+
+      y += cardH + 10;
     });
 
-    // ── Page footer ───────────────────────────────────────────────────────────
+    // ─── Footer (every page) ─────────────────────────────────────────────────
     const totalPages = (doc as any).internal.getNumberOfPages();
     for (let i = 1; i <= totalPages; i++) {
       doc.setPage(i);
-      // bottom band
-      doc.setFillColor(232, 85, 78);
-      doc.rect(0, pageHeight - 4, pageWidth, 4, 'F');
-      doc.setFontSize(8);
-      doc.setTextColor(150, 150, 150);
-      doc.text(
-        `${i} / ${totalPages}  ·  Pulso Cultural  ·  Dados agregados conforme LGPD Art. 12`,
-        pageWidth / 2, pageHeight - 14, { align: 'center' }
-      );
+      drawBrandStrip(pageHeight - 4, 4);
+
+      // Footer text — left: brand line; right: page count
+      setText(inkFaint);
+      doc.setFontSize(7.5);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Pulso Cultural · Dados agregados conforme LGPD Art. 12',
+        margin, pageHeight - 12);
+      doc.text(`${i} / ${totalPages}`, pageWidth - margin, pageHeight - 12, { align: 'right' });
     }
 
     const dateStr = new Date().toISOString().split('T')[0];

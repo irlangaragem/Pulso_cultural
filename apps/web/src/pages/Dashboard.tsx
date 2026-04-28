@@ -95,7 +95,16 @@ export function Dashboard() {
   const navigate = useNavigate();
   const { user, token, logout } = useAuthStore();
 
-  const [tab, setTab] = useState<TabId>('tempo-real');
+  const TAB_KEY = 'pulso:dashboard:tab';
+  const VALID_TABS: TabId[] = ['tempo-real', 'publico', 'historico', 'exposicao', 'impacto', 'gestores'];
+  const [tab, setTabRaw] = useState<TabId>(() => {
+    const saved = (typeof window !== 'undefined' ? localStorage.getItem(TAB_KEY) : null) as TabId | null;
+    return saved && VALID_TABS.includes(saved) ? saved : 'tempo-real';
+  });
+  const setTab = (next: TabId) => {
+    setTabRaw(next);
+    try { localStorage.setItem(TAB_KEY, next); } catch { /* private mode */ }
+  };
   const [exhibitions, setExhibitions] = useState<ExhibitionSummary[]>([]);
   const [exhibitionId, setExhibitionId] = useState<string>('');
   const [museum, setMuseum] = useState<MuseumSummary | null>(null);
@@ -168,8 +177,16 @@ export function Dashboard() {
         top: 0,
         alignSelf: 'flex-start',
       }}>
-        {/* Brand */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '4px 8px 8px' }}>
+        {/* Brand — clicking the logo/name resets to the live "Tempo real" tab. */}
+        <button
+          type="button"
+          onClick={() => setTab('tempo-real')}
+          aria-label="Voltar para Tempo real"
+          style={{
+            display: 'flex', alignItems: 'center', gap: 10, padding: '4px 8px 8px',
+            background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left',
+          }}
+        >
           <SidebarBrandLogo />
           <div>
             <div style={{ fontFamily: "'Sora', 'Geist', sans-serif", fontSize: 15, fontWeight: 800, color: COLORS.text, letterSpacing: '0.04em' }}>
@@ -179,7 +196,7 @@ export function Dashboard() {
               Cultural
             </div>
           </div>
-        </div>
+        </button>
 
         {/* Nav */}
         <nav style={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 1 }}>
