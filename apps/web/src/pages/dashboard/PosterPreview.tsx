@@ -67,6 +67,10 @@ export function PosterPreview({ exhibition, museum, open, onClose }: Props) {
   const [qrDataUrl, setQrDataUrl] = useState<string>('');
   const [qrReady, setQrReady] = useState(false);
   const [downloading, setDownloading] = useState<'png' | 'pdf' | null>(null);
+  // The cover image lives on the API container's ephemeral disk; if Railway
+  // recycles the container the file 404s. Falling back to the gradient bg
+  // keeps the poster from showing a broken-image icon.
+  const [coverFailed, setCoverFailed] = useState(false);
 
   const visitorUrl = useMemo(() => buildVisitorUrl(exhibition.id), [exhibition.id]);
   const isLocal = useMemo(() => isLocalhostUrl(visitorUrl), [visitorUrl]);
@@ -251,12 +255,13 @@ export function PosterPreview({ exhibition, museum, open, onClose }: Props) {
           {/* Cover image as a tinted backdrop — gives the poster the personality
               of the exhibition while keeping all the text + QR clearly readable
               thanks to the dark gradient overlay above it. */}
-          {exhibition.coverImage && (
+          {exhibition.coverImage && !coverFailed && (
             <>
               <img
                 src={resolveImg(exhibition.coverImage)}
                 alt=""
                 crossOrigin="anonymous"
+                onError={() => setCoverFailed(true)}
                 style={{
                   position: 'absolute',
                   inset: 0,
@@ -355,9 +360,6 @@ export function PosterPreview({ exhibition, museum, open, onClose }: Props) {
                 <span style={{ color: '#0E0B0D', fontSize: 11 }}>Gerando QR…</span>
               )}
             </div>
-            <p style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, color: COLORS.faint, margin: '10px 0 0', letterSpacing: 0.5, wordBreak: 'break-all' }}>
-              {visitorUrl.replace(/^https?:\/\//, '')}
-            </p>
           </div>
 
           {/* Manifesto block */}

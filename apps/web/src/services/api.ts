@@ -5,9 +5,11 @@ import { useAuthStore } from '../store/useAuthStore';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3333";
 
+// 20s timeout: covers cold-start API + slow paths like /users (which joins
+// invites + last login per row). 8s was too tight on production cold starts.
 const baseApi = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 8000,
+  timeout: 20_000,
 });
 
 // ── Request: attach JWT when available ──

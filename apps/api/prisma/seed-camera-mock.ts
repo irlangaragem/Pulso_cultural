@@ -70,12 +70,18 @@ async function main() {
     console.error('❌ demo-camera not found. Run the main seed first.');
     process.exit(1);
   }
-  const exhibition = await prisma.exhibition.findFirst({ where: { status: 'ACTIVE' } })
-    ?? await prisma.exhibition.findFirst();
+  const exhArg = process.argv.find(a => a.startsWith('--exhibition='));
+  const exhibitionIdOverride = exhArg ? exhArg.split('=')[1] : null;
+
+  const exhibition = exhibitionIdOverride
+    ? await prisma.exhibition.findUnique({ where: { id: exhibitionIdOverride } })
+    : (await prisma.exhibition.findFirst({ where: { status: 'ACTIVE' } })
+       ?? await prisma.exhibition.findFirst({ orderBy: { updatedAt: 'desc' } }));
   if (!exhibition) {
     console.error('❌ no exhibition found. Create one first.');
     process.exit(1);
   }
+  console.log(`📍 Seeding for exhibition: ${exhibition.id} (${exhibition.name})`);
 
   if (reset) {
     const deleted = await prisma.cameraCount.deleteMany({ where: { cameraId: camera.id } });
