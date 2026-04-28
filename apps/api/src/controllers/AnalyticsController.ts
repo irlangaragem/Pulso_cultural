@@ -15,51 +15,63 @@ export const AnalyticsController = {
   async getTrends(req: Request, res: Response) {
     const { exhibitionId } = req.params;
 
-    // Museum opening hours (Solar do Unhão / MAM Bahia): 10h–18h.
-    // The hourly chart only renders these slots — showing 03:00 / 04:00
-    // empty buckets just because they fit in a 12-hour rolling window
-    // confuses managers ("why is everything zero?").
-    const OPEN_HOUR_START = 10;
-    const OPEN_HOUR_END   = 18;
+    // Museum opening hours in BRAZIL local time (Solar do Unhão / MAM Bahia is
+    // UTC-3, no DST). Production runs in UTC, so we shift by +3 to match the
+    // server's wall clock when filtering and labeling. Showing UTC hours
+    // directly would bake in a 3h offset for every Brazilian visitor.
+    const OPEN_HOUR_BR_START = 10;
+    const OPEN_HOUR_BR_END   = 18;
+    const TZ_OFFSET_HOURS    = 3; // Brazil = UTC - 3
 
     try {
       const now = new Date();
-      const todayStart = startOfHour(now);
-      todayStart.setHours(0, 0, 0, 0);
+      // "Brazil today" begins at UTC 03:00 of the current Brazil date. If we're
+      // currently before that boundary in UTC (i.e. before 03:00 UTC), Brazil
+      // is still on the previous calendar date.
+      const todayStartUtc = new Date(now);
+      todayStartUtc.setUTCHours(TZ_OFFSET_HOURS, 0, 0, 0);
+      if (now.getTime() < todayStartUtc.getTime()) {
+        todayStartUtc.setUTCDate(todayStartUtc.getUTCDate() - 1);
+      }
 
       const [counts, checkins] = await Promise.all([
         prisma.cameraCount.findMany({
-          where: { exhibitionId, timestamp: { gte: todayStart } },
+          where: { exhibitionId, timestamp: { gte: todayStartUtc } },
           orderBy: { timestamp: 'asc' },
         }),
         prisma.checkin.findMany({
-          where: { exhibitionId, createdAt: { gte: todayStart } },
+          where: { exhibitionId, createdAt: { gte: todayStartUtc } },
           orderBy: { createdAt: 'asc' },
         }),
       ]);
 
-      const hours: number[] = [];
-      for (let h = OPEN_HOUR_START; h <= OPEN_HOUR_END; h++) hours.push(h);
+      const trends: Array<{ hour: string; entries: number; exits: number; checkins: number }> = [];
+      for (let brH = OPEN_HOUR_BR_START; brH <= OPEN_HOUR_BR_END; brH++) {
+        const utcHour = brH + TZ_OFFSET_HOURS;
+        const hourStartUtc = new Date(todayStartUtc);
+        hourStartUtc.setUTCHours(utcHour, 0, 0, 0);
+        const hourEndUtc = new Date(hourStartUtc);
+        hourEndUtc.setUTCHours(hourEndUtc.getUTCHours() + 1);
 
-      const trends = hours.map(h => {
-        const hourDate = new Date(todayStart);
-        hourDate.setHours(h, 0, 0, 0);
-        const hourStr = h.toString().padStart(2, '0') + 'h';
+        const inBucket = (ts: Date) => ts.getTime() >= hourStartUtc.getTime() && ts.getTime() < hourEndUtc.getTime();
 
         const hourEntries = counts
-          .filter(c => startOfHour(c.timestamp).getTime() === hourDate.getTime() && c.type === 'ENTRADA')
+          .filter(c => c.type === 'ENTRADA' && inBucket(c.timestamp))
           .reduce((sum, c) => sum + (c.count ?? 1), 0);
 
         const hourExits = counts
-          .filter(c => startOfHour(c.timestamp).getTime() === hourDate.getTime() && c.type === 'SAIDA')
+          .filter(c => c.type === 'SAIDA' && inBucket(c.timestamp))
           .reduce((sum, c) => sum + (c.count ?? 1), 0);
 
-        const hourCheckins = checkins.filter(
-          c => startOfHour(c.createdAt).getTime() === hourDate.getTime()
-        ).length;
+        const hourCheckins = checkins.filter(c => inBucket(c.createdAt)).length;
 
-        return { hour: hourStr, entries: hourEntries, exits: hourExits, checkins: hourCheckins };
-      });
+        trends.push({
+          hour: brH.toString().padStart(2, '0') + 'h',
+          entries: hourEntries,
+          exits: hourExits,
+          checkins: hourCheckins,
+        });
+      }
 
       return res.json(trends);
     } catch (error) {

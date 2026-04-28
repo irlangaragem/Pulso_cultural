@@ -53,6 +53,9 @@ export function Guide() {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const [exhibition, setExhibition] = useState<any>(null);
+  // Local /uploads files can 404 after a Railway restart — hide the cover
+  // and fall back to the visitor-glow background instead of broken-img icon.
+  const [coverFailed, setCoverFailed] = useState(false);
   const [works, setWorks] = useState<Work[]>(FALLBACK_WORKS.slice(0, 6));
 
   // Resolve relative API uploads (/uploads/files/...) to absolute URLs.
@@ -240,11 +243,12 @@ export function Guide() {
             guide as a subtle background. The hero adds a brighter version on
             top of it; lower sections see only this dim layer + dark overlay
             so text stays legible. */}
-        {exhibition?.coverImage && (
+        {exhibition?.coverImage && !coverFailed && (
           <>
             <img
               src={resolveImg(exhibition.coverImage)}
               alt=""
+              onError={() => setCoverFailed(true)}
               style={{
                 position: 'absolute',
                 inset: 0,
@@ -291,7 +295,7 @@ export function Guide() {
               }} />
             </>
           )}
-          {!exhibition?.coverImage && <div className="visitor-glow" />}
+          {(!exhibition?.coverImage || coverFailed) && <div className="visitor-glow" />}
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, position: 'relative', zIndex: 1 }}>
             <PulseSymbol size={22} />

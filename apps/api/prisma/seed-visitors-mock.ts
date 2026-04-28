@@ -87,14 +87,18 @@ async function main() {
     }
   }
 
-  // Pick the active or most recent exhibition.
-  const exhibition =
-    (await prisma.exhibition.findFirst({ where: { status: 'ACTIVE' } }))
-    ?? (await prisma.exhibition.findFirst({ orderBy: { updatedAt: 'desc' } }));
+  // Pick the exhibition: --exhibition=<id> override, else ACTIVE, else most recent.
+  const exhArg = process.argv.find(a => a.startsWith('--exhibition='));
+  const exhibitionIdOverride = exhArg ? exhArg.split('=')[1] : null;
+  const exhibition = exhibitionIdOverride
+    ? await prisma.exhibition.findUnique({ where: { id: exhibitionIdOverride } })
+    : (await prisma.exhibition.findFirst({ where: { status: 'ACTIVE' } }))
+      ?? (await prisma.exhibition.findFirst({ orderBy: { updatedAt: 'desc' } }));
   if (!exhibition) {
     console.error('❌ no exhibition found.');
     process.exit(1);
   }
+  console.log(`📍 Seeding visitors/checkins for: ${exhibition.id} (${exhibition.name})`);
 
   const totalCheckins = Math.round(DAYS * DAILY_AVG_ENTRIES * (6 / 7) * ADHESION_RATE);
   console.log(`Target: ${totalCheckins} mock checkins (≈${Math.round(totalCheckins / DAYS)}/day, ${Math.round(ADHESION_RATE * 100)}% adesão)`);

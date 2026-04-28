@@ -161,12 +161,14 @@ export function ImpactoTab({ exhibitionId, museumId }: Props) {
   const [insights, setInsights] = useState<Insights | null>(null);
   const [trends, setTrends] = useState<TrendPoint[]>([]);
   const [recorrencia, setRecorrencia] = useState<Recorrencia | null>(null);
+  const [hoje, setHoje] = useState<{ tempo_medio_min: number | null } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const refresh = () => {
     api.get('/historico').then(r => setAcc(r.data)).catch(e => setError(e?.message));
     api.get('/resumo/historico?days=30').then(r => setHistorico(r.data || [])).catch(() => {});
     api.get('/resumo/recorrencia').then(r => setRecorrencia(r.data)).catch(() => {});
+    api.get('/resumo/hoje').then(r => setHoje(r.data)).catch(() => {});
     if (exhibitionId) {
       api.get(`/analytics/demographics/${exhibitionId}`).then(r => setDemo(r.data)).catch(() => {});
       api.get(`/analytics/trends/${exhibitionId}`).then(r => setTrends(r.data || [])).catch(() => {});
@@ -659,7 +661,11 @@ export function ImpactoTab({ exhibitionId, museumId }: Props) {
           color={COLORS.green}
         />
         <StatCard value={acc ? `${acc.retorno}%` : '—'} label="Retornaram ao espaço" color={COLORS.green} />
-        <StatCard value="—" label="Permanência média" color={COLORS.faint} />
+        <StatCard
+          value={hoje?.tempo_medio_min != null ? `${hoje.tempo_medio_min} min` : '—'}
+          label="Permanência média"
+          color={COLORS.purple}
+        />
         <StatCard
           value={recorrencia?.retorno?.toLocaleString('pt-BR') ?? '—'}
           label="Visitantes recorrentes"
