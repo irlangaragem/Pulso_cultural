@@ -23,7 +23,7 @@ export class AnalyticsService {
           event: payload.event,
           exhibitionId: payload.exhibitionId || null,
           museumSlug: payload.museumSlug || null,
-          properties: (payload.properties ?? {}) as Prisma.InputJsonValue
+          properties: (payload.properties ?? {}) as any
         }
       });
     } catch (error) {

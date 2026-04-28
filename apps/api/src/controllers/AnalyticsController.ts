@@ -88,7 +88,7 @@ export const AnalyticsController = {
       }, {});
       const gender = Object.entries(genderMap).map(([name, count]) => ({
         name,
-        value: Math.round((count / total) * 100),
+        value: Math.round((Number(count) / total) * 100),
       }));
 
       const originMap = visitors.reduce((acc: Record<string, number>, v) => {
@@ -97,7 +97,7 @@ export const AnalyticsController = {
       }, {});
       const origin = Object.entries(originMap).map(([name, count]) => ({
         name,
-        value: Math.round((count / total) * 100),
+        value: Math.round((Number(count) / total) * 100),
       }));
 
       const currentYear = new Date().getFullYear();
