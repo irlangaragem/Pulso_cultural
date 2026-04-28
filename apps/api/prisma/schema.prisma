@@ -48,6 +48,7 @@ model Exhibition {
   endDate         DateTime
   sponsor         String?
   coverImage      String?
+  audioUrl        String?
   status          ExhibitionStatus @default(DRAFT)
   qrCode          String?          @unique
   works           Work[]

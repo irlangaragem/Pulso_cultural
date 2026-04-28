@@ -345,15 +345,15 @@ export function ImpactoTab({ exhibitionId, museumId }: Props) {
     let y = margin + 8;
 
     // Brand row: logo + wordmark
-    drawPulseLogo(margin + 7, y + 5, 16);
+    drawPulseLogo(margin + 8, y + 6, 16);
     setText(ink);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(11);
-    doc.text('PULSO', margin + 22, y + 4);
+    doc.text('PULSO', margin + 28, y + 4);
     setText(inkFaint);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
-    doc.text('CULTURAL', margin + 22, y + 14);
+    doc.text('CULTURAL', margin + 28, y + 14);
 
     // Right-aligned date stamp
     setText(inkFaint);
@@ -361,14 +361,16 @@ export function ImpactoTab({ exhibitionId, museumId }: Props) {
     const today = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
     doc.text(today.toUpperCase(), pageWidth - margin, y + 4, { align: 'right' });
     doc.text('RELATÓRIO DE IMPACTO', pageWidth - margin, y + 14, { align: 'right' });
-    y += 36;
+    // Big gap before the headline so the 30pt-tall title doesn't crash into
+    // the rings logo / brand row above it.
+    y += 56;
 
     // Big title block
     setText(ink);
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(34);
+    doc.setFontSize(30);
     doc.text('Relatório de impacto', margin, y);
-    y += 18;
+    y += 20;
     setText(brand);
     doc.setFontSize(11);
     doc.setFont('helvetica', 'normal');
@@ -452,21 +454,21 @@ export function ImpactoTab({ exhibitionId, museumId }: Props) {
         // Left color bar
         setFill(s.color);
         doc.rect(cx, cy + 8, 3, cardH - 16, 'F');
-        // Big value
+        // Big value — extra gap so the side bar doesn't crowd the digits
         setText(s.color);
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(22);
-        doc.text(s.value, cx + 14, cy + 30);
+        doc.text(s.value, cx + 18, cy + 30);
         // Label
         setText(ink);
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(9);
-        doc.text(s.label, cx + 14, cy + 46);
+        doc.text(s.label, cx + 18, cy + 46);
         // Sub
         setText(inkFaint);
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(7.5);
-        doc.text(s.sub, cx + 14, cy + 58);
+        doc.text(s.sub, cx + 18, cy + 58);
       });
       y += Math.ceil(stats.length / 3) * (cardH + 10) + 24;
     }
@@ -530,8 +532,9 @@ export function ImpactoTab({ exhibitionId, museumId }: Props) {
 
     findings.forEach((f, i) => {
       const cardPadding = 14;
-      const titleLines = doc.splitTextToSize(f.title, contentWidth - cardPadding * 2 - 32);
-      const bodyLines = doc.splitTextToSize(f.body, contentWidth - cardPadding * 2 - 32);
+      const numberCol = 44; // extra breathing room between the big number and the title text
+      const titleLines = doc.splitTextToSize(f.title, contentWidth - cardPadding * 2 - numberCol);
+      const bodyLines = doc.splitTextToSize(f.body, contentWidth - cardPadding * 2 - numberCol);
       const cardH = cardPadding * 2 + titleLines.length * 13 + bodyLines.length * 11 + 8;
       y = ensureSpace(cardH + 12, y);
 
@@ -551,13 +554,13 @@ export function ImpactoTab({ exhibitionId, museumId }: Props) {
       setText(ink);
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(11);
-      doc.text(titleLines, margin + cardPadding + 32, y + cardPadding + 8);
+      doc.text(titleLines, margin + cardPadding + numberCol, y + cardPadding + 8);
 
       // Body
       setText(inkSoft);
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(9.5);
-      doc.text(bodyLines, margin + cardPadding + 32, y + cardPadding + 8 + titleLines.length * 13 + 6);
+      doc.text(bodyLines, margin + cardPadding + numberCol, y + cardPadding + 8 + titleLines.length * 13 + 6);
 
       y += cardH + 10;
     });

@@ -96,7 +96,15 @@
   flex-direction: column;
 }
 
-/* Hide scrollbar but allow scroll */
+/* Hide scrollbar but allow scroll. The page-level rules cover the iframe
+   used in the dashboard's preview modal — without them the iframe shows the
+   browser's native scrollbar inside the phone frame, which looks broken. */
+html, body {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+html::-webkit-scrollbar,
+body::-webkit-scrollbar { display: none; }
 .visitor-content::-webkit-scrollbar { display: none; }
 .visitor-content { -ms-overflow-style: none; scrollbar-width: none; }
 

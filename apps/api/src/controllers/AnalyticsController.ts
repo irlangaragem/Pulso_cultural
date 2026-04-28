@@ -15,26 +15,36 @@ export const AnalyticsController = {
   async getTrends(req: Request, res: Response) {
     const { exhibitionId } = req.params;
 
+    // Museum opening hours (Solar do Unhão / MAM Bahia): 10h–18h.
+    // The hourly chart only renders these slots — showing 03:00 / 04:00
+    // empty buckets just because they fit in a 12-hour rolling window
+    // confuses managers ("why is everything zero?").
+    const OPEN_HOUR_START = 10;
+    const OPEN_HOUR_END   = 18;
+
     try {
       const now = new Date();
-      const twelveHoursAgo = subHours(now, 12);
+      const todayStart = startOfHour(now);
+      todayStart.setHours(0, 0, 0, 0);
 
-      // Run both queries in parallel — they're independent and the slower of
-      // the two now dominates total latency instead of summing them.
       const [counts, checkins] = await Promise.all([
         prisma.cameraCount.findMany({
-          where: { exhibitionId, timestamp: { gte: twelveHoursAgo } },
+          where: { exhibitionId, timestamp: { gte: todayStart } },
           orderBy: { timestamp: 'asc' },
         }),
         prisma.checkin.findMany({
-          where: { exhibitionId, createdAt: { gte: twelveHoursAgo } },
+          where: { exhibitionId, createdAt: { gte: todayStart } },
           orderBy: { createdAt: 'asc' },
         }),
       ]);
 
-      const trends = Array.from({ length: 13 }).map((_, i) => {
-        const hourDate = startOfHour(subHours(now, 12 - i));
-        const hourStr = hourDate.getHours().toString().padStart(2, '0') + ':00';
+      const hours: number[] = [];
+      for (let h = OPEN_HOUR_START; h <= OPEN_HOUR_END; h++) hours.push(h);
+
+      const trends = hours.map(h => {
+        const hourDate = new Date(todayStart);
+        hourDate.setHours(h, 0, 0, 0);
+        const hourStr = h.toString().padStart(2, '0') + 'h';
 
         const hourEntries = counts
           .filter(c => startOfHour(c.timestamp).getTime() === hourDate.getTime() && c.type === 'ENTRADA')

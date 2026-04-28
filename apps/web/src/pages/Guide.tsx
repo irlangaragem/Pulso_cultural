@@ -37,6 +37,18 @@ const OTHER_EXPOS = [
 
 const EXHIBITION_ID = 'default-exhibition';
 
+/**
+ * Translate room labels stored in the DB (always in PT, e.g. "Sala 1") into
+ * the active language. Pattern-matches "Sala <suffix>" specifically — leaves
+ * other room formats (e.g. "Galeria 2", "Espaço Educativo") untouched, since
+ * those are proper names that shouldn't be auto-translated.
+ */
+function translateRoom(room: string, t: (key: string) => string): string {
+  const m = room.trim().match(/^Sala\s+(.+)$/i);
+  if (!m) return room;
+  return `${t('guide.room_prefix')} ${m[1]}`;
+}
+
 export function Guide() {
   const navigate = useNavigate();
   const { t } = useLanguage();
@@ -101,14 +113,22 @@ export function Guide() {
   }, []);
 
   useEffect(() => {
-    // Public route (LOG-11): visitor app does not need a JWT to read the
-    // active exhibition. Falls back to the static FALLBACK_WORKS only when
-    // the API is unreachable — and shows a non-blocking warning so the
-    // operator notices the disconnect.
+    // Public route (LOG-11): visitor app does not need a JWT.
+    // Honours the `?exhibition=<id>` query param so the dashboard's preview
+    // iframe (and shared QR links) show the requested exhibition, not just
+    // whatever happens to be ACTIVE in the DB. Falls back to the static
+    // FALLBACK_WORKS only when both the by-id and active endpoints fail.
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 4000);
 
-    api.get('/api/v1/public/exhibitions/active', { signal: controller.signal })
+    const requestedId = typeof window !== 'undefined'
+      ? new URLSearchParams(window.location.search).get('exhibition')
+      : null;
+    const url = requestedId
+      ? `/api/v1/public/exhibitions/by-id/${encodeURIComponent(requestedId)}`
+      : '/api/v1/public/exhibitions/active';
+
+    api.get(url, { signal: controller.signal })
       .then(res => {
         clearTimeout(timeout);
         setExhibition(res.data);
@@ -118,7 +138,7 @@ export function Guide() {
       })
       .catch(err => {
         clearTimeout(timeout);
-        console.warn('[Guide] failed to load active exhibition; showing fallback works:', err?.message);
+        console.warn('[Guide] failed to load exhibition; showing fallback works:', err?.message);
       });
   }, []);
 
@@ -190,12 +210,64 @@ export function Guide() {
     }
   };
 
+  // Same pattern as togglePlay but for the exhibition's intro track. Uses a
+  // synthetic id 'exhibition-intro' so it shares state with the works' player
+  // (only one track plays at a time).
+  const toggleIntroAudio = () => {
+    const url = exhibition?.audioUrl;
+    if (!url || url === 'https://') return;
+    const introId = 'exhibition-intro';
+    if (playingId === introId) {
+      soundRef.current?.pause();
+      setPlayingId(null);
+    } else {
+      soundRef.current?.stop();
+      const sound = new Howl({
+        src: [url],
+        html5: true,
+        onend: () => { setPlayingId(null); setProgress(0); },
+      });
+      sound.play();
+      soundRef.current = sound;
+      setPlayingId(introId);
+    }
+  };
+
   return (
     <VisitorLayout>
-      <div style={{ minHeight: '100%' }}>
+      <div style={{ minHeight: '100%', position: 'relative' }}>
+        {/* Cover image (when uploaded by the manager) — covers the entire
+            guide as a subtle background. The hero adds a brighter version on
+            top of it; lower sections see only this dim layer + dark overlay
+            so text stays legible. */}
+        {exhibition?.coverImage && (
+          <>
+            <img
+              src={resolveImg(exhibition.coverImage)}
+              alt=""
+              style={{
+                position: 'absolute',
+                inset: 0,
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                opacity: 0.16,
+                zIndex: 0,
+                pointerEvents: 'none',
+              }}
+            />
+            <div style={{
+              position: 'absolute',
+              inset: 0,
+              background: 'linear-gradient(180deg, rgba(14,11,13,0.5) 0%, rgba(14,11,13,0.92) 100%)',
+              zIndex: 0,
+              pointerEvents: 'none',
+            }} />
+          </>
+        )}
         {/* Hero header */}
         <div className="v-guide-hero" style={{ position: 'relative', overflow: 'hidden' }}>
-          {/* Cover image (when uploaded by the manager) — sits behind the hero text */}
+          {/* Brighter image inside the hero so the cover is more visible at top */}
           {exhibition?.coverImage && (
             <>
               <img
@@ -207,14 +279,14 @@ export function Guide() {
                   width: '100%',
                   height: '100%',
                   objectFit: 'cover',
-                  opacity: 0.35,
+                  opacity: 0.45,
                   zIndex: 0,
                 }}
               />
               <div style={{
                 position: 'absolute',
                 inset: 0,
-                background: 'linear-gradient(180deg, rgba(14,11,13,0.5) 0%, rgba(14,11,13,0.85) 70%, #0E0B0D 100%)',
+                background: 'linear-gradient(180deg, rgba(14,11,13,0.3) 0%, rgba(14,11,13,0.75) 70%, #0E0B0D 100%)',
                 zIndex: 0,
               }} />
             </>
@@ -244,10 +316,64 @@ export function Guide() {
 
 
         {/* Description */}
-        <div style={{ padding: '0 20px' }}>
+        <div style={{ padding: '0 20px', position: 'relative', zIndex: 1 }}>
           <p style={{ fontSize: 13, color: '#A8969A', lineHeight: 1.7 }}>
             {exhibition?.description || t('exhibition.description')}
           </p>
+
+          {/* Intro audio — plays a welcome track set on the exhibition itself
+              (separate from per-work audio). Uses the same Howl singleton so
+              only one track plays at a time. */}
+          {exhibition?.audioUrl && exhibition.audioUrl !== 'https://' && (
+            <div
+              onClick={toggleIntroAudio}
+              style={{
+                marginTop: 20,
+                padding: '14px 16px',
+                borderRadius: 12,
+                background: playingId === 'exhibition-intro' ? 'rgba(232, 85, 78, 0.06)' : 'rgba(255,255,255,0.03)',
+                border: `1px solid ${playingId === 'exhibition-intro' ? 'rgba(232, 85, 78, 0.25)' : 'rgba(255,255,255,0.06)'}`,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 14,
+                transition: 'border-color 0.2s, background 0.2s',
+              }}
+            >
+              <button
+                className="v-audio-btn"
+                onClick={(e) => { e.stopPropagation(); toggleIntroAudio(); }}
+                aria-label="Tocar áudio de introdução"
+                style={{ flexShrink: 0 }}
+              >
+                {playingId === 'exhibition-intro' ? (
+                  <Pause size={16} fill="#E8554E" stroke="none" />
+                ) : (
+                  <Play size={16} fill="#E8554E" stroke="none" />
+                )}
+              </button>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{
+                  fontFamily: "'Sora', sans-serif",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: '#F5ECE4',
+                  margin: 0,
+                }}>
+                  Áudio de boas-vindas
+                </p>
+                <p style={{
+                  fontFamily: "'Space Mono', monospace",
+                  fontSize: 9,
+                  color: '#6B5A60',
+                  letterSpacing: 1,
+                  margin: '3px 0 0',
+                }}>
+                  {playingId === 'exhibition-intro' ? 'TOCANDO' : 'PRESSIONE PARA OUVIR'}
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Works */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 28, marginBottom: 14 }}>
@@ -268,7 +394,7 @@ export function Guide() {
                 onClick={() => setActiveWork(isActive ? null : w.id)}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  {w.room && <div className="v-work-room">{w.room}</div>}
+                  {w.room && <div className="v-work-room">{translateRoom(w.room, t)}</div>}
                   <div style={{ flex: 1 }}>
                     <p className="v-work-title">
                       {w.title}
@@ -332,7 +458,7 @@ export function Guide() {
           })}
 
           {/* Other exhibitions */}
-          <h2 className="v-section-title" style={{ marginTop: 32, marginBottom: 14 }}>Também em cartaz</h2>
+          <h2 className="v-section-title" style={{ marginTop: 32, marginBottom: 14 }}>{t('guide.other_exhibitions')}</h2>
           {OTHER_EXPOS.map((ex, i) => (
             <div
               key={i}

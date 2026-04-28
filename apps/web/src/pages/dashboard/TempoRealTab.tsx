@@ -12,6 +12,7 @@ interface ResumoHoje {
   checkins_hoje: number;
   ocupacao_atual: number;
   ocupacao_pico: number | null;
+  tempo_medio_min: number | null;
   atualizado_em: string;
 }
 
@@ -38,7 +39,11 @@ interface Props {
   exhibitionId: string;
 }
 
+// Indexed by JS Date.getDay() (0 = Sunday) — used to label each day of the
+// weekly chart. Display order is enforced separately so the week starts on
+// Monday (Seg) like the reference design.
 const DOW_SHORT = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+const WEEK_DISPLAY_ORDER = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
 
 function pctLabel(pct: number | null | undefined, suffix: string): string | null {
   if (pct === null || pct === undefined) return null;
@@ -135,12 +140,20 @@ export function TempoRealTab({ exhibitionId }: Props) {
   // Real-time: refresh immediately when a visitor pulses, checks in, or rates.
   useRealtimeUpdates(refresh);
 
-  // Weekly comparison: camera entries vs check-ins per day
-  const weekly = historico.map(d => {
-    const date = new Date(d.data);
-    const dow = DOW_SHORT[date.getDay()];
-    return { day: dow, camera: d.entradas, checkins: d.checkins };
+  // Weekly comparison: camera entries vs check-ins per day, ordered Mon→Sun.
+  // historico arrives newest-first; we take the most recent 7 days, label each
+  // by weekday, then re-order via WEEK_DISPLAY_ORDER so the chart always reads
+  // Seg → Dom regardless of which weekday "today" is.
+  const weeklyByDay: Record<string, { camera: number; checkins: number }> = {};
+  historico.slice(0, 7).forEach(d => {
+    const dow = DOW_SHORT[new Date(d.data).getDay()];
+    weeklyByDay[dow] = { camera: d.entradas, checkins: d.checkins };
   });
+  const weekly = WEEK_DISPLAY_ORDER.map(dow => ({
+    day: dow,
+    camera: weeklyByDay[dow]?.camera ?? 0,
+    checkins: weeklyByDay[dow]?.checkins ?? 0,
+  }));
 
   const adesao = hoje && hoje.entradas_hoje > 0
     ? Math.round((hoje.checkins_hoje / hoje.entradas_hoje) * 100)
@@ -184,10 +197,10 @@ export function TempoRealTab({ exhibitionId }: Props) {
           hintColor={COLORS.orange}
         />
         <StatBig
-          value="—"
+          value={hoje?.tempo_medio_min != null ? `${hoje.tempo_medio_min} min` : '—'}
           label="Tempo médio no espaço"
-          color={COLORS.faint}
-          hint="Sem dwell tracking"
+          color={COLORS.purple}
+          hint={hoje?.tempo_medio_min != null ? 'estimativa baseada em fluxo' : null}
           hintColor={COLORS.faint}
         />
       </div>
@@ -215,7 +228,7 @@ export function TempoRealTab({ exhibitionId }: Props) {
             ) : (
               <div style={{ width: '100%', height: 240 }}>
                 <ResponsiveContainer>
-                  <BarChart data={trends.map(t => ({ hour: t.hour, value: t[useField] as number }))} margin={{ top: 10, right: 6, bottom: 0, left: -16 }} barCategoryGap={12}>
+                  <BarChart data={trends.map(t => ({ hour: t.hour, value: t[useField] as number }))} margin={{ top: 10, right: 6, bottom: 0, left: -16 }} barCategoryGap={6}>
                     <defs>
                       <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="0%"   stopColor="#F0426A" stopOpacity={1} />
@@ -230,7 +243,7 @@ export function TempoRealTab({ exhibitionId }: Props) {
                       contentStyle={{ background: COLORS.panelAlt, border: `1px solid ${COLORS.border}`, borderRadius: 8 }}
                       labelFormatter={label => `Hora: ${label}`}
                     />
-                    <Bar dataKey="value" radius={[6, 6, 2, 2]} fill="url(#barGradient)" maxBarSize={36} isAnimationActive={false} />
+                    <Bar dataKey="value" radius={[6, 6, 2, 2]} fill="url(#barGradient)" maxBarSize={64} isAnimationActive={false} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -239,52 +252,63 @@ export function TempoRealTab({ exhibitionId }: Props) {
         );
       })()}
 
-      {/* Weekly comparison — paired bars (pulse + amber) with fixed Y 0/200/400/600/800 */}
-      <div style={card}>
-        <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: 20 }}>
-          <h3 style={{ ...sectionTitle, margin: 0, flex: 1, fontSize: 15 }}>Comparativo semanal</h3>
-          <span style={sectionMeta}>CÂMERA VS CHECK-IN</span>
-        </div>
-        {weekly.length === 0 ? (
-          <div style={{ height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', color: COLORS.faint }}>
-            Sem dados ainda
+      {/* Weekly comparison — paired bars (pulse + amber). Y axis scales to the
+          actual max so small datasets don't render as 1-pixel slivers. */}
+      {(() => {
+        const weeklyMax = weekly.reduce((m, d) => Math.max(m, d.camera, d.checkins), 0);
+        // Round Y up to a sensible step (e.g. 4, 10, 50, 200…) so the ticks read clean.
+        const step = weeklyMax <= 8 ? 2 : weeklyMax <= 40 ? 10 : weeklyMax <= 200 ? 50 : weeklyMax <= 800 ? 200 : 500;
+        const yMax = Math.max(step * 4, Math.ceil(weeklyMax * 1.2 / step) * step);
+        const yTicks = [0, yMax * 0.25, yMax * 0.5, yMax * 0.75, yMax];
+
+        return (
+          <div style={card}>
+            <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: 20 }}>
+              <h3 style={{ ...sectionTitle, margin: 0, flex: 1, fontSize: 15 }}>Comparativo semanal</h3>
+              <span style={sectionMeta}>CÂMERA VS CHECK-IN</span>
+            </div>
+            {weekly.length === 0 ? (
+              <div style={{ height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', color: COLORS.faint }}>
+                Sem dados ainda
+              </div>
+            ) : (
+              <div style={{ width: '100%', height: 240 }}>
+                <ResponsiveContainer>
+                  <BarChart data={weekly} margin={{ top: 10, right: 6, bottom: 0, left: -16 }} barCategoryGap={8} barGap={2}>
+                    <defs>
+                      <linearGradient id="weeklyPulse" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%"   stopColor="#F0426A" />
+                        <stop offset="60%"  stopColor="#FF5E5B" />
+                        <stop offset="100%" stopColor="#F59E42" />
+                      </linearGradient>
+                      <linearGradient id="weeklyAmber" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%"   stopColor="#E8A33D" />
+                        <stop offset="100%" stopColor="#B97826" />
+                      </linearGradient>
+                    </defs>
+                    <XAxis dataKey="day" stroke={COLORS.faint} fontSize={10} tickLine={false} axisLine={{ stroke: COLORS.border }} />
+                    <YAxis stroke={COLORS.faint} fontSize={10} tickLine={false} axisLine={false} ticks={yTicks} domain={[0, yMax]} />
+                    <Tooltip
+                      cursor={{ fill: 'rgba(255,255,255,0.04)' }}
+                      contentStyle={{ background: COLORS.panelAlt, border: `1px solid ${COLORS.border}`, borderRadius: 8 }}
+                    />
+                    <Legend
+                      wrapperStyle={{ fontSize: 12, paddingTop: 8 }}
+                      iconType="circle"
+                      iconSize={8}
+                      formatter={(value) => (
+                        <span style={{ color: COLORS.muted, fontSize: 12, fontFamily: "'DM Sans', sans-serif" }}>{value}</span>
+                      )}
+                    />
+                    <Bar dataKey="camera"   name="Câmera (total)"        fill="url(#weeklyPulse)" radius={[5, 5, 2, 2]} maxBarSize={48} isAnimationActive={false} />
+                    <Bar dataKey="checkins" name="Check-in (voluntário)" fill="url(#weeklyAmber)" radius={[5, 5, 2, 2]} maxBarSize={48} isAnimationActive={false} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
           </div>
-        ) : (
-          <div style={{ width: '100%', height: 240 }}>
-            <ResponsiveContainer>
-              <BarChart data={weekly} margin={{ top: 10, right: 6, bottom: 0, left: -16 }} barCategoryGap={12} barGap={4}>
-                <defs>
-                  <linearGradient id="weeklyPulse" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%"   stopColor="#F0426A" />
-                    <stop offset="60%"  stopColor="#FF5E5B" />
-                    <stop offset="100%" stopColor="#F59E42" />
-                  </linearGradient>
-                  <linearGradient id="weeklyAmber" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%"   stopColor="#E8A33D" />
-                    <stop offset="100%" stopColor="#B97826" />
-                  </linearGradient>
-                </defs>
-                <XAxis dataKey="day" stroke={COLORS.faint} fontSize={10} tickLine={false} axisLine={{ stroke: COLORS.border }} />
-                <YAxis stroke={COLORS.faint} fontSize={10} tickLine={false} axisLine={false} ticks={[0, 200, 400, 600, 800]} domain={[0, 800]} />
-                <Tooltip
-                  cursor={{ fill: 'rgba(255,255,255,0.04)' }}
-                  contentStyle={{ background: COLORS.panelAlt, border: `1px solid ${COLORS.border}`, borderRadius: 8 }}
-                />
-                <Legend
-                  wrapperStyle={{ fontSize: 12, paddingTop: 8 }}
-                  iconType="circle"
-                  iconSize={8}
-                  formatter={(value) => (
-                    <span style={{ color: COLORS.muted, fontSize: 12, fontFamily: "'DM Sans', sans-serif" }}>{value}</span>
-                  )}
-                />
-                <Bar dataKey="camera"   name="Câmera (total)"        fill="url(#weeklyPulse)" radius={[5, 5, 2, 2]} maxBarSize={18} isAnimationActive={false} />
-                <Bar dataKey="checkins" name="Check-in (voluntário)" fill="url(#weeklyAmber)" radius={[5, 5, 2, 2]} maxBarSize={18} isAnimationActive={false} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        )}
-      </div>
+        );
+      })()}
     </div>
   );
 }
