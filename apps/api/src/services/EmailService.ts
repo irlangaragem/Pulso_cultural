@@ -65,26 +65,35 @@ function inviteHtml(p: InviteEmailPayload): string {
 }
 
 export const EmailService = {
-  /** Returns true if the email was actually sent via SMTP. */
-  async sendInvite(p: InviteEmailPayload): Promise<boolean> {
+  /**
+   * Returns whether SMTP is configured at all (i.e., we will *attempt* to send).
+   * The actual SMTP send happens fire-and-forget so the HTTP request returns
+   * fast even when the provider is slow/unverified — the invite URL is always
+   * returned in the response body so the admin can copy it as a fallback.
+   *
+   * Why fire-and-forget: Resend (and most providers) can take 2–10s on the
+   * first send after a cold start; an unverified domain causes a 30s+ hang
+   * before failing. Awaiting that inside the request handler caused the
+   * dashboard's 20s axios timeout to fire and made the UI look broken.
+   */
+  sendInvite(p: InviteEmailPayload): boolean {
     const transporter = getTransporter();
     if (!transporter) {
       console.log(`[email:mock] invite for ${p.to}: ${p.inviteUrl}`);
       return false;
     }
-    try {
-      await transporter.sendMail({
-        from: process.env.SMTP_FROM || `Pulso Cultural <noreply@${(process.env.SMTP_HOST || 'localhost').replace(/^smtp\./, '')}>`,
-        to: `${p.toName} <${p.to}>`,
-        subject: `Convite para o ${p.museumName} · Pulso Cultural`,
-        html: inviteHtml(p),
-        text: `Você foi convidado para acessar o painel do ${p.museumName}.\n\nDefina sua senha em: ${p.inviteUrl}\n\nO convite expira em ${p.expiresInDays} dias.`,
-      });
-      console.log(`[email] invite sent to ${p.to}`);
-      return true;
-    } catch (err: any) {
-      console.error('[email] failed to send invite:', err?.message ?? err);
-      return false;
-    }
+    setImmediate(() => {
+      transporter
+        .sendMail({
+          from: process.env.SMTP_FROM || `Pulso Cultural <noreply@${(process.env.SMTP_HOST || 'localhost').replace(/^smtp\./, '')}>`,
+          to: `${p.toName} <${p.to}>`,
+          subject: `Convite para o ${p.museumName} · Pulso Cultural`,
+          html: inviteHtml(p),
+          text: `Você foi convidado para acessar o painel do ${p.museumName}.\n\nDefina sua senha em: ${p.inviteUrl}\n\nO convite expira em ${p.expiresInDays} dias.`,
+        })
+        .then(() => console.log(`[email] invite sent to ${p.to}`))
+        .catch(err => console.error('[email] failed to send invite:', err?.message ?? err));
+    });
+    return true;
   },
 };

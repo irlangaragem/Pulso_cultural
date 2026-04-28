@@ -43,7 +43,10 @@ app.use(cors({
   origin: ALLOWED_ORIGINS,
   credentials: true,
 }));
-app.use(express.json());
+// 8MB body limit covers the largest cover image (5MB raw → ~6.7MB base64)
+// stored inline as a data URL on the Exhibition row. Without this, saving an
+// exhibition with a cover hit the default 100KB cap and threw PayloadTooLargeError.
+app.use(express.json({ limit: '8mb' }));
 app.use(routes);
 
 app.get('/', (_req, res) => {

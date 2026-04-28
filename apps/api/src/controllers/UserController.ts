@@ -119,7 +119,9 @@ export const UserController = {
         select: { name: true },
       });
 
-      const sent = await EmailService.sendInvite({
+      // Fire-and-forget: SMTP send happens in background so this endpoint
+      // returns under ~100ms even when the email provider is slow/unverified.
+      const sent = EmailService.sendInvite({
         to: user.email,
         toName: user.name,
         inviteUrl,
@@ -207,7 +209,8 @@ export const UserController = {
         select: { name: true },
       });
 
-      const sent = await EmailService.sendInvite({
+      // Fire-and-forget — see UserController.create for context.
+      const sent = EmailService.sendInvite({
         to: target.email,
         toName: target.name,
         inviteUrl,
