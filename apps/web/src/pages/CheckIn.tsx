@@ -244,10 +244,11 @@ export function CheckIn() {
         channel,
       };
 
-      let registered = false;
       try {
+        // /api/v1/users/register already creates the initial check-in for this
+        // visitor (see VisitorController.create), so we don't POST /checkins
+        // afterwards — that was producing two check-in rows per registration.
         await api.post('/api/v1/users/register', payload);
-        registered = true;
       } catch (err) {
         // Offline: enqueue full visitor data so the batch endpoint can create
         // the visitor on the next sync attempt.
@@ -261,25 +262,6 @@ export function CheckIn() {
           exhibitionId: payload.exhibitionId,
           channel: payload.channel,
         });
-      }
-
-      if (registered) {
-        try {
-          await api.post('/checkins', {
-            cpf: rawCpf || undefined,
-            email: email || undefined,
-            exhibitionId: payload.exhibitionId,
-            channel: payload.channel,
-          });
-        } catch {
-          // Initial registration succeeded but checkin POST failed — enqueue.
-          localDb.addToSyncQueue({
-            cpf: rawCpf || undefined,
-            email: email || undefined,
-            exhibitionId: payload.exhibitionId,
-            channel: payload.channel,
-          });
-        }
       }
 
       if (identityMode === 'cpf') {
