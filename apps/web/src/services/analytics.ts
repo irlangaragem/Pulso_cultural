@@ -1,4 +1,5 @@
 import { api } from './api';
+import { MUSEUM_SLUG } from '../config/museum';
 
 // Anonymous session ID — generated once per browser session
 const getSessionId = (): string => {
@@ -39,7 +40,7 @@ export const analytics = {
       sessionId,
       event,
       exhibitionId: options.exhibitionId,
-      museumSlug: options.museumSlug || 'mam-salvador',
+      museumSlug: options.museumSlug || MUSEUM_SLUG,
       properties: options.properties
     }).catch(() => {
       // Analytics failures are silent — never affect UX

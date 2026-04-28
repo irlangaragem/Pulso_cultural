@@ -1,10 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'pulso-cultural-default-secret-key-2026';
-if (JWT_SECRET === 'pulso-cultural-default-secret-key-2026' && process.env.NODE_ENV !== 'production') {
-  console.warn('⚠️ JWT_SECRET env variable is not set. Using default secret. Please change this in production.');
-}
+import { env } from '../config/env';
 
 export const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
@@ -26,7 +22,7 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
   }
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET);
+    const decoded = jwt.verify(token, env.JWT_SECRET);
     (req as any).user = decoded;
     return next();
   } catch (err) {

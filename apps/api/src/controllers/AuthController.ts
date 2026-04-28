@@ -2,11 +2,7 @@ import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { prisma } from '../lib/prisma';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'pulso-cultural-default-secret-key-2026';
-if (JWT_SECRET === 'pulso-cultural-default-secret-key-2026' && process.env.NODE_ENV !== 'production') {
-  console.warn('⚠️ JWT_SECRET env variable is not set in AuthController. Using default secret.');
-}
+import { env } from '../config/env';
 
 export const AuthController = {
   async signIn(req: Request, res: Response) {
@@ -29,14 +25,14 @@ export const AuthController = {
       }
 
       const token = jwt.sign(
-        { id: user.id, role: user.role, email: user.email },
-        JWT_SECRET,
+        { id: user.id, role: user.role, email: user.email, museumId: user.museumId },
+        env.JWT_SECRET,
         { expiresIn: '8h' }
       );
 
       return res.json({
-        user: { id: user.id, email: user.email, name: user.name, role: user.role },
-        token
+        user: { id: user.id, email: user.email, name: user.name, role: user.role, museumId: user.museumId },
+        token,
       });
     } catch (error) {
       console.error('[AuthController] signIn error:', error);

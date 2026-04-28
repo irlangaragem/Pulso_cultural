@@ -31,4 +31,4 @@ EXPOSE 3333
 
 # db push sincroniza schema → servidor sobe
 # Erros de push são logados mas não travam o servidor
-CMD ["sh", "-c", "npx prisma db push --accept-data-loss && node dist/server.js"]
+CMD ["sh", "-c", "npx prisma db push && node dist/server.js"]

@@ -51,6 +51,7 @@ export const ExhibitionController = {
       sponsor,
       coverImage,
       status,
+      otherExhibitions,
     } = req.body;
 
     try {
@@ -65,6 +66,7 @@ export const ExhibitionController = {
           sponsor,
           coverImage,
           status,
+          otherExhibitions: otherExhibitions ?? undefined,
         },
       });
 
@@ -88,6 +90,7 @@ export const ExhibitionController = {
       sponsor,
       coverImage,
       status,
+      otherExhibitions,
     } = req.body;
 
     try {
@@ -103,6 +106,7 @@ export const ExhibitionController = {
           sponsor,
           coverImage,
           status,
+          otherExhibitions: otherExhibitions !== undefined ? otherExhibitions : undefined,
           works: req.body.works ? {
             deleteMany: {},
             create: req.body.works.map((w: any) => ({
@@ -111,11 +115,11 @@ export const ExhibitionController = {
               year: w.year || w.ano,
               room: w.room || w.sala,
               description: w.description || w.desc,
+              audioUrl: w.audioUrl ?? null,
               order: w.order || 0,
             }))
           } : undefined,
         },
-
       });
 
       return res.json(exhibition);
@@ -125,19 +129,26 @@ export const ExhibitionController = {
     }
   },
 
-  // DELETE /exhibitions/:id
+  // DELETE /exhibitions/:id — cascades through dependent rows manually because
+  // the schema doesn't declare ON DELETE CASCADE for these relations.
   async delete(req: Request, res: Response) {
     const { id } = req.params;
 
     try {
-      await prisma.exhibition.delete({
-        where: { id },
-      });
-
+      await prisma.$transaction([
+        prisma.work.deleteMany({ where: { exhibitionId: id } }),
+        prisma.evaluation.deleteMany({ where: { exhibitionId: id } }),
+        prisma.checkin.deleteMany({ where: { exhibitionId: id } }),
+        prisma.cameraCount.deleteMany({ where: { exhibitionId: id } }),
+        prisma.exhibition.delete({ where: { id } }),
+      ]);
       return res.status(204).send();
-    } catch (error) {
-      console.error(error);
-      return res.status(500).json({ error: 'Internal server error' });
+    } catch (error: any) {
+      console.error('[ExhibitionController.delete] error:', error);
+      const msg = error?.code === 'P2003'
+        ? 'Esta exposição tem registros vinculados que não puderam ser removidos.'
+        : (error?.message || 'Erro ao apagar exposição');
+      return res.status(500).json({ error: msg });
     }
   },
 };

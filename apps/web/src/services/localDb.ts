@@ -16,8 +16,12 @@ export interface VisitorData {
 export interface SyncEntry {
   _id: string;          // idempotency key — prevents duplicate syncs
   _ts: string;          // ISO timestamp — used for TTL pruning
-  cpfHash?: string;
+  cpf?: string;         // raw CPF — stored locally, encrypted in transit (TLS)
+  email?: string;
   name?: string;
+  birthYear?: number;
+  gender?: string;
+  origin?: string;
   exhibitionId?: string;
   channel?: string;
   [key: string]: unknown;
@@ -140,9 +144,13 @@ export const localDb = {
     const queue = this.getSyncQueue();
     const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
 
-    // Idempotency check — skip if same visitor + exhibition already queued today
+    // Idempotency check — skip if same visitor + exhibition already queued today.
+    // Compares whichever identifier is present (cpf or email).
+    const sameId = (a: SyncEntry, b: { cpf?: string; email?: string }) =>
+      (a.cpf && b.cpf && a.cpf === b.cpf) ||
+      (a.email && b.email && a.email === b.email);
     const isDuplicate = queue.some(
-      e => e.cpfHash === payload.cpfHash &&
+      e => sameId(e, payload) &&
            e.exhibitionId === payload.exhibitionId &&
            e._ts.slice(0, 10) === today
     );

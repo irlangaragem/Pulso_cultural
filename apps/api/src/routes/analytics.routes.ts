@@ -5,6 +5,8 @@ const analyticsRoutes = Router();
 
 analyticsRoutes.get('/trends/:exhibitionId', AnalyticsController.getTrends);
 analyticsRoutes.get('/demographics/:exhibitionId', AnalyticsController.getDemographics);
+analyticsRoutes.get('/channels/:exhibitionId', AnalyticsController.getChannels);
+analyticsRoutes.get('/median-age/:exhibitionId', AnalyticsController.getMedianAge);
 analyticsRoutes.get('/export/:exhibitionId', AnalyticsController.exportCheckins);
 
 

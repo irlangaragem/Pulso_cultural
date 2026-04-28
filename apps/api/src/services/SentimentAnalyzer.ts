@@ -56,6 +56,16 @@ const AMPLIFIER_WORDS = new Set([
   'totalmente', 'completamente', 'absolutamente', 'incrivelmente',
 ]);
 
+// Normalize lexicon to match the same shape used during analysis (LOG-05).
+// Without this, words like 'incr\u00edvel', 'p\u00e9ssimo', 'n\u00e3o' never matched.
+function strip(s: string): string {
+  return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+const POS = new Set<string>([...POSITIVE_WORDS].map(strip));
+const NEG = new Set<string>([...NEGATIVE_WORDS].map(strip));
+const NEGATIONS = new Set<string>([...NEGATION_WORDS].map(strip));
+const AMPLIFIERS = new Set<string>([...AMPLIFIER_WORDS].map(strip));
+
 export class SentimentAnalyzer {
   /**
    * Analyze the sentiment of a Portuguese text.
@@ -79,14 +89,14 @@ export class SentimentAnalyzer {
       const prevToken = i > 0 ? tokens[i - 1] : '';
       const prev2Token = i > 1 ? tokens[i - 2] : '';
 
-      const isNegated = NEGATION_WORDS.has(prevToken) || NEGATION_WORDS.has(prev2Token);
-      const isAmplified = AMPLIFIER_WORDS.has(prevToken) || AMPLIFIER_WORDS.has(prev2Token);
+      const isNegated = NEGATIONS.has(prevToken) || NEGATIONS.has(prev2Token);
+      const isAmplified = AMPLIFIERS.has(prevToken) || AMPLIFIERS.has(prev2Token);
       const amplifier = isAmplified ? 1.5 : 1.0;
 
-      if (POSITIVE_WORDS.has(token)) {
+      if (POS.has(token)) {
         score += isNegated ? -0.5 * amplifier : 1.0 * amplifier;
         wordCount++;
-      } else if (NEGATIVE_WORDS.has(token)) {
+      } else if (NEG.has(token)) {
         score += isNegated ? 0.5 * amplifier : -1.0 * amplifier;
         wordCount++;
       }

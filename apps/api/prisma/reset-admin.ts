@@ -39,8 +39,8 @@ async function main() {
     data: { passwordHash },
   });
 
-  console.log(`✅  Password for "${email}" updated successfully.`);
-  console.log(`    New password: ${newPassword}`);
+  console.log(`Password for "${email}" updated.`);
+  // The new password is intentionally NOT logged (SEC-14).
 }
 
 main()
