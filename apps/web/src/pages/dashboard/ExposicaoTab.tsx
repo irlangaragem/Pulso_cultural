@@ -111,10 +111,17 @@ export function ExposicaoTab({ museumId, onChange, selectedExhibitionId }: Props
     }
   };
 
-  const loadExhibition = async (id: string) => {
+  /**
+   * Hydrate the form from an Exhibition object. When the caller already has
+   * the full record from `GET /exhibitions` (which now includes works),
+   * pass `{ skipFetch: true }` to skip the redundant `GET /exhibitions/:id`
+   * round-trip — saves ~700ms on first paint of the tab.
+   */
+  const loadExhibition = async (id: string, opts?: { skipFetch?: boolean; preloaded?: Exhibition }) => {
     try {
-      const r = await api.get(`/exhibitions/${id}`);
-      const ex: Exhibition = r.data;
+      const ex: Exhibition = opts?.preloaded
+        ?? (opts?.skipFetch ? null as any : (await api.get(`/exhibitions/${id}`)).data);
+      if (!ex) return;
       setForm(ex);
       setWorks((ex.works || []).slice().sort((a, b) => a.order - b.order));
       setOthers(Array.isArray(ex.otherExhibitions) ? ex.otherExhibitions : []);
@@ -131,11 +138,12 @@ export function ExposicaoTab({ museumId, onChange, selectedExhibitionId }: Props
 
   useEffect(() => { refreshList(); }, []);
 
-  // Load museum info once for the poster footer
+  // Museum info comes embedded in each exhibition's `museum` field, so we hydrate
+  // from `form` rather than firing a separate `GET /museums/:id` round-trip.
   useEffect(() => {
-    if (!museumId) return;
-    api.get(`/museums/${museumId}`).then(r => setMuseumInfo(r.data)).catch(() => {});
-  }, [museumId]);
+    const m = (form as any)?.museum;
+    if (m && !museumInfo) setMuseumInfo(m);
+  }, [form, museumInfo]);
 
   // Close preview modal on Escape
   useEffect(() => {
@@ -153,7 +161,12 @@ export function ExposicaoTab({ museumId, onChange, selectedExhibitionId }: Props
       list.find(e => e.id === selectedExhibitionId) ||
       list.find(e => e.status === 'ACTIVE') ||
       list[0];
-    if (target) loadExhibition(target.id);
+    if (target) {
+      // The list response already carries the full record (works, etc.) — see
+      // ExhibitionController.index. Hydrate the form straight from it instead
+      // of round-tripping `GET /exhibitions/:id`.
+      loadExhibition(target.id, { preloaded: target });
+    }
   }, [list, selectedExhibitionId]);
 
   const startNew = () => {
@@ -183,6 +196,9 @@ export function ExposicaoTab({ museumId, onChange, selectedExhibitionId }: Props
     setCuratorship('');
     setWorks([]);
     setOthers([]);
+    // Reset the hidden file input so a previously selected file doesn't
+    // sneak back in via React's input.value preservation.
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const updateField = <K extends keyof Exhibition>(key: K, value: Exhibition[K]) =>
@@ -250,7 +266,11 @@ export function ExposicaoTab({ museumId, onChange, selectedExhibitionId }: Props
     }
   };
 
-  const handleSave = async () => {
+  // `openGuideOnPublish` controls whether the guide preview auto-opens on save.
+  // True only for the main "Salvar e publicar guia" footer button. The inline
+  // "Salvar obra" / "Salvar lista" buttons pass false — they're partial saves
+  // while the user is still editing, no preview should pop up.
+  const handleSave = async (openGuideOnPublish: boolean = false) => {
     if (!form) return;
     if (!form.name.trim()) { setError('Nome é obrigatório'); setExpandedWork(null); return; }
     if (!form.description.trim()) { setError('Descrição é obrigatória'); setExpandedWork(null); return; }
@@ -325,11 +345,11 @@ export function ExposicaoTab({ museumId, onChange, selectedExhibitionId }: Props
       await loadExhibition(savedId);
       onChange?.();
 
-      // Auto-open poster (with QR) when the exhibition is published as ACTIVE.
-      // The poster carries the QR that should be printed and put at the museum
-      // entrance, so we surface it right after publication.
-      if (wasActive) {
-        setShowPoster(true);
+      // The main "Salvar e publicar guia" button opens the guide preview
+      // (phone-frame iframe of /guide). The QR-code poster stays one click away
+      // via the dedicated "📄 Cartaz / QR" button in the header.
+      if (openGuideOnPublish && wasActive) {
+        setShowPreview(true);
       }
     } catch (err: any) {
       setError(err?.response?.data?.error || err?.message || 'Erro ao salvar');
@@ -367,28 +387,7 @@ export function ExposicaoTab({ museumId, onChange, selectedExhibitionId }: Props
       {form && !creatingNew && (
         <div style={{ ...card, marginBottom: 24, padding: 22 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            {/* Cover image thumbnail (or status dot if no cover) */}
-            {form.coverImage ? (
-              <img
-                src={resolveImg(form.coverImage)}
-                alt=""
-                style={{
-                  width: 64, height: 64,
-                  borderRadius: 10,
-                  objectFit: 'cover',
-                  border: `1px solid ${COLORS.border}`,
-                  flexShrink: 0,
-                }}
-              />
-            ) : (
-              <span style={{
-                display: 'inline-block',
-                width: 12, height: 12, borderRadius: '50%',
-                background: statusDot(form.status),
-                boxShadow: form.status === 'ACTIVE' ? `0 0 8px ${COLORS.green}` : 'none',
-                flexShrink: 0,
-              }} />
-            )}
+            {/* Header card identifies status with the dot in the title row; no thumbnail. */}
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <span style={{
@@ -438,7 +437,7 @@ export function ExposicaoTab({ museumId, onChange, selectedExhibitionId }: Props
           {list.map(ex => (
             <button
               key={ex.id}
-              onClick={() => loadExhibition(ex.id)}
+              onClick={() => loadExhibition(ex.id, { preloaded: ex })}
               style={{
                 background: 'transparent',
                 border: `1px solid ${editingId === ex.id ? COLORS.brand : COLORS.border}`,
@@ -852,7 +851,7 @@ export function ExposicaoTab({ museumId, onChange, selectedExhibitionId }: Props
             </div>
             {/* Inline save for the simultaneous-exhibitions section */}
             <div style={{ marginTop: 14, display: 'flex', justifyContent: 'flex-end' }}>
-              <button onClick={handleSave} disabled={saving} style={btnPrimary}>
+              <button onClick={() => handleSave(false)} disabled={saving} style={btnPrimary}>
                 {saving ? 'Salvando…' : 'Salvar lista'}
               </button>
             </div>
@@ -908,7 +907,7 @@ export function ExposicaoTab({ museumId, onChange, selectedExhibitionId }: Props
               </div>
             )}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-              <button onClick={handleSave} disabled={saving} style={{ ...btnPrimary, padding: '18px', fontSize: 14 }}>
+              <button onClick={() => handleSave(true)} disabled={saving} style={{ ...btnPrimary, padding: '18px', fontSize: 14 }}>
                 {saving ? 'Salvando…' : (creatingNew ? 'Criar exposição' : 'Salvar e publicar guia')}
               </button>
               <button
@@ -968,10 +967,6 @@ export function ExposicaoTab({ museumId, onChange, selectedExhibitionId }: Props
                   boxSizing: 'border-box',
                 }}
               >
-                {/* Side buttons (purely decorative — give the phone shape) */}
-                <span style={{ position: 'absolute', left: -3, top: 110, width: 3, height: 60, background: '#0A0709', borderRadius: '2px 0 0 2px' }} />
-                <span style={{ position: 'absolute', left: -3, top: 180, width: 3, height: 36, background: '#0A0709', borderRadius: '2px 0 0 2px' }} />
-                <span style={{ position: 'absolute', right: -3, top: 140, width: 3, height: 80, background: '#0A0709', borderRadius: '0 2px 2px 0' }} />
 
                 {/* Screen */}
                 <div style={{

@@ -3,6 +3,7 @@ import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend,
 } from 'recharts';
 import { api } from '../../services/api';
+import { useRealtimeUpdates } from '../../services/useRealtimeUpdates';
 import { card, COLORS, sectionTitle, sectionMeta } from './styles';
 
 interface ResumoHoje {
@@ -124,9 +125,15 @@ export function TempoRealTab({ exhibitionId }: Props) {
 
   useEffect(() => {
     refresh();
-    const id = setInterval(refresh, 30_000);
+    // Polling fallback for environments where the socket can't connect (rare,
+    // but it's free insurance). Bumped to 60s now that real-time pushes are
+    // wired up — fresh data normally arrives via socket within a second.
+    const id = setInterval(refresh, 60_000);
     return () => clearInterval(id);
   }, [exhibitionId]);
+
+  // Real-time: refresh immediately when a visitor pulses, checks in, or rates.
+  useRealtimeUpdates(refresh);
 
   // Weekly comparison: camera entries vs check-ins per day
   const weekly = historico.map(d => {
@@ -185,40 +192,52 @@ export function TempoRealTab({ exhibitionId }: Props) {
         />
       </div>
 
-      {/* Hourly flow — fixed Y scale 0/70/140/210/280 + pulse gradient bars */}
-      <div style={{ ...card, marginBottom: 24 }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: 20 }}>
-          <h3 style={{ ...sectionTitle, margin: 0, flex: 1, fontSize: 15 }}>Fluxo de visitantes por hora</h3>
-          <span style={sectionMeta}>HOJE</span>
-        </div>
-        {trends.length === 0 ? (
-          <div style={{ height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', color: COLORS.faint }}>
-            Sem dados ainda
+      {/* Hourly flow — prefers camera entries; falls back to check-ins when camera is offline. */}
+      {(() => {
+        const hasCamera = trends.some(t => t.entries > 0);
+        const useField: 'entries' | 'checkins' = hasCamera ? 'entries' : 'checkins';
+        const fallbackLabel = hasCamera ? 'CÂMERA · HOJE' : 'CHECK-INS · HOJE (sem câmera)';
+        const maxValue = trends.reduce((m, t) => Math.max(m, t[useField] as number), 0);
+        // Round Y axis up to a reasonable number; default to 4 if no data.
+        const yMax = Math.max(4, Math.ceil(maxValue * 1.2 / 4) * 4);
+        const yTicks = [0, yMax * 0.25, yMax * 0.5, yMax * 0.75, yMax];
+
+        return (
+          <div style={{ ...card, marginBottom: 24 }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: 20 }}>
+              <h3 style={{ ...sectionTitle, margin: 0, flex: 1, fontSize: 15 }}>Fluxo de visitantes por hora</h3>
+              <span style={sectionMeta}>{fallbackLabel}</span>
+            </div>
+            {trends.length === 0 ? (
+              <div style={{ height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', color: COLORS.faint }}>
+                Sem dados ainda
+              </div>
+            ) : (
+              <div style={{ width: '100%', height: 240 }}>
+                <ResponsiveContainer>
+                  <BarChart data={trends.map(t => ({ hour: t.hour, value: t[useField] as number }))} margin={{ top: 10, right: 6, bottom: 0, left: -16 }} barCategoryGap={12}>
+                    <defs>
+                      <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%"   stopColor="#F0426A" stopOpacity={1} />
+                        <stop offset="60%"  stopColor="#FF5E5B" stopOpacity={1} />
+                        <stop offset="100%" stopColor="#F59E42" stopOpacity={1} />
+                      </linearGradient>
+                    </defs>
+                    <XAxis dataKey="hour" stroke={COLORS.faint} fontSize={10} tickLine={false} axisLine={{ stroke: COLORS.border }} />
+                    <YAxis stroke={COLORS.faint} fontSize={10} tickLine={false} axisLine={false} ticks={yTicks} domain={[0, yMax]} />
+                    <Tooltip
+                      cursor={{ fill: 'rgba(255,255,255,0.04)' }}
+                      contentStyle={{ background: COLORS.panelAlt, border: `1px solid ${COLORS.border}`, borderRadius: 8 }}
+                      labelFormatter={label => `Hora: ${label}`}
+                    />
+                    <Bar dataKey="value" radius={[6, 6, 2, 2]} fill="url(#barGradient)" maxBarSize={36} isAnimationActive={false} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
           </div>
-        ) : (
-          <div style={{ width: '100%', height: 240 }}>
-            <ResponsiveContainer>
-              <BarChart data={trends.map(t => ({ hour: t.hour, value: t.entries }))} margin={{ top: 10, right: 6, bottom: 0, left: -16 }} barCategoryGap={12}>
-                <defs>
-                  <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%"   stopColor="#F0426A" stopOpacity={1} />
-                    <stop offset="60%"  stopColor="#FF5E5B" stopOpacity={1} />
-                    <stop offset="100%" stopColor="#F59E42" stopOpacity={1} />
-                  </linearGradient>
-                </defs>
-                <XAxis dataKey="hour" stroke={COLORS.faint} fontSize={10} tickLine={false} axisLine={{ stroke: COLORS.border }} />
-                <YAxis stroke={COLORS.faint} fontSize={10} tickLine={false} axisLine={false} ticks={[0, 70, 140, 210, 280]} domain={[0, 280]} />
-                <Tooltip
-                  cursor={{ fill: 'rgba(255,255,255,0.04)' }}
-                  contentStyle={{ background: COLORS.panelAlt, border: `1px solid ${COLORS.border}`, borderRadius: 8 }}
-                  labelFormatter={label => `Hora: ${label}`}
-                />
-                <Bar dataKey="value" radius={[6, 6, 2, 2]} fill="url(#barGradient)" maxBarSize={36} isAnimationActive={false} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        )}
-      </div>
+        );
+      })()}
 
       {/* Weekly comparison — paired bars (pulse + amber) with fixed Y 0/200/400/600/800 */}
       <div style={card}>

@@ -3,6 +3,7 @@ import { prisma } from '../lib/prisma';
 import { HashService } from '../services/HashService';
 import { getIO } from '../lib/socket';
 import { MLServiceClient } from '../services/MLServiceClient';
+import { invalidateDashboardCache } from './DashboardController';
 
 // RFC-5321-aligned email validator (mirrors frontend isValidEmail)
 const EMAIL_RE = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*\.[a-zA-Z]{2,}$/;
@@ -108,7 +109,9 @@ export class VisitorController {
         }
       });
 
-      // Emit real-time event
+      // Emit real-time event + drop cached aggregates so the next dashboard
+      // read reflects this new check-in immediately.
+      invalidateDashboardCache();
       if (exhibitionId) {
         getIO().emit('occupancy_update', {
           type: 'checkin',

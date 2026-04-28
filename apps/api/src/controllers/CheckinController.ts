@@ -3,6 +3,7 @@ import { prisma } from '../lib/prisma';
 import { HashService } from '../services/HashService';
 import { getIO } from '../lib/socket';
 import { env } from '../config/env';
+import { invalidateDashboardCache } from './DashboardController';
 
 const VALID_CHANNELS = ['REDES_SOCIAIS', 'INDICACAO', 'PASSOU_NA_FRENTE', 'JORNAL_TV', 'ESCOLA_FACULDADE', 'OUTRO'];
 const VALID_ORIGINS = ['SALVADOR', 'INTERIOR_BA', 'OUTRO_ESTADO', 'INTERNACIONAL'];
@@ -46,6 +47,7 @@ export class CheckinController {
         data: { visitorId: visitor.id, exhibitionId, channel: safeChannel },
       });
 
+      invalidateDashboardCache();
       getIO().emit('occupancy_update', {
         type: 'checkin',
         exhibitionId,
@@ -187,6 +189,7 @@ export class CheckinController {
         },
       });
 
+      invalidateDashboardCache();
       getIO().emit('occupancy_update', {
         type: 'camera_count',
         countType: created.type,
@@ -257,6 +260,7 @@ export class CheckinController {
         },
       });
 
+      invalidateDashboardCache();
       getIO().emit('occupancy_update', {
         type: 'camera_count',
         countType: type,

@@ -4,6 +4,7 @@ import {
   PieChart, Pie, Cell,
 } from 'recharts';
 import { api } from '../../services/api';
+import { useRealtimeUpdates } from '../../services/useRealtimeUpdates';
 import { card, COLORS, sectionTitle, sectionMeta } from './styles';
 
 interface HistoricoDia {
@@ -98,22 +99,23 @@ export function HistoricoTab({ exhibitionId: _ }: Props) {
   const [mensal, setMensal] = useState<ComparacaoMensal | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    Promise.all([
-      api.get('/resumo/historico?days=30'),
-      api.get('/historico'),
-      api.get('/resumo/recorrencia'),
-      api.get('/resumo/comparacao-mensal'),
-    ])
-      .then(([h, a, r, m]) => {
-        setHistorico30(h.data || []);
-        setAcumulado(a.data);
-        setRecorrencia(r.data);
-        setMensal(m.data);
-        setError(null);
-      })
-      .catch(err => setError(err?.response?.data?.error || err?.message || 'Falha ao carregar'));
-  }, []);
+  const refresh = () => Promise.all([
+    api.get('/resumo/historico?days=30'),
+    api.get('/historico'),
+    api.get('/resumo/recorrencia'),
+    api.get('/resumo/comparacao-mensal'),
+  ])
+    .then(([h, a, r, m]) => {
+      setHistorico30(h.data || []);
+      setAcumulado(a.data);
+      setRecorrencia(r.data);
+      setMensal(m.data);
+      setError(null);
+    })
+    .catch(err => setError(err?.response?.data?.error || err?.message || 'Falha ao carregar'));
+
+  useEffect(() => { refresh(); }, []);
+  useRealtimeUpdates(refresh);
 
   const weekly = aggregateByWeek(historico30);
   // Daily series: oldest → newest, with day index 1..30

@@ -3,7 +3,7 @@ import { api } from '../../services/api';
 import { useAuthStore } from '../../store/useAuthStore';
 import {
   card, COLORS, sectionTitle,
-  inputBase, labelStyle, btnPrimary, btnGhost,
+  inputBase, labelStyle, btnPrimary, btnGhost, btnDanger,
 } from './styles';
 
 type Role = 'ADMIN' | 'GESTOR';
@@ -76,6 +76,12 @@ export function GestoresTab() {
 
   // Invite link modal (after create or resend)
   const [inviteLink, setInviteLink] = useState<{ url: string; email: string; emailSent: boolean; expiresInDays: number } | null>(null);
+
+  // Hard-delete confirmation modal — replaces the two stacked window.confirm()
+  // with a single styled dialog that requires typing the email to enable submit.
+  const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [deleteBusy, setDeleteBusy] = useState(false);
 
   const refresh = async () => {
     setLoading(true);
@@ -164,21 +170,25 @@ export function GestoresTab() {
     }
   };
 
-  const handleHardDelete = async (u: User) => {
+  const handleHardDelete = (u: User) => {
     if (u.id === me?.id) return;
-    const ok = window.confirm(
-      `EXCLUIR DEFINITIVAMENTE ${u.name}?\n\n` +
-      `A conta será apagada e não pode ser recuperada. Histórico de auditoria será perdido.`
-    );
-    if (!ok) return;
-    const ok2 = window.confirm(`Tem certeza? Confirme novamente para excluir ${u.email}.`);
-    if (!ok2) return;
+    setDeleteTarget(u);
+    setDeleteConfirmText('');
+  };
+
+  const confirmHardDelete = async () => {
+    if (!deleteTarget) return;
+    if (deleteConfirmText.trim().toLowerCase() !== deleteTarget.email.toLowerCase()) return;
+    setDeleteBusy(true);
     try {
-      await api.delete(`/users/${u.id}/permanent`);
-      setInfo(`${u.name} foi excluído definitivamente.`);
+      await api.delete(`/users/${deleteTarget.id}/permanent`);
+      setInfo(`${deleteTarget.name} foi excluído definitivamente.`);
+      setDeleteTarget(null);
       await refresh();
     } catch (err: any) {
       setError(err?.response?.data?.error || err?.message || 'Erro ao excluir');
+    } finally {
+      setDeleteBusy(false);
     }
   };
 
@@ -514,6 +524,58 @@ export function GestoresTab() {
           </div>
         </div>
       )}
+
+      {/* Hard-delete confirmation — replaces the previous double window.confirm. */}
+      {deleteTarget && (() => {
+        const target = deleteTarget;
+        const matches = deleteConfirmText.trim().toLowerCase() === target.email.toLowerCase();
+        return (
+          <div style={modalBackdrop} onClick={() => !deleteBusy && setDeleteTarget(null)}>
+            <div
+              style={{ ...card, width: 480, maxWidth: '92vw', padding: 26, borderColor: 'rgba(232,85,78,0.35)' }}
+              onClick={e => e.stopPropagation()}
+            >
+              <h3 style={{ ...sectionTitle, marginBottom: 6, color: COLORS.brand }}>
+                Excluir definitivamente
+              </h3>
+              <p style={{ color: COLORS.muted, fontSize: 13, lineHeight: 1.55, margin: '0 0 16px' }}>
+                A conta de <strong style={{ color: COLORS.text }}>{target.name}</strong> será apagada. Não pode ser recuperada — histórico de auditoria será perdido.
+              </p>
+              <label style={labelStyle}>
+                Para confirmar, digite o email <strong style={{ color: COLORS.text }}>{target.email}</strong>:
+              </label>
+              <input
+                style={inputBase}
+                value={deleteConfirmText}
+                onChange={e => setDeleteConfirmText(e.target.value)}
+                placeholder={target.email}
+                autoFocus
+                disabled={deleteBusy}
+              />
+              <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 20 }}>
+                <button
+                  onClick={() => setDeleteTarget(null)}
+                  style={btnGhost}
+                  disabled={deleteBusy}
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={confirmHardDelete}
+                  style={{
+                    ...btnDanger,
+                    opacity: matches && !deleteBusy ? 1 : 0.45,
+                    cursor: matches && !deleteBusy ? 'pointer' : 'not-allowed',
+                  }}
+                  disabled={!matches || deleteBusy}
+                >
+                  {deleteBusy ? 'Excluindo…' : 'Excluir definitivamente'}
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

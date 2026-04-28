@@ -239,7 +239,7 @@ export function Guide() {
           <p className="v-guide-subtitle" style={{ position: 'relative', zIndex: 1 }}>
             {exhibition?.subtitle || t('exhibition.subtitle')}
           </p>
-          <p className="v-guide-meta" style={{ position: 'relative', zIndex: 1 }}>Ter a Dom · 10h às 18h</p>
+          <p className="v-guide-meta" style={{ position: 'relative', zIndex: 1 }}>{t('guide.hours')}</p>
         </div>
 
 
@@ -251,8 +251,8 @@ export function Guide() {
 
           {/* Works */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 28, marginBottom: 14 }}>
-            <h2 className="v-section-title">Destaques</h2>
-            <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, color: '#6B5A60' }}>{works.length} OBRAS</span>
+            <h2 className="v-section-title">{t('guide.highlights')}</h2>
+            <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, color: '#6B5A60' }}>{works.length} {t('guide.works_count')}</span>
           </div>
 
           {works.map((w) => {
@@ -280,7 +280,7 @@ export function Guide() {
                     <button
                       className="v-audio-btn"
                       onClick={(e) => { e.stopPropagation(); togglePlay(w); }}
-                      aria-label={`Áudio-guia: ${w.title}`}
+                      aria-label={t('guide.audio_label', { title: w.title })}
                     >
                       {playingId === w.id ? (
                         <Pause size={16} fill="#E8554E" stroke="none" />

@@ -1,13 +1,29 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
+import { cache } from '../utils/cache';
+
+const EXHIBITIONS_CACHE_KEY = 'exhibitions:list';
+const EXHIBITIONS_TTL = 30_000;
+
+export function invalidateExhibitionsCache(): void {
+  (cache as any).cache?.delete?.(EXHIBITIONS_CACHE_KEY);
+}
 
 export const ExhibitionController = {
   // GET /exhibitions
-  async index(req: Request, res: Response) {
+  // Returns the full record including works, so the dashboard's Exposição tab
+  // can render the form from the list response without a second round-trip
+  // to GET /exhibitions/:id. For piloto (1–2 exhibitions × ~6 works each)
+  // payload size is negligible (<10KB) and saves a full round-trip of latency.
+  // 30s in-memory cache; create/update/delete invalidate immediately.
+  async index(_req: Request, res: Response) {
     try {
-      const exhibitions = await prisma.exhibition.findMany({
-        include: { museum: true },
-      });
+      const exhibitions = await cache.getOrFetch(EXHIBITIONS_CACHE_KEY, async () => {
+        return prisma.exhibition.findMany({
+          include: { museum: true, works: { orderBy: { order: 'asc' } } },
+          orderBy: { updatedAt: 'desc' },
+        });
+      }, EXHIBITIONS_TTL);
       return res.json(exhibitions);
     } catch (error) {
       console.error(error);
@@ -70,6 +86,7 @@ export const ExhibitionController = {
         },
       });
 
+      invalidateExhibitionsCache();
       return res.status(201).json(exhibition);
     } catch (error) {
       console.error(error);
@@ -122,6 +139,7 @@ export const ExhibitionController = {
         },
       });
 
+      invalidateExhibitionsCache();
       return res.json(exhibition);
     } catch (error) {
       console.error(error);
@@ -142,6 +160,7 @@ export const ExhibitionController = {
         prisma.cameraCount.deleteMany({ where: { exhibitionId: id } }),
         prisma.exhibition.delete({ where: { id } }),
       ]);
+      invalidateExhibitionsCache();
       return res.status(204).send();
     } catch (error: any) {
       console.error('[ExhibitionController.delete] error:', error);

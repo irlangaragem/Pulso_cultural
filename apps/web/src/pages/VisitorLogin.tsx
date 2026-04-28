@@ -257,13 +257,19 @@ export function VisitorLogin() {
         <h2 className="v-expo-title" style={{ marginBottom: 20 }}>{t('exhibition.title')}</h2>
 
         <p className="v-cta-text" style={{ marginTop: 0, marginBottom: 20 }}>
-          {returningUser ? (
-            <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-              Bem-vindo de volta,{' '}
-              <span style={{ color: '#E8554E' }}>{returningUser}</span>! 👋{' '}
-              Dê seu pulso e acesse o guia.
-            </motion.span>
-          ) : t('checkin.cta')}
+          {returningUser ? (() => {
+            const greeting = t('checkin.cta.returning', { name: returningUser });
+            const idx = greeting.indexOf(returningUser);
+            return idx >= 0 ? (
+              <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                {greeting.slice(0, idx)}
+                <span style={{ color: '#E8554E' }}>{returningUser}</span>
+                {greeting.slice(idx + returningUser.length)}
+              </motion.span>
+            ) : (
+              <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }}>{greeting}</motion.span>
+            );
+          })() : t('checkin.cta')}
         </p>
 
         <div style={{ width: '100%', height: 1, background: 'rgba(255,255,255,0.08)', margin: '4px 0 20px', zIndex: 1 }} />
