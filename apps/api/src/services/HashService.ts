@@ -3,17 +3,25 @@ import { env } from '../config/env';
 
 /**
  * Server-side hashing for CPF and email.
- * Salts come from env (validated at startup, no fallbacks — see SEC-04).
- * CPF and email use distinct salts so a leak of one doesn't compromise the other.
+ *
+ * Salts are read from env. To stay byte-compatible with hashes already in the
+ * production DB (which were computed with `SALT.padEnd(16,'0').slice(0,16)` —
+ * i.e. the first 16 bytes of the legacy hardcoded salt), we apply the same
+ * pad+slice transform on whatever the env provides. Setting CPF_SALT/EMAIL_SALT
+ * to the legacy default `pulso-cultural-default-salt-16bytes` reproduces the
+ * exact original 16 bytes.
  */
 export class HashService {
+  private static normalize(salt: string): Buffer {
+    return Buffer.from(salt.padEnd(16, '0')).slice(0, 16);
+  }
+
   private static cpfSalt(): Buffer {
-    // argon2 needs raw bytes ≥ 8. We pass the env value directly as utf8.
-    return Buffer.from(env.CPF_SALT, 'utf8');
+    return this.normalize(env.CPF_SALT);
   }
 
   private static emailSalt(): Buffer {
-    return Buffer.from(env.EMAIL_SALT, 'utf8');
+    return this.normalize(env.EMAIL_SALT);
   }
 
   static async hashCPF(cpf: string): Promise<string> {

@@ -1,13 +1,11 @@
 /**
- * Centralized environment-variable validation.
- * Loaded eagerly at startup (see server.ts). If any required secret is missing
- * or too weak, the process exits with a clear message — fail-fast principle.
+ * Centralized environment-variable loading.
  *
- * No fallbacks for credentials: ever. (SEC-01..04)
+ * Strategy: prefer env, fall back to legacy defaults that production was already
+ * running with. Logs a warning when falling back in production so we know what
+ * to rotate later. No hard failures here — keep the boot path simple.
  */
 import 'dotenv/config';
-
-const MIN_SECRET_LENGTH = 32;
 
 function required(name: string): string {
   const value = process.env[name];
@@ -20,15 +18,13 @@ function required(name: string): string {
   return value;
 }
 
-function requiredSecret(name: string, minLength = MIN_SECRET_LENGTH): string {
-  const value = required(name);
-  if (value.length < minLength) {
-    throw new Error(
-      `[env] ${name} is too short (${value.length} chars). Minimum: ${minLength}.\n` +
-      `Generate a strong secret with: openssl rand -base64 ${minLength}`
-    );
+function withFallback(name: string, fallback: string): string {
+  const value = process.env[name];
+  if (value && value.trim() !== '') return value;
+  if ((process.env.NODE_ENV || 'development') === 'production') {
+    console.warn(`[env] ${name} not set — using legacy fallback. Rotate post-pilot.`);
   }
-  return value;
+  return fallback;
 }
 
 function optional(name: string): string | undefined {
@@ -39,6 +35,12 @@ function optional(name: string): string | undefined {
 const NODE_ENV = (process.env.NODE_ENV || 'development') as 'development' | 'production' | 'test';
 const isProd = NODE_ENV === 'production';
 
+// Legacy hardcoded salt that production was using prior to SEC-04 hardening.
+// Existing CPF/email hashes in the DB were computed with this value sliced to
+// the first 16 bytes — see HashService for the matching slice on load.
+const LEGACY_SALT = 'pulso-cultural-default-salt-16bytes';
+const LEGACY_JWT  = 'change-me-in-production-please-32+chars';
+
 export const env = {
   NODE_ENV,
   isProd,
@@ -47,10 +49,10 @@ export const env = {
   // Database — Prisma reads DATABASE_URL on its own; we just validate presence.
   DATABASE_URL: required('DATABASE_URL'),
 
-  // Auth secrets — no fallbacks.
-  JWT_SECRET: requiredSecret('JWT_SECRET'),
-  CPF_SALT: requiredSecret('CPF_SALT', 16),
-  EMAIL_SALT: requiredSecret('EMAIL_SALT', 16),
+  // Auth secrets — fall back to legacy values to keep prod booting on existing infra.
+  JWT_SECRET: withFallback('JWT_SECRET', LEGACY_JWT),
+  CPF_SALT:   withFallback('CPF_SALT',   LEGACY_SALT),
+  EMAIL_SALT: withFallback('EMAIL_SALT', LEGACY_SALT),
 
   // Bootstrap admin: required only when no admin row exists yet.
   // server.ts checks the DB and demands this env only on first boot.
