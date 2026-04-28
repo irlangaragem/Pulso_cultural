@@ -21,8 +21,19 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-const DAYS = 30;
-const TARGET_MULTIPLIER = 7; // ENTRADA total / Checkin total
+const DAYS = 60;
+// Realistic volume for a museum the size of MAM Bahia (Solar do Unhão).
+// Base is ~250-300 visitors/day, peaks on weekends with major shows.
+// 60 days × ~280/day ≈ 17000 ENTRADA total.
+const DAILY_AVG_ENTRIES = 280;
+// Today gets a 2× boost vs. average so the dashboard's "vs ontem" delta
+// renders positive (green) for the demo. Yesterday gets a milder boost.
+const TODAY_BOOST = 2.0;
+const YESTERDAY_BOOST = 1.5;
+// Gradual upward trend across the period: oldest day = 0.6×, newest = 1.4×.
+// Communicates "growing audience" in the historical chart for the piloto demo.
+const GROWTH_TREND_MIN = 0.6;
+const GROWTH_TREND_MAX = 1.4;
 
 // Opening hours: Tue (2) → Sun (0), closed Mon (1).
 function isOpen(date: Date): boolean {
@@ -78,10 +89,11 @@ async function main() {
     }
   }
 
-  // Aim for total ENTRADA ≈ TARGET_MULTIPLIER × check-in count.
-  const checkinCount = await prisma.checkin.count();
-  const targetEntradas = Math.max(50, checkinCount * TARGET_MULTIPLIER);
-  const targetSaidas = Math.round(targetEntradas * 0.92); // most leave, a few overlap end-of-day
+  // Total ENTRADA scales with DAILY_AVG_ENTRIES × open days. Roughly half the
+  // calendar days are weekend-or-weekday open (we close Mondays). Plus the
+  // growth trend tilts the back-half higher so the average ≈ DAILY_AVG_ENTRIES.
+  const targetEntradas = Math.round(DAYS * DAILY_AVG_ENTRIES * (6 / 7)); // -1 day/week (Mon)
+  const targetSaidas = Math.round(targetEntradas * 0.92);
 
   console.log(`Target: ${targetEntradas} ENTRADA + ${targetSaidas} SAIDA across ${DAYS} days`);
 
@@ -100,7 +112,12 @@ async function main() {
     const dow = d.getDay();
     const isWeekend = dow === 0 || dow === 6;
     const isToday = i === 0;
-    const w = (isWeekend ? 1.3 : 1.0) * (isToday ? 1.4 : 1.0) * (0.85 + Math.random() * 0.3);
+    const isYesterday = i === 1;
+    // Linear growth trend from oldest (i=DAYS-1) to newest (i=0).
+    const ageFraction = i / (DAYS - 1); // 0 = today, 1 = oldest
+    const trend = GROWTH_TREND_MAX - ageFraction * (GROWTH_TREND_MAX - GROWTH_TREND_MIN);
+    const dayBoost = isToday ? TODAY_BOOST : isYesterday ? YESTERDAY_BOOST : 1.0;
+    const w = (isWeekend ? 1.3 : 1.0) * dayBoost * trend * (0.85 + Math.random() * 0.3);
     dayDistribution.push(w);
     totalWeight += w;
   }

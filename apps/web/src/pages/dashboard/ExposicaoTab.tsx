@@ -1,7 +1,7 @@
 import { Suspense, lazy, useEffect, useRef, useState } from 'react';
 import { api } from '../../services/api';
 import {
-  card, COLORS, sectionTitle, sectionMeta,
+  card, COLORS, sectionTitle, sectionMeta, GRADIENT_PULSE,
   inputBase, labelStyle, btnPrimary, btnGhost, btnDanger,
 } from './styles';
 
@@ -37,6 +37,7 @@ interface Exhibition {
   endDate: string;
   sponsor?: string | null;
   coverImage?: string | null;
+  audioUrl?: string | null;
   status: Status;
   works?: Work[];
   otherExhibitions?: OtherExhibition[] | null;
@@ -191,6 +192,7 @@ export function ExposicaoTab({ museumId, onChange, selectedExhibitionId }: Props
       endDate: in30.toISOString(),
       sponsor: '',
       coverImage: '',
+      audioUrl: null,
       status: 'DRAFT',
     });
     setCuratorship('');
@@ -308,6 +310,7 @@ export function ExposicaoTab({ museumId, onChange, selectedExhibitionId }: Props
         endDate: form.endDate,
         sponsor: form.sponsor || null,
         coverImage: form.coverImage || null,
+        audioUrl: form.audioUrl && form.audioUrl !== 'https://' ? form.audioUrl : null,
         status: form.status,
         otherExhibitions: others.length > 0 ? others : null,
         works: works.map((w, idx) => ({
@@ -615,6 +618,35 @@ export function ExposicaoTab({ museumId, onChange, selectedExhibitionId }: Props
                   Remover imagem
                 </button>
               )}
+
+              {/* Áudio de introdução — mesmo padrão (toggle + URL) das obras. */}
+              <div style={{ marginTop: 18 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                  <span style={{ fontSize: 13, color: COLORS.muted, fontFamily: "'DM Sans', sans-serif" }}>
+                    Áudio de introdução
+                  </span>
+                  <ToggleSwitch
+                    checked={!!form.audioUrl}
+                    onChange={(on) => {
+                      if (on && !form.audioUrl) updateField('audioUrl', 'https://');
+                      if (!on) updateField('audioUrl', null);
+                    }}
+                  />
+                  {form.audioUrl && (
+                    <input
+                      style={{ ...inputBase, flex: 1, padding: '8px 12px', fontSize: 13 }}
+                      value={form.audioUrl || ''}
+                      onChange={e => updateField('audioUrl', e.target.value)}
+                      placeholder="https://… (URL do arquivo de áudio)"
+                    />
+                  )}
+                </div>
+                {form.audioUrl && (
+                  <p style={{ fontSize: 11, color: COLORS.faint, margin: '8px 0 0' }}>
+                    Toca como faixa de boas-vindas no topo do guia, antes da lista de obras.
+                  </p>
+                )}
+              </div>
             </div>
           </div>
 
@@ -670,11 +702,13 @@ export function ExposicaoTab({ museumId, onChange, selectedExhibitionId }: Props
                             fontFamily: "'Space Mono', monospace",
                             fontSize: 10,
                             letterSpacing: 2,
-                            color: COLORS.brand,
-                            border: `1px solid ${COLORS.brand}`,
+                            color: '#fff',
+                            background: GRADIENT_PULSE,
+                            border: 'none',
                             borderRadius: 4,
-                            padding: '4px 10px',
+                            padding: '5px 11px',
                             whiteSpace: 'nowrap',
+                            fontWeight: 600,
                           }}>
                             AUDIO
                           </span>
@@ -1017,7 +1051,12 @@ export function ExposicaoTab({ museumId, onChange, selectedExhibitionId }: Props
                   }} />
 
                   <iframe
-                    src="/guide"
+                    // Passes the currently selected exhibition id so the
+                    // preview reflects whichever one the manager is editing,
+                    // not just whatever is ACTIVE in the DB. Keying on form.id
+                    // forces a remount when the selected exhibition changes.
+                    key={form.id || 'new'}
+                    src={form.id ? `/guide?exhibition=${encodeURIComponent(form.id)}` : '/guide'}
                     style={{
                       width: '100%',
                       height: '100%',
@@ -1081,6 +1120,7 @@ export function ExposicaoTab({ museumId, onChange, selectedExhibitionId }: Props
                   subtitle: form.subtitle,
                   startDate: form.startDate,
                   endDate: form.endDate,
+                  coverImage: form.coverImage,
                 }}
                 museum={{
                   name: museumInfo.name,

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { api } from '../../services/api';
 import { useAuthStore } from '../../store/useAuthStore';
 import {
@@ -83,6 +83,18 @@ export function GestoresTab() {
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [deleteBusy, setDeleteBusy] = useState(false);
 
+  // Generic confirm modal — used for cancel-invite and deactivate, which
+  // previously used native window.confirm() popups.
+  type ConfirmAction = {
+    title: string;
+    message: ReactNode;
+    confirmLabel: string;
+    danger?: boolean;
+    onConfirm: () => Promise<void> | void;
+  };
+  const [confirmAction, setConfirmAction] = useState<ConfirmAction | null>(null);
+  const [confirmBusy, setConfirmBusy] = useState(false);
+
   const refresh = async () => {
     setLoading(true);
     try {
@@ -142,28 +154,39 @@ export function GestoresTab() {
     }
   };
 
-  const handleRevoke = async (u: User) => {
-    if (!window.confirm(`Cancelar convite de ${u.name}? Ele não poderá usar o link atual.`)) return;
-    try {
-      await api.post(`/users/${u.id}/revoke-invite`);
-      setInfo(`Convite de ${u.name} cancelado.`);
-      await refresh();
-    } catch (err: any) {
-      setError(err?.response?.data?.error || err?.message || 'Erro ao cancelar convite');
-    }
+  const handleRevoke = (u: User) => {
+    setConfirmAction({
+      title: 'Cancelar convite',
+      message: <>O convite enviado para <strong style={{ color: COLORS.text }}>{u.name}</strong> será invalidado e o link atual não funcionará mais.</>,
+      confirmLabel: 'Cancelar convite',
+      danger: true,
+      onConfirm: async () => {
+        await api.post(`/users/${u.id}/revoke-invite`);
+        setInfo(`Convite de ${u.name} cancelado.`);
+        await refresh();
+      },
+    });
   };
 
   const handleToggleActive = async (u: User) => {
     if (u.id === me?.id) return;
-    if (u.active && !window.confirm(`Desativar ${u.name}? Ele não conseguirá mais entrar (mas a conta fica preservada).`)) return;
+    if (u.active) {
+      setConfirmAction({
+        title: 'Desativar acesso',
+        message: <><strong style={{ color: COLORS.text }}>{u.name}</strong> não conseguirá mais entrar no painel. A conta fica preservada e pode ser reativada depois.</>,
+        confirmLabel: 'Desativar',
+        danger: true,
+        onConfirm: async () => {
+          await api.delete(`/users/${u.id}`);
+          setInfo(`${u.name} desativado.`);
+          await refresh();
+        },
+      });
+      return;
+    }
     try {
-      if (u.active) {
-        await api.delete(`/users/${u.id}`);
-        setInfo(`${u.name} desativado.`);
-      } else {
-        await api.put(`/users/${u.id}`, { active: true });
-        setInfo(`${u.name} reativado.`);
-      }
+      await api.put(`/users/${u.id}`, { active: true });
+      setInfo(`${u.name} reativado.`);
       await refresh();
     } catch (err: any) {
       setError(err?.response?.data?.error || err?.message || 'Erro ao mudar status');
@@ -482,7 +505,7 @@ export function GestoresTab() {
       {inviteLink && (
         <div style={modalBackdrop} onClick={() => setInviteLink(null)}>
           <div style={{ ...card, width: 540, maxWidth: '92vw', padding: 26 }} onClick={e => e.stopPropagation()}>
-            <h3 style={{ ...sectionTitle, marginBottom: 12 }}>Convite enviado</h3>
+            <h3 style={{ ...sectionTitle, marginBottom: 12 }}>Convite gerado</h3>
             <p style={{ color: COLORS.muted, fontSize: 13, lineHeight: 1.5, margin: '0 0 18px' }}>
               {inviteLink.emailSent ? (
                 <>
@@ -491,7 +514,7 @@ export function GestoresTab() {
                 </>
               ) : (
                 <>
-                  SMTP não está configurado, então não enviamos email. Copie o link abaixo e envie pra <strong style={{ color: COLORS.text }}>{inviteLink.email}</strong> manualmente.
+                  Copie o link abaixo e envie pra <strong style={{ color: COLORS.text }}>{inviteLink.email}</strong>.
                   Expira em <strong style={{ color: COLORS.text }}>{inviteLink.expiresInDays} dias</strong>.
                 </>
               )}
@@ -535,20 +558,34 @@ export function GestoresTab() {
               style={{ ...card, width: 480, maxWidth: '92vw', padding: 26, borderColor: 'rgba(232,85,78,0.35)' }}
               onClick={e => e.stopPropagation()}
             >
-              <h3 style={{ ...sectionTitle, marginBottom: 6, color: COLORS.brand }}>
+              <h3 style={{ ...sectionTitle, marginBottom: 8, color: COLORS.brand, fontSize: 16 }}>
                 Excluir definitivamente
               </h3>
-              <p style={{ color: COLORS.muted, fontSize: 13, lineHeight: 1.55, margin: '0 0 16px' }}>
-                A conta de <strong style={{ color: COLORS.text }}>{target.name}</strong> será apagada. Não pode ser recuperada — histórico de auditoria será perdido.
+              <p style={{ color: COLORS.muted, fontSize: 13, lineHeight: 1.6, margin: '0 0 8px' }}>
+                A conta de <strong style={{ color: COLORS.text }}>{target.name}</strong> será apagada permanentemente.
               </p>
-              <label style={labelStyle}>
-                Para confirmar, digite o email <strong style={{ color: COLORS.text }}>{target.email}</strong>:
-              </label>
+              <p style={{ color: COLORS.muted, fontSize: 13, lineHeight: 1.6, margin: '0 0 20px' }}>
+                Esta ação não pode ser desfeita — o histórico de auditoria será perdido.
+              </p>
+              <label style={{ ...labelStyle, marginBottom: 4 }}>Para confirmar, digite o email abaixo:</label>
+              <div style={{
+                fontFamily: "'Space Mono', monospace",
+                fontSize: 12,
+                color: COLORS.text,
+                background: 'rgba(255,255,255,0.04)',
+                border: `1px solid ${COLORS.border}`,
+                borderRadius: 6,
+                padding: '6px 10px',
+                marginBottom: 10,
+                userSelect: 'all',
+              }}>
+                {target.email}
+              </div>
               <input
                 style={inputBase}
                 value={deleteConfirmText}
                 onChange={e => setDeleteConfirmText(e.target.value)}
-                placeholder={target.email}
+                placeholder="Digite o email para liberar o botão"
                 autoFocus
                 disabled={deleteBusy}
               />
@@ -576,6 +613,61 @@ export function GestoresTab() {
           </div>
         );
       })()}
+
+      {/* Generic confirm modal — replaces the remaining native window.confirm
+          popups for cancel-invite and deactivate. */}
+      {confirmAction && (
+        <div style={modalBackdrop} onClick={() => !confirmBusy && setConfirmAction(null)}>
+          <div
+            style={{
+              ...card,
+              width: 440,
+              maxWidth: '92vw',
+              padding: 26,
+              borderColor: confirmAction.danger ? 'rgba(232,85,78,0.35)' : COLORS.border,
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <h3 style={{
+              ...sectionTitle,
+              marginBottom: 10,
+              fontSize: 16,
+              color: confirmAction.danger ? COLORS.brand : COLORS.text,
+            }}>
+              {confirmAction.title}
+            </h3>
+            <p style={{ color: COLORS.muted, fontSize: 13, lineHeight: 1.6, margin: '0 0 22px' }}>
+              {confirmAction.message}
+            </p>
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setConfirmAction(null)}
+                style={btnGhost}
+                disabled={confirmBusy}
+              >
+                Voltar
+              </button>
+              <button
+                onClick={async () => {
+                  setConfirmBusy(true);
+                  try {
+                    await confirmAction.onConfirm();
+                    setConfirmAction(null);
+                  } catch (err: any) {
+                    setError(err?.response?.data?.error || err?.message || 'Erro ao executar ação');
+                  } finally {
+                    setConfirmBusy(false);
+                  }
+                }}
+                style={confirmAction.danger ? btnDanger : btnPrimary}
+                disabled={confirmBusy}
+              >
+                {confirmBusy ? 'Aguarde…' : confirmAction.confirmLabel}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

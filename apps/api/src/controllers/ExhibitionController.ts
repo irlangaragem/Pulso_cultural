@@ -66,6 +66,7 @@ export const ExhibitionController = {
       endDate,
       sponsor,
       coverImage,
+      audioUrl,
       status,
       otherExhibitions,
     } = req.body;
@@ -81,6 +82,7 @@ export const ExhibitionController = {
           endDate: new Date(endDate),
           sponsor,
           coverImage,
+          audioUrl,
           status,
           otherExhibitions: otherExhibitions ?? undefined,
         },
@@ -106,6 +108,7 @@ export const ExhibitionController = {
       endDate,
       sponsor,
       coverImage,
+      audioUrl,
       status,
       otherExhibitions,
     } = req.body;
@@ -122,6 +125,7 @@ export const ExhibitionController = {
           endDate: endDate ? new Date(endDate) : undefined,
           sponsor,
           coverImage,
+          audioUrl,
           status,
           otherExhibitions: otherExhibitions !== undefined ? otherExhibitions : undefined,
           works: req.body.works ? {

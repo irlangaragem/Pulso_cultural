@@ -10,6 +10,7 @@ interface Exhibition {
   subtitle?: string | null;
   startDate: string;
   endDate: string;
+  coverImage?: string | null;
 }
 
 interface MuseumInfo {
@@ -46,6 +47,15 @@ function buildVisitorUrl(exhibitionId: string): string {
   const base = (import.meta as any).env?.VITE_PUBLIC_URL
     || (typeof window !== 'undefined' ? window.location.origin : '');
   return `${base.replace(/\/$/, '')}/?exhibition=${exhibitionId}`;
+}
+
+/** Resolve a relative upload URL (e.g. "/uploads/files/abc.jpg") against the
+ *  API host so html-to-image can fetch it for the PNG/PDF export. */
+function resolveImg(url: string | null | undefined): string {
+  if (!url) return '';
+  if (/^(https?:|data:|blob:)/i.test(url)) return url;
+  const apiBase = (import.meta as any).env?.VITE_API_URL || '';
+  return `${apiBase}${url}`;
 }
 
 function isLocalhostUrl(url: string): boolean {
@@ -238,6 +248,40 @@ export function PosterPreview({ exhibition, museum, open, onClose }: Props) {
             boxShadow: '0 40px 80px rgba(0,0,0,0.5)',
           }}
         >
+          {/* Cover image as a tinted backdrop — gives the poster the personality
+              of the exhibition while keeping all the text + QR clearly readable
+              thanks to the dark gradient overlay above it. */}
+          {exhibition.coverImage && (
+            <>
+              <img
+                src={resolveImg(exhibition.coverImage)}
+                alt=""
+                crossOrigin="anonymous"
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  opacity: 0.32,
+                  zIndex: 0,
+                }}
+              />
+              <div style={{
+                position: 'absolute',
+                inset: 0,
+                background: 'linear-gradient(180deg, rgba(26,10,20,0.72) 0%, rgba(14,11,13,0.92) 100%)',
+                zIndex: 0,
+              }} />
+            </>
+          )}
+
+          {/* All content sits above the backdrop. Using flex:1 (instead of
+              height:100%) so this wrapper becomes a regular flex child of the
+              poster — guarantees the footer doesn't spill past the 842px
+              bottom edge in the exported PNG/PDF. minHeight:0 lets the
+              wrapper shrink correctly inside the parent flex column. */}
+          <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
           {/* Logo */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 18 }}>
             <PosterPulseSymbol size={54} />
@@ -373,6 +417,7 @@ export function PosterPreview({ exhibition, museum, open, onClose }: Props) {
           </div>
         </div>
 
+          </div>
       </div>
 
       {/* Action bar — fixed footer of the modal, never overlaps the poster */}
