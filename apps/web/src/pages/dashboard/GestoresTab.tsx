@@ -95,6 +95,10 @@ export function GestoresTab() {
   const [confirmAction, setConfirmAction] = useState<ConfirmAction | null>(null);
   const [confirmBusy, setConfirmBusy] = useState(false);
 
+  // Per-row busy state for the inline icon actions (reenviar / cancelar).
+  // Without this the buttons gave zero visual feedback on click — looked broken.
+  const [rowBusy, setRowBusy] = useState<{ id: string; action: 'resend' | 'revoke' } | null>(null);
+
   const refresh = async () => {
     setLoading(true);
     try {
@@ -144,6 +148,7 @@ export function GestoresTab() {
   const handleResend = async (u: User) => {
     setError(null);
     setInfo(null);
+    setRowBusy({ id: u.id, action: 'resend' });
     try {
       const res = await api.post(`/users/${u.id}/resend-invite`);
       const inv = (res.data as InviteResponse).invite;
@@ -151,6 +156,8 @@ export function GestoresTab() {
       await refresh();
     } catch (err: any) {
       setError(err?.response?.data?.error || err?.message || 'Erro ao reenviar');
+    } finally {
+      setRowBusy(null);
     }
   };
 
@@ -161,9 +168,14 @@ export function GestoresTab() {
       confirmLabel: 'Cancelar convite',
       danger: true,
       onConfirm: async () => {
-        await api.post(`/users/${u.id}/revoke-invite`);
-        setInfo(`Convite de ${u.name} cancelado.`);
-        await refresh();
+        setRowBusy({ id: u.id, action: 'revoke' });
+        try {
+          await api.post(`/users/${u.id}/revoke-invite`);
+          setInfo(`Convite de ${u.name} cancelado.`);
+          await refresh();
+        } finally {
+          setRowBusy(null);
+        }
       },
     });
   };
@@ -409,19 +421,37 @@ export function GestoresTab() {
                   <td style={{ ...td, textAlign: 'right' }}>
                     <div style={{ display: 'inline-flex', gap: 6 }}>
                       {isPending && (
-                        <button onClick={() => handleResend(u)} title="Reenviar convite" style={iconBtn}>
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <line x1="22" y1="2" x2="11" y2="13"/>
-                            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
-                          </svg>
+                        <button
+                          onClick={() => handleResend(u)}
+                          disabled={rowBusy?.id === u.id}
+                          title="Reenviar convite"
+                          style={{ ...iconBtn, cursor: rowBusy?.id === u.id ? 'wait' : 'pointer', opacity: rowBusy?.id === u.id && rowBusy.action !== 'resend' ? 0.4 : 1 }}
+                        >
+                          {rowBusy?.id === u.id && rowBusy.action === 'resend' ? (
+                            <Spinner />
+                          ) : (
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <line x1="22" y1="2" x2="11" y2="13"/>
+                              <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                            </svg>
+                          )}
                         </button>
                       )}
                       {isPending && (
-                        <button onClick={() => handleRevoke(u)} title="Cancelar convite" style={iconBtn}>
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <circle cx="12" cy="12" r="10"/>
-                            <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
-                          </svg>
+                        <button
+                          onClick={() => handleRevoke(u)}
+                          disabled={rowBusy?.id === u.id}
+                          title="Cancelar convite"
+                          style={{ ...iconBtn, cursor: rowBusy?.id === u.id ? 'wait' : 'pointer', opacity: rowBusy?.id === u.id && rowBusy.action !== 'revoke' ? 0.4 : 1 }}
+                        >
+                          {rowBusy?.id === u.id && rowBusy.action === 'revoke' ? (
+                            <Spinner />
+                          ) : (
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <circle cx="12" cy="12" r="10"/>
+                              <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+                            </svg>
+                          )}
                         </button>
                       )}
                       {!isPending && !isMe && (
@@ -707,3 +737,23 @@ const modalBackdrop: React.CSSProperties = {
   zIndex: 100,
   backdropFilter: 'blur(4px)',
 };
+
+/** Inline 16×16 spinner — matches the icon-button slot exactly so the row
+ *  doesn't shift when we swap the icon for the loading state. */
+function Spinner() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={COLORS.brand}
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      style={{ animation: 'pulso-spin 0.7s linear infinite' }}
+    >
+      <style>{`@keyframes pulso-spin { to { transform: rotate(360deg); } }`}</style>
+      <path d="M21 12a9 9 0 1 1-6.2-8.55" />
+    </svg>
+  );
+}

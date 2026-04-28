@@ -2,24 +2,23 @@ import { Router, Request, Response } from 'express';
 import multer from 'multer';
 import path from 'node:path';
 import fs from 'node:fs';
-import crypto from 'node:crypto';
-
-const UPLOAD_DIR = process.env.UPLOAD_DIR || path.resolve(process.cwd(), 'uploads');
-if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
 const ALLOWED_MIME = new Set(['image/png', 'image/jpeg', 'image/jpg', 'image/webp']);
 
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, UPLOAD_DIR),
-  filename: (_req, file, cb) => {
-    const id = crypto.randomBytes(12).toString('hex');
-    const ext = path.extname(file.originalname).toLowerCase().replace(/[^a-z0-9.]/g, '') || '.bin';
-    cb(null, `${Date.now()}-${id}${ext}`);
-  },
-});
-
+// ── Storage strategy ──────────────────────────────────────────────────────
+// We use memory storage and respond with a base64 data URL. This is the
+// simplest fix to Railway's ephemeral filesystem: the cover image lives
+// inside the Exhibition row in Postgres (durable) instead of /uploads on the
+// container disk (gone after every redeploy). With a 5MB image cap the
+// resulting data URL is ~6.7MB — fine for a single Exhibition row, and the
+// dashboard already caches the response for 30s.
+//
+// Tradeoff: payload is larger than serving the image from disk, but the
+// piloto has 1–2 exhibitions per museum so the overhead is negligible. If
+// we ever need to scale we can swap memoryStorage for an S3/Supabase
+// adapter without touching any callers.
 const upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
     if (!ALLOWED_MIME.has(file.mimetype)) {
@@ -35,21 +34,28 @@ export const uploadRoutes = Router();
 uploadRoutes.post('/', upload.single('file'), (req: Request, res: Response) => {
   const file = req.file;
   if (!file) return res.status(400).json({ error: 'Arquivo ausente (campo "file")' });
+  // Returning a data URL keeps the image self-contained in the response —
+  // no second round-trip and survives container redeploys.
+  const dataUrl = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
   return res.status(201).json({
-    url: `/uploads/files/${file.filename}`,
-    filename: file.filename,
+    url: dataUrl,
     size: file.size,
     mime: file.mimetype,
   });
 });
 
 // ── Public router (GET files for visitor-facing guide) ─────────────────────
+// Kept around for backwards-compat with any old rows that still reference
+// /uploads/files/<name>. New uploads are stored inline as data URLs so this
+// path will see no new traffic. Safe to remove once the DB has been swept.
 export const uploadPublicRoutes = Router();
+
+const LEGACY_DIR = process.env.UPLOAD_DIR || path.resolve(process.cwd(), 'uploads');
 
 uploadPublicRoutes.get('/files/:filename', (req: Request, res: Response) => {
   const safeName = path.basename(req.params.filename);
-  const filePath = path.join(UPLOAD_DIR, safeName);
-  if (!filePath.startsWith(UPLOAD_DIR)) {
+  const filePath = path.join(LEGACY_DIR, safeName);
+  if (!filePath.startsWith(LEGACY_DIR)) {
     return res.status(400).end();
   }
   if (!fs.existsSync(filePath)) {

@@ -194,8 +194,11 @@ export function Guide() {
   }, []);
 
   const togglePlay = (work: Work) => {
-    // Only play if a real audioUrl is provided — never use placeholder audio
-    if (!work.audioUrl) return;
+    // Only play if a real audioUrl is provided — never use placeholder audio.
+    // Reject empty/whitespace and bare-protocol values that sneak through forms.
+    const u = (work.audioUrl || '').trim();
+    if (!u || u === 'https://' || u === 'http://') return;
+    if (!/^(https?:|data:|blob:|\/)/i.test(u)) return;
 
     if (playingId === work.id) {
       soundRef.current?.pause();
@@ -203,7 +206,7 @@ export function Guide() {
     } else {
       soundRef.current?.stop();
       const newSound = new Howl({
-        src: [work.audioUrl],
+        src: [u],
         html5: true,
         onend: () => { setPlayingId(null); setProgress(0); },
       });
@@ -213,12 +216,20 @@ export function Guide() {
     }
   };
 
+  // Treat empty string, "https://" placeholder and bare URL fragments as
+  // "no audio configured" so the player doesn't try to load a junk src.
+  const hasIntroAudio = (() => {
+    const u = (exhibition?.audioUrl || '').trim();
+    if (!u || u === 'https://' || u === 'http://') return false;
+    return /^(https?:|data:|blob:|\/)/i.test(u);
+  })();
+
   // Same pattern as togglePlay but for the exhibition's intro track. Uses a
   // synthetic id 'exhibition-intro' so it shares state with the works' player
   // (only one track plays at a time).
   const toggleIntroAudio = () => {
     const url = exhibition?.audioUrl;
-    if (!url || url === 'https://') return;
+    if (!hasIntroAudio || !url) return;
     const introId = 'exhibition-intro';
     if (playingId === introId) {
       soundRef.current?.pause();
@@ -271,12 +282,15 @@ export function Guide() {
         )}
         {/* Hero header */}
         <div className="v-guide-hero" style={{ position: 'relative', overflow: 'hidden' }}>
-          {/* Brighter image inside the hero so the cover is more visible at top */}
-          {exhibition?.coverImage && (
+          {/* Brighter image inside the hero so the cover is more visible at top.
+              Also gated on `!coverFailed` so legacy /uploads paths that 404 after
+              a Railway redeploy don't leave a broken-image icon at the top. */}
+          {exhibition?.coverImage && !coverFailed && (
             <>
               <img
                 src={resolveImg(exhibition.coverImage)}
                 alt=""
+                onError={() => setCoverFailed(true)}
                 style={{
                   position: 'absolute',
                   inset: 0,
@@ -328,7 +342,7 @@ export function Guide() {
           {/* Intro audio — plays a welcome track set on the exhibition itself
               (separate from per-work audio). Uses the same Howl singleton so
               only one track plays at a time. */}
-          {exhibition?.audioUrl && exhibition.audioUrl !== 'https://' && (
+          {hasIntroAudio && (
             <div
               onClick={toggleIntroAudio}
               style={{
@@ -405,7 +419,11 @@ export function Guide() {
                     </p>
                     <p className="v-work-artist">{w.artist}{w.year ? ` · ${w.year}` : ''}</p>
                   </div>
-                  {w.audioUrl ? (
+                  {(() => {
+                    const u = (w.audioUrl || '').trim();
+                    const playable = !!u && u !== 'https://' && u !== 'http://' && /^(https?:|data:|blob:|\/)/i.test(u);
+                    return playable;
+                  })() ? (
                     // Real audio available — show play/pause control
                     <button
                       className="v-audio-btn"
